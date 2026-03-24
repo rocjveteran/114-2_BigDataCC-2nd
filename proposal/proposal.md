@@ -29,14 +29,14 @@
 
 ## 預計使用技術
 
-- [ ] Python + Pandas 資料分析
+- [ ✓ ] Python + Pandas 資料分析
 - [ ] Matplotlib / Seaborn 視覺化
 - [ ] Jupyter Notebook
 - [ ] Keras 預訓練模型
 - [ ] Gradio 互動介面
-- [ ] MySQL 資料庫
+- [ ✓ ] MySQL 資料庫
 - [ ] Docker 容器部署
-- [ ] 其他 : CSS 前端樣式設計 / 介面美化
+- [ ✓ ] 其他 : CSS 前端樣式設計 / 介面美化
 
 ## 系統架構
 
