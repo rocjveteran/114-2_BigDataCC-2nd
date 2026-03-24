@@ -34,9 +34,9 @@
 - [ ] Jupyter Notebook
 - [ ] Keras 預訓練模型
 - [ ] Gradio 互動介面
-- [ ] MySQL 資料庫
+- [x] MySQL 資料庫
 - [ ] Docker 容器部署
-- [ ] 其他 : CSS 前端樣式設計 / 介面美化
+- [x] 其他 : CSS 前端樣式設計 / 介面美化
 
 ## 系統架構
 
