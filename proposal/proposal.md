@@ -29,7 +29,7 @@
 
 ## 預計使用技術
 
-- [ˇ] Python + Pandas 資料分析
+- [x] Python + Pandas 資料分析
 - [ ] Matplotlib / Seaborn 視覺化
 - [ ] Jupyter Notebook
 - [ ] Keras 預訓練模型
