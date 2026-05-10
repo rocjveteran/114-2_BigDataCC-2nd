@@ -108,11 +108,10 @@ ALTER TABLE attendance
 
 > 請先掃描整個 repo 並讀取 CLAUDE.md 確認脈絡，接著依第 14 週目標處理以下事項。每一項完成前先讓我 review diff，確認後再 commit。
 > 
-> 1. 刪除根目錄誤推檔案 `Hollow UP`
-> 2. 整理 `my-topics/` 結構，扁平化或移除巢狀的 `my-topics/my-topics/` 資料夾
-> 3. 將我提供的上學期 PHP 程式碼置入 `src/app/` 之下
-> 4. 建立 `docker/docker-compose.yml` 與相關 `Dockerfile`，依 CLAUDE.md 之三容器架構
-> 5. 修改 `db.php` 改為從環境變數讀取連線設定
-> 6. 撰寫 Schema migration SQL，新增 `duty_zone`、`sea_state`、`vessel_id` 三個欄位
+> 1. 整理 `my-topics/` 結構，扁平化或移除巢狀的 `my-topics/my-topics/` 資料夾
+> 2. 將我提供的上學期 PHP 程式碼置入 `src/app/` 之下
+> 3. 建立 `docker/docker-compose.yml` 與相關 `Dockerfile`，依 CLAUDE.md 之三容器架構
+> 4. 修改 `db.php` 改為從環境變數讀取連線設定
+> 5. 撰寫 Schema migration SQL，新增 `duty_zone`、`sea_state`、`vessel_id` 三個欄位
 
 完成後再進入 Python 模擬資料生成腳本之開發。
