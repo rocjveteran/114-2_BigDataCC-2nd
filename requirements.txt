@@ -4,3 +4,5 @@ matplotlib
 seaborn
 jupyter
 gradio
+mysql-connector-python
+scipy
