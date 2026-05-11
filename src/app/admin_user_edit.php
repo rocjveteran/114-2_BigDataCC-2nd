@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div>
               <label>啟用狀態</label>
-              <label style="display:flex;gap:10px;align-items:center;margin-top:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text);">
+              <label class="check-label">
                 <input type="checkbox" name="is_active" <?= ((int)$u['is_active']===1)?'checked':'' ?> style="width:auto;">
                 <?= ((int)$u['is_active']===1) ? '帳號啟用中' : '帳號已停用' ?>
               </label>

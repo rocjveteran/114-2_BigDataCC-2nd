@@ -98,7 +98,7 @@ $users = $stmt->fetchAll();
           </div>
         </div>
 
-        <label style="display:flex;gap:10px;align-items:center;margin-top:18px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text);">
+        <label class="check-label">
           <input type="checkbox" name="is_active" checked style="width:auto;">
           建立後立即啟用帳號
         </label>
