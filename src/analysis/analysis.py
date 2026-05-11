@@ -31,6 +31,7 @@ _DB = {
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/app/output"))
 
 # ── 中文字型 ──────────────────────────────────────────────────────────────────
+
 import glob as _glob
 
 def _find_cjk_font():
@@ -54,6 +55,7 @@ if _cjk_file:
 else:
     _cjk = [f.name for f in fm.fontManager.ttflist if "Noto" in f.name and "CJK" in f.name]
     plt.rcParams["font.family"] = _cjk[0] if _cjk else "DejaVu Sans"
+main
 plt.rcParams["axes.unicode_minus"] = False
 
 BLUE_PAL = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
@@ -96,10 +98,16 @@ def generate_charts(
     prefix = "filtered_" if any([date_from, date_to, zones, vessels]) else ""
 
     conn = get_connection()
-    att, leaves = _load_data(conn, date_from, date_to, zones, vessels)
+    att, leaves = _load_data(conn, date_from, date_to)
     conn.close()
 
     att, leaves = _clean(att, leaves)
+
+    # 篩選在 _clean 之後執行，確保 duty_zone/vessel_id 已從 bytes 轉為 str
+    if zones:
+        att = att[att["duty_zone"].isin(zones)]
+    if vessels:
+        att = att[att["vessel_id"].isin(vessels)]
 
     paths = []
     for fn, chart_fn in [
@@ -122,7 +130,7 @@ def generate_charts(
 
 
 # ── 資料載入 ──────────────────────────────────────────────────────────────────
-def _load_data(conn, date_from, date_to, zones, vessels):
+def _load_data(conn, date_from, date_to):
     where = ["a.status = 'done'"]
     params: list = []
 
@@ -130,6 +138,8 @@ def _load_data(conn, date_from, date_to, zones, vessels):
         where.append("a.work_date >= %s"); params.append(date_from)
     if date_to:
         where.append("a.work_date <= %s"); params.append(date_to)
+
+main
     sql_att = f"""
         SELECT a.att_id, a.user_id, u.full_name, u.role,
                a.work_date, a.check_in, a.check_out,

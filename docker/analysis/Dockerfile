@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt \
     && python -c "import matplotlib.font_manager as fm; fm.fontManager.ttflist; print('font cache ok')"
+main
 
 EXPOSE 7860
 
