@@ -31,8 +31,29 @@ _DB = {
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/app/output"))
 
 # ── 中文字型 ──────────────────────────────────────────────────────────────────
-_cjk = [f.name for f in fm.fontManager.ttflist if "Noto" in f.name and "CJK" in f.name]
-plt.rcParams["font.family"] = _cjk[:1] + ["DejaVu Sans"] if _cjk else ["DejaVu Sans"]
+import glob as _glob
+
+def _find_cjk_font():
+    patterns = [
+        "/usr/share/fonts/**/*CJK*.ttc",
+        "/usr/share/fonts/**/*CJK*.ttf",
+        "/usr/share/fonts/**/*Noto*CJK*.otf",
+        "/usr/share/fonts/**/*noto*cjk*.ttf",
+    ]
+    for p in patterns:
+        files = _glob.glob(p, recursive=True)
+        if files:
+            return files[0]
+    return None
+
+_cjk_file = _find_cjk_font()
+if _cjk_file:
+    fm.fontManager.addfont(_cjk_file)
+    _cjk_prop = fm.FontProperties(fname=_cjk_file)
+    plt.rcParams["font.family"] = _cjk_prop.get_name()
+else:
+    _cjk = [f.name for f in fm.fontManager.ttflist if "Noto" in f.name and "CJK" in f.name]
+    plt.rcParams["font.family"] = _cjk[0] if _cjk else "DejaVu Sans"
 plt.rcParams["axes.unicode_minus"] = False
 
 BLUE_PAL = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
@@ -109,13 +130,6 @@ def _load_data(conn, date_from, date_to, zones, vessels):
         where.append("a.work_date >= %s"); params.append(date_from)
     if date_to:
         where.append("a.work_date <= %s"); params.append(date_to)
-    if zones:
-        where.append(f"a.duty_zone IN ({','.join(['%s']*len(zones))})")
-        params.extend(zones)
-    if vessels:
-        where.append(f"a.vessel_id IN ({','.join(['%s']*len(vessels))})")
-        params.extend(vessels)
-
     sql_att = f"""
         SELECT a.att_id, a.user_id, u.full_name, u.role,
                a.work_date, a.check_in, a.check_out,
@@ -126,6 +140,12 @@ def _load_data(conn, date_from, date_to, zones, vessels):
     """
     att = pd.read_sql(sql_att, conn, params=params or None,
                       parse_dates=["work_date", "check_in", "check_out"])
+
+    # Python-side filtering for CJK strings (avoids mysql.connector charset issues)
+    if zones:
+        att = att[att["duty_zone"].isin(zones)]
+    if vessels:
+        att = att[att["vessel_id"].isin(vessels)]
 
     leaves = pd.read_sql(
         """SELECT l.leave_id, l.user_id, u.full_name,
