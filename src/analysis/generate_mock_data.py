@@ -18,10 +18,12 @@ import mysql.connector
 
 # ── 連線設定 ──────────────────────────────────────────────────────────────────
 DB = {
-    "host":     os.getenv("DB_HOST", "localhost"),
-    "database": os.getenv("DB_NAME", "maritime_duty"),
-    "user":     os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASS", ""),
+    "host":        os.getenv("DB_HOST", "localhost"),
+    "database":    os.getenv("DB_NAME", "maritime_duty"),
+    "user":        os.getenv("DB_USER", "root"),
+    "password":    os.getenv("DB_PASS", ""),
+    "charset":     "utf8mb4",
+    "use_unicode": True,
 }
 
 # ── 時間範圍（六個月）────────────────────────────────────────────────────────
