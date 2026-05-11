@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    fontconfig \
     fonts-noto-cjk \
     && fc-cache -fv \
     && rm -rf /var/lib/apt/lists/*
