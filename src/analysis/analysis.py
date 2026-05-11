@@ -20,10 +20,12 @@ import mysql.connector
 
 # ── 連線設定 ──────────────────────────────────────────────────────────────────
 _DB = {
-    "host":     os.getenv("DB_HOST", "localhost"),
-    "database": os.getenv("DB_NAME", "maritime_duty"),
-    "user":     os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASS", ""),
+    "host":        os.getenv("DB_HOST", "localhost"),
+    "database":    os.getenv("DB_NAME", "maritime_duty"),
+    "user":        os.getenv("DB_USER", "root"),
+    "password":    os.getenv("DB_PASS", ""),
+    "charset":     "utf8mb4",
+    "use_unicode": True,
 }
 
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/app/output"))
@@ -138,6 +140,8 @@ def _load_data(conn, date_from, date_to, zones, vessels):
 def _clean(att: pd.DataFrame, leaves: pd.DataFrame):
     before = len(att)
     att = att.dropna(subset=["check_in", "check_out", "duty_zone", "sea_state", "vessel_id"]).copy()
+    for col in ["duty_zone", "sea_state", "vessel_id"]:
+        att[col] = att[col].apply(lambda x: x.decode("utf-8") if isinstance(x, bytes) else str(x))
     att["hours"] = (att["check_out"] - att["check_in"]).dt.total_seconds() / 3600
     att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
     if before - len(att):
@@ -170,8 +174,12 @@ def _chart_zone_bar(att):
 
 
 def _chart_zone_sea_stacked(att):
-    sea_order  = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].unique()]
-    zone_order = [z for z in ["港口", "近海", "外海"] if z in att["duty_zone"].unique()]
+    sea_order  = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].values]
+    zone_order = [z for z in ["港口", "近海", "外海"] if z in att["duty_zone"].values]
+    if not sea_order or not zone_order:
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.set_title("各海域海況分布（資料不足）", fontsize=14, fontweight="bold")
+        return fig
     pivot = (att.groupby(["duty_zone", "sea_state"]).size()
                .unstack(fill_value=0)
                .reindex(index=zone_order, columns=sea_order, fill_value=0)
