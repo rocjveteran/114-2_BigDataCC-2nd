@@ -37,23 +37,6 @@ def _load_options():
                 "date_min": date(2025, 11, 1), "date_max": date(2026, 4, 30)}
 
 
-def run_analysis(date_from, date_to, zones, vessels, progress=gr.Progress()):
-    progress(0, desc="連線資料庫...")
-
-    df = str(date_from) if date_from else None
-    dt = str(date_to)   if date_to   else None
-    z  = list(zones)    if zones     else None
-    v  = list(vessels)  if vessels   else None
-
-    try:
-        progress(0.1, desc="載入資料...")
-        paths = generate_charts(OUTPUT_DIR, date_from=df, date_to=dt, zones=z, vessels=v)
-        progress(1.0, desc="完成")
-        return paths + [gr.update(visible=True), "✅ 分析完成"]
-    except Exception as e:
-        return [None] * 7 + [gr.update(visible=False), f"❌ 錯誤：{e}"]
-
-
 # ── 建立介面 ──────────────────────────────────────────────────────────────────
 opts = _load_options()
 
@@ -102,26 +85,18 @@ with gr.Blocks(title="海事勤務分析系統", theme=gr.themes.Base(primary_hu
             with gr.Row():
                 charts.append(gr.Image(label=CHART_LABELS[6], type="filepath"))
 
-    result_row = gr.Row(visible=False)
-
     def on_run(date_from, date_to, zones, vessels):
         v_filter = [v for v in vessels if v != "（全部）"] or None
         z_filter = zones if zones else None
         try:
-            conn = get_connection()
-            import pandas as pd
-            row = pd.read_sql("SELECT COUNT(*) as cnt, MIN(duty_zone) as z1, MAX(duty_zone) as z2 FROM attendance WHERE status='done'", conn)
-            conn.close()
-            debug = f"DB筆數={row['cnt'][0]}, zone範例={row['z1'][0]}~{row['z2'][0]}"
             paths = generate_charts(OUTPUT_DIR,
                                     date_from=date_from or None,
                                     date_to=date_to or None,
                                     zones=z_filter,
                                     vessels=v_filter)
-            return paths + [f"✅ 分析完成 | {debug}"]
+            return paths + ["✅ 分析完成"]
         except Exception as e:
-            import traceback
-            return [None] * 7 + [f"❌ 錯誤：{e}\n{traceback.format_exc()}"]
+            return [None] * 7 + [f"❌ 錯誤：{e}"]
 
     run_btn.click(
         fn=on_run,
