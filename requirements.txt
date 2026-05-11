@@ -6,3 +6,4 @@ jupyter
 gradio
 mysql-connector-python
 scipy
+bcrypt
