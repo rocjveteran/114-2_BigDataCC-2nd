@@ -108,12 +108,17 @@ with gr.Blocks(title="海事勤務分析系統", theme=gr.themes.Base(primary_hu
         v_filter = [v for v in vessels if v != "（全部）"] or None
         z_filter = zones if zones else None
         try:
+            conn = get_connection()
+            import pandas as pd
+            row = pd.read_sql("SELECT COUNT(*) as cnt, MIN(duty_zone) as z1, MAX(duty_zone) as z2 FROM attendance WHERE status='done'", conn)
+            conn.close()
+            debug = f"DB筆數={row['cnt'][0]}, zone範例={row['z1'][0]}~{row['z2'][0]}"
             paths = generate_charts(OUTPUT_DIR,
                                     date_from=date_from or None,
                                     date_to=date_to or None,
                                     zones=z_filter,
                                     vessels=v_filter)
-            return paths + ["✅ 分析完成"]
+            return paths + [f"✅ 分析完成 | {debug}"]
         except Exception as e:
             import traceback
             return [None] * 7 + [f"❌ 錯誤：{e}\n{traceback.format_exc()}"]
