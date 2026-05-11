@@ -7,3 +7,4 @@ gradio
 mysql-connector-python
 scipy
 bcrypt
+requests
