@@ -117,26 +117,34 @@ $u = $stmt->fetchAll();
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>值勤總覽</title>
-  <link rel="stylesheet" href="style.css">
+  <title>勤務總覽 · 海事勤務</title>
+  <?php require_once 'ui.php'; style_link(); ?>
 </head>
 <body>
-  <?php require_once 'ui.php'; nav_top('值勤總覽'); ?>
+  <?php nav_top(); ?>
   <div class="wrap">
+    <?php
+    $actions = '<a class="btn ghost" href="admin_export.php?d='.h($d).'">'.icon_svg('download').'匯出日報表</a>';
+    page_header(
+      '勤務總覽',
+      '查看任一日所有人員的值勤狀態，並可快速開始、結束或清除值勤紀錄；亦可進一步編輯。',
+      'ADMIN · 管理',
+      $actions
+    );
+    ?>
+
     <div class="card">
-      <form method="get">
-        <div class="toolbar">
-          <div class="title">
-            <h1>值勤總覽</h1>
-            <div class="hint">切換日期或搜尋後按「套用」</div>
-          </div>
-          <div class="actions">
-            <input type="date" name="d" value="<?= h($d) ?>" style="max-width:170px;">
-            <input class="searchbar" name="q" value="<?= h($q) ?>" placeholder="搜尋帳號或姓名">
-            <button class="btn primary" type="submit"><?= icon_svg("check") ?>套用</button>
-            <a class="btn" href="admin_export.php?d=<?= h($d) ?>"><?= icon_svg("download") ?>匯出日報表</a>
-            <a class="btn" href="admin_users.php"><?= icon_svg("users") ?>帳號管理</a>
-          </div>
+      <form method="get" class="filter-bar">
+        <div>
+          <label>日期</label>
+          <input type="date" name="d" value="<?= h($d) ?>">
+        </div>
+        <div style="flex:2;">
+          <label>搜尋帳號或姓名</label>
+          <input name="q" value="<?= h($q) ?>" placeholder="輸入關鍵字後按套用">
+        </div>
+        <div class="filter-actions">
+          <button class="btn primary" type="submit"><?= icon_svg("check") ?>套用</button>
         </div>
       </form>
 
@@ -201,5 +209,6 @@ $u = $stmt->fetchAll();
       </table>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>

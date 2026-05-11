@@ -102,19 +102,27 @@ function to_local($dt) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>編輯值勤</title>
-  <link rel="stylesheet" href="style.css">
+  <title>編輯值勤 · 海事勤務</title>
+  <?php require_once 'ui.php'; style_link(); ?>
 </head>
 <body>
-  <?php require_once 'ui.php'; nav_top('編輯值勤'); ?>
-  <div class="wrap" style="max-width:820px;">
+  <?php nav_top(); ?>
+  <div class="wrap mid">
+    <?php
+    $actions = '<a class="btn ghost" href="admin_status.php?d='.h($d).'">'.icon_svg('list').'回勤務總覽</a>';
+    page_header(
+      '編輯值勤紀錄',
+      $u['full_name'].'（'.$u['username'].'） · '.$d.'。可直接修改開始/結束時間，或清空兩欄並儲存以刪除該日紀錄。',
+      'ADMIN · 管理',
+      $actions
+    );
+    ?>
+
+    <?php if($msg): ?><p class="msg ok"><?= h($msg) ?></p><?php endif; ?>
+    <?php if($err): ?><p class="msg err"><?= h($err) ?></p><?php endif; ?>
+
     <div class="card">
-      <div class="muted">使用者：<?= h($u['username']) ?>（<?= h($u['full_name']) ?>）｜日期：<?= h($d) ?></div>
-
-      <?php if($msg): ?><p class="msg ok" style="margin-top:12px;"><?= h($msg) ?></p><?php endif; ?>
-      <?php if($err): ?><p class="msg err" style="margin-top:12px;"><?= h($err) ?></p><?php endif; ?>
-
-      <form method="post" style="margin-top:10px;">
+      <form method="post">
         <div class="row">
           <div>
             <label>值勤開始時間</label>
@@ -125,13 +133,17 @@ function to_local($dt) {
             <input type="datetime-local" name="out" value="<?= h(to_local($out_v)) ?>">
           </div>
         </div>
-        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn primary" type="submit">儲存</button>
-          <a class="btn" href="admin_status.php?d=<?= h($d) ?>">回狀態</a>
+
+        <div class="form-actions">
+          <button class="btn primary" type="submit"><?= icon_svg('check') ?>儲存</button>
+          <a class="btn ghost" href="admin_status.php?d=<?= h($d) ?>">取消</a>
         </div>
-        <div class="muted" style="margin-top:10px;">清空兩個時間後按儲存 = 刪除該日紀錄（回到未值勤）。</div>
+        <div class="muted" style="margin-top:14px;font-size:13px;">
+          提示：清空兩個時間欄並按儲存 = 刪除該日紀錄（回到「未值勤」）。
+        </div>
       </form>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>

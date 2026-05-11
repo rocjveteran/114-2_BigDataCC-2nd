@@ -81,29 +81,35 @@ $rows = $stmt->fetchAll();
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>帳號管理</title>
-  <link rel="stylesheet" href="style.css">
+  <title>帳號管理 · 海事勤務</title>
+  <?php style_link(); ?>
 </head>
 <body>
-  <?php nav_top('帳號管理'); ?>
+  <?php nav_top(); ?>
   <div class="wrap">
-    <div class="card">
-      <div class="toolbar">
-        <div>
-          <div class="title">帳號清單</div>
-          <div class="sub">搜尋、修改、啟用/停用（依權限顯示）</div>
-        </div>
-        <div class="actions">
-          <form method="get" style="min-width:260px;">
-            <input name="q" value="<?= h($q) ?>" placeholder="搜尋：帳號或姓名">
-          </form>
-          <a class="btn okfill" href="admin_create_user.php"><?= icon_svg("plus") ?>新增</a>
-          <a class="btn" href="admin_status.php"><?= icon_svg("list") ?>值勤總覽</a>
-        </div>
-      </div>
+    <?php
+    $actions = '<a class="btn primary" href="admin_create_user.php">'.icon_svg('plus').'新增帳號</a>';
+    page_header(
+      '帳號管理',
+      '搜尋、編輯、啟用或停用帳號。boss 可管理所有人；admin 僅能管理 employee。',
+      'ADMIN · 管理',
+      $actions
+    );
+    ?>
 
-      <?php if($msg): ?><p class="msg ok" style="margin-top:10px;"><?= h($msg) ?></p><?php endif; ?>
-      <?php if($err): ?><p class="msg err" style="margin-top:10px;"><?= h($err) ?></p><?php endif; ?>
+    <?php if($msg): ?><p class="msg ok"><?= h($msg) ?></p><?php endif; ?>
+    <?php if($err): ?><p class="msg err"><?= h($err) ?></p><?php endif; ?>
+
+    <div class="card">
+      <form method="get" class="filter-bar">
+        <div style="flex:2;">
+          <label>搜尋</label>
+          <input name="q" value="<?= h($q) ?>" placeholder="輸入帳號或姓名">
+        </div>
+        <div class="filter-actions">
+          <button class="btn primary" type="submit"><?= icon_svg('list') ?>查詢</button>
+        </div>
+      </form>
 
       <table>
         <tr><th>ID</th><th>帳號</th><th>姓名</th><th>等級</th><th>啟用</th><th>建立時間</th><th>操作</th></tr>
@@ -134,5 +140,6 @@ $rows = $stmt->fetchAll();
       </table>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>

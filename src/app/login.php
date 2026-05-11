@@ -5,7 +5,6 @@ error_reporting(E_ALL);
 
 session_start();
 
-// 已登入就直接進系統（避免登入中還看到登入頁）
 if (isset($_SESSION['user_id'])) {
   header("Location: punch.php");
   exit;
@@ -41,37 +40,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>登入</title>
-  <link rel="stylesheet" href="style.css">
+  <title>登入 · 海事勤務</title>
+  <?php style_link(); ?>
 </head>
 <body>
-  <?php nav_top('登入'); ?>
+  <?php nav_top(); ?>
 
-  <div class="wrap" style="max-width:520px;">
+  <div class="wrap narrow" style="padding-top:48px;">
+    <?php page_header('登入系統', '請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
+
     <div class="card">
-      <h1 class="h1">人員登入</h1>
-      <div class="muted">請輸入帳號與密碼</div>
-
       <?php if ($error): ?>
-        <p class="msg err" style="margin-top:10px;"><?= h($error) ?></p>
+        <p class="msg err"><?= h($error) ?></p>
       <?php endif; ?>
 
-      <form method="post" style="margin-top:10px;">
+      <form method="post" autocomplete="on">
         <label>帳號</label>
-        <input name="username" autocomplete="username" required placeholder="請輸入帳號">
+        <input name="username" autocomplete="username" required placeholder="例如：admin">
 
         <label>密碼</label>
-        <input name="password" type="password" autocomplete="current-password" required placeholder="請輸入密碼">
+        <input name="password" type="password" autocomplete="current-password" required placeholder="輸入您的密碼">
 
-        <div style="margin-top:12px;">
-          <button class="btn primary" type="submit"><?= icon_svg('login') ?>登入</button>
-        </div>
-
-        <div class="muted" style="margin-top:10px;">
-          
+        <div class="form-actions">
+          <button class="btn primary" type="submit" style="flex:1;"><?= icon_svg('login') ?>登入</button>
         </div>
       </form>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>

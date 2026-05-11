@@ -9,7 +9,6 @@ $uid = (int)$_SESSION['user_id'];
 $msg = null;
 $err = null;
 
-// cancel pending request
 if (($_POST['act'] ?? '') === 'cancel') {
   $id = (int)($_POST['id'] ?? 0);
   if ($id > 0) {
@@ -54,6 +53,7 @@ $stmt = $pdo->prepare("SELECT leave_id, date_from, date_to, leave_type, reason, 
                        FROM leaves WHERE user_id=? ORDER BY leave_id DESC LIMIT 50");
 $stmt->execute([$uid]);
 $rows = $stmt->fetchAll();
+$count = count($rows);
 
 function type_name($t){
   if ($t==='personal') return '事假';
@@ -71,17 +71,26 @@ function st_badge($st){
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>請假</title>
-  <link rel="stylesheet" href="style.css">
+  <title>請假 · 海事勤務</title>
+  <?php style_link(); ?>
 </head>
 <body>
-  <?php nav_top('請假'); ?>
-  <div class="wrap" style="max-width:980px;">
-    <div class="card">
-      <h1 class="h1">請假申請</h1>
+  <?php nav_top(); ?>
+  <div class="wrap">
+    <?php page_header(
+      '請假申請',
+      '填寫日期區間與假別送出後，由 admin 或 boss 審核。狀態為「待審核」時可自行取消。',
+      'LEAVE · 請假'
+    ); ?>
 
-      <?php if($msg): ?><p class="msg ok"><?= h($msg) ?></p><?php endif; ?>
-      <?php if($err): ?><p class="msg err"><?= h($err) ?></p><?php endif; ?>
+    <?php if($msg): ?><p class="msg ok"><?= h($msg) ?></p><?php endif; ?>
+    <?php if($err): ?><p class="msg err"><?= h($err) ?></p><?php endif; ?>
+
+    <div class="card">
+      <div class="card-head" style="border:0;padding:0;margin:0 0 14px;">
+        <h2>新申請</h2>
+        <span class="meta">送出後狀態為「待審核」</span>
+      </div>
 
       <form method="post">
         <div class="row">
@@ -110,39 +119,48 @@ function st_badge($st){
           </div>
         </div>
 
-        <div style="margin-top:12px;">
-          <button class="btn okfill" type="submit"<?= icon_svg("plus") ?>送出申請</button>
+        <div class="form-actions">
+          <button class="btn primary" type="submit"><?= icon_svg('plus') ?>送出申請</button>
         </div>
       </form>
     </div>
 
     <div class="card">
-      <h2 class="h2">我的申請（最近 50 筆）</h2>
+      <div class="card-head" style="border:0;padding:0;margin:0 0 8px;">
+        <h2>我的申請</h2>
+        <span class="meta">最近 <?= (int)$count ?> 筆</span>
+      </div>
+
+      <?php if ($count === 0): ?>
+        <p class="muted" style="padding:20px 0;">尚無請假紀錄。</p>
+      <?php else: ?>
       <table>
-        <tr><th>ID</th><th>期間</th><th>假別</th><th>狀態</th><th>原因</th><th>建立時間</th><th>操作</th></tr>
+        <tr><th>ID</th><th>期間</th><th>假別</th><th>狀態</th><th>原因</th><th>建立</th><th>操作</th></tr>
         <?php foreach($rows as $x): ?>
           <tr>
             <td><?= h($x['leave_id']) ?></td>
-            <td><?= h($x['date_from']) ?> ~ <?= h($x['date_to']) ?></td>
+            <td><?= h($x['date_from']) ?> ～ <?= h($x['date_to']) ?></td>
             <td><?= h(type_name($x['leave_type'])) ?></td>
             <td><?= st_badge($x['status']) ?></td>
-            <td><?= h($x['reason'] ?? '') ?></td>
-            <td><?= h($x['created_at']) ?></td>
+            <td class="muted"><?= h($x['reason'] ?? '') ?></td>
+            <td class="muted"><?= h($x['created_at']) ?></td>
             <td>
               <?php if($x['status']==='pending'): ?>
-                <form method="post">
+                <form method="post" style="margin:0;">
                   <input type="hidden" name="act" value="cancel">
                   <input type="hidden" name="id" value="<?= h($x['leave_id']) ?>">
-                  <button class="btn small" type="submit"<?= icon_svg("x") ?>取消</button>
+                  <button class="btn small danger" type="submit"><?= icon_svg('x') ?>取消</button>
                 </form>
               <?php else: ?>
-                <span class="muted">-</span>
+                <span class="muted">—</span>
               <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>
       </table>
+      <?php endif; ?>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>

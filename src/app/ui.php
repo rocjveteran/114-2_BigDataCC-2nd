@@ -57,29 +57,82 @@ function icon_svg($name){
   return '';
 }
 
-function nav_top($title){
+function style_link(){
+  $p = __DIR__ . '/style.css';
+  $v = @filemtime($p) ?: time();
+  echo '<link rel="stylesheet" href="style.css?v='.$v.'">';
+}
+
+function page_footer(){
+  $y = date('Y');
+  echo '<footer class="site-footer"><div class="wrap"><div class="footer-row">';
+  echo '<div class="footer-brand">';
+  echo '<span class="footer-logo">'.icon_svg('ship').'</span>';
+  echo '<span>海事勤務值勤管理系統</span>';
+  echo '</div>';
+  echo '<div class="footer-meta">114-2 巨量資料與雲端運算 · 第 2 組 · &copy; '.$y.'</div>';
+  echo '</div></div></footer>';
+}
+
+function page_header($title, $subtitle = '', $eyebrow = '', $actions_html = ''){
+  echo '<header class="page-header">';
+  echo '<div class="ph-text">';
+  if ($eyebrow !== '') echo '<div class="eyebrow">'.h($eyebrow).'</div>';
+  echo '<h1 class="page-title">'.h($title).'</h1>';
+  if ($subtitle !== '') echo '<p class="page-subtitle">'.h($subtitle).'</p>';
+  echo '</div>';
+  if ($actions_html !== '') echo '<div class="ph-actions">'.$actions_html.'</div>';
+  echo '</header>';
+}
+
+function nav_link($href, $label, $current = false){
+  $cls = 'nav-link' . ($current ? ' active' : '');
+  return '<a class="'.$cls.'" href="'.h($href).'">'.h($label).'</a>';
+}
+
+function nav_top($title = ''){
   $name = $_SESSION['full_name'] ?? '';
   $role = $_SESSION['role'] ?? '';
-  $who  = $name ? (h($name).' · '.h(role_name($role))) : '';
-  echo '<div class="top"><div class="wrap"><div class="nav">';
-  echo '<span class="brand"><span class="logo">'.icon_svg('ship').'</span>海事勤務值勤管理系統</span>';
-  if ($who) echo '<span class="muted" style="color:rgba(255,255,255,.82)">'. $who .'</span>';
-  echo '<span class="sp"></span>';
+  $cur  = basename($_SERVER['SCRIPT_NAME'] ?? '');
+
+  echo '<header class="top"><div class="wrap nav-wrap"><div class="nav">';
+
+  echo '<a class="brand" href="'.(isset($_SESSION['user_id']) ? 'punch.php' : 'login.php').'">';
+  echo '<span class="logo">'.icon_svg('ship').'</span>';
+  echo '<span class="brand-name">海事勤務</span>';
+  echo '<span class="brand-tag">值勤管理系統</span>';
+  echo '</a>';
+
   if (isset($_SESSION['user_id'])) {
-    echo '<a class="btn small" href="punch.php">'.icon_svg('clock').'值勤</a>';
-    echo '<a class="btn small" href="records.php">'.icon_svg('list').'我的值勤</a>';
-    echo '<a class="btn small" href="leave.php">'.icon_svg('plane').'請假</a>';
+    echo '<nav class="nav-links">';
+    echo nav_link('punch.php',   '值勤',   $cur==='punch.php');
+    echo nav_link('records.php', '我的紀錄', $cur==='records.php');
+    echo nav_link('leave.php',   '請假',   in_array($cur, ['leave.php'], true));
     if (is_admin()) {
-      echo '<a class="btn small" href="admin_status.php">'.icon_svg('list').'值勤總覽</a>';
-      echo '<a class="btn small" href="admin_leave.php">'.icon_svg('check').'請假審核</a>';
-      echo '<a class="btn small" href="admin_users.php">'.icon_svg('users').'帳號管理</a>';
-      echo '<a class="btn small" href="admin_dashboard.php">'.icon_svg('download').'分析儀表板</a>';
+      echo '<span class="nav-sep"></span>';
+      echo nav_link('admin_status.php',    '勤務總覽', in_array($cur, ['admin_status.php','admin_edit.php'], true));
+      echo nav_link('admin_leave.php',     '請假審核', $cur==='admin_leave.php');
+      echo nav_link('admin_users.php',     '帳號管理', in_array($cur, ['admin_users.php','admin_create_user.php','admin_user_edit.php'], true));
+      echo nav_link('admin_dashboard.php', '分析儀表板', $cur==='admin_dashboard.php');
     }
-    echo '<a class="btn small" href="logout.php">'.icon_svg('logout').'登出</a>';
+    echo '</nav>';
+  }
+
+  echo '<span class="sp"></span>';
+
+  echo '<div class="nav-right">';
+  if (isset($_SESSION['user_id'])) {
+    if ($name) {
+      echo '<span class="user-chip">';
+      echo '<span class="user-name">'.h($name).'</span>';
+      echo '<span class="user-role">'.h(role_name($role)).'</span>';
+      echo '</span>';
+    }
+    echo '<a class="btn small ghost-on-dark" href="logout.php">'.icon_svg('logout').'登出</a>';
   } else {
-    echo '<a class="btn small" href="login.php">'.icon_svg('login').'登入</a>';
+    echo '<a class="btn small primary" href="login.php">'.icon_svg('login').'登入</a>';
   }
   echo '</div>';
-  if ($title) echo '<div class="muted" style="color:rgba(255,255,255,.82)">'.h($title).'</div>';
-  echo '</div></div>';
+
+  echo '</div></div></header>';
 }

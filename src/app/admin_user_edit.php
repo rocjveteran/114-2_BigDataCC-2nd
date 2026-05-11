@@ -80,72 +80,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>修改帳號</title>
-  <link rel="stylesheet" href="style.css">
+  <title>修改帳號 · 海事勤務</title>
+  <?php style_link(); ?>
 </head>
 <body>
-  <?php nav_top('修改帳號'); ?>
-  <div class="wrap" style="max-width:820px;">
+  <?php nav_top(); ?>
+  <div class="wrap mid">
+    <?php
+    $actions = '<a class="btn ghost" href="admin_users.php">'.icon_svg('users').'回帳號管理</a>';
+    page_header(
+      '修改帳號',
+      'ID #'.h($u['user_id']).' · '.h(role_name($u['role'])).' · 建立於 '.h($u['created_at']),
+      'ADMIN · 管理',
+      $actions
+    );
+    ?>
+
+    <?php if(!$can): ?><p class="msg err">你沒有權限（只可查看）</p><?php endif; ?>
+    <?php if($msg): ?><p class="msg ok"><?= h($msg) ?></p><?php endif; ?>
+    <?php if($err): ?><p class="msg err"><?= h($err) ?></p><?php endif; ?>
+
     <div class="card">
-      <div class="muted">ID：<?= h($u['user_id']) ?>｜等級：<?= h(role_name($u['role'])) ?>｜建立時間：<?= h($u['created_at']) ?></div>
-
-      <?php if(!$can): ?><p class="msg err" style="margin-top:10px;">你沒有權限（只可查看）</p><?php endif; ?>
-
-      <?php if($msg): ?><p class="msg ok" style="margin-top:10px;"><?= h($msg) ?></p><?php endif; ?>
-      <?php if($err): ?><p class="msg err" style="margin-top:10px;"><?= h($err) ?></p><?php endif; ?>
-
-      <form method="post" style="margin-top:10px;">
+      <form method="post">
         <fieldset <?= (!$can)?'disabled':'' ?> style="border:0;padding:0;margin:0;">
-        <div class="row">
-          <div>
-            <label>帳號</label>
-            <input name="username" value="<?= h($u['username']) ?>" placeholder="請輸入帳號" required>
+          <div class="row">
+            <div>
+              <label>帳號</label>
+              <input name="username" value="<?= h($u['username']) ?>" placeholder="請輸入帳號" required>
+            </div>
+            <div>
+              <label>姓名</label>
+              <input name="full_name" value="<?= h($u['full_name']) ?>" placeholder="請輸入姓名" required>
+            </div>
           </div>
-          <div>
-            <label>姓名</label>
-            <input name="full_name" value="<?= h($u['full_name']) ?>" placeholder="請輸入姓名" required>
+
+          <div class="row">
+            <div>
+              <label>角色</label>
+              <?php if($my_role==='boss'): ?>
+                <select name="role">
+                  <option value="boss"     <?= $u['role']==='boss'?'selected':'' ?>>boss（老闆）</option>
+                  <option value="admin"    <?= $u['role']==='admin'?'selected':'' ?>>admin（管理員）</option>
+                  <option value="employee" <?= $u['role']==='employee'?'selected':'' ?>>employee（員工）</option>
+                </select>
+              <?php else: ?>
+                <select disabled>
+                  <option selected>employee（員工）</option>
+                </select>
+                <div class="muted" style="margin-top:6px;font-size:12.5px;">你沒有權限調整角色</div>
+              <?php endif; ?>
+            </div>
+            <div>
+              <label>啟用狀態</label>
+              <label style="display:flex;gap:10px;align-items:center;margin-top:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text);">
+                <input type="checkbox" name="is_active" <?= ((int)$u['is_active']===1)?'checked':'' ?> style="width:auto;">
+                <?= ((int)$u['is_active']===1) ? '帳號啟用中' : '帳號已停用' ?>
+              </label>
+            </div>
           </div>
-        </div>
 
-        <div class="row">
-          <div>
-            <label>等級</label>
-            <?php if($my_role==='boss'): ?>
-              <select name="role">
-                <option value="boss" <?= $u['role']==='boss'?'selected':'' ?>>boss</option>
-                <option value="admin" <?= $u['role']==='admin'?'selected':'' ?>>admin</option>
-                <option value="employee" <?= $u['role']==='employee'?'selected':'' ?>>employee</option>
-              </select>
-            <?php else: ?>
-              <select disabled>
-                <option selected>employee</option>
-              </select>
-              <div class="hint">你沒有權限調整等級</div>
-            <?php endif; ?>
+          <label>重設密碼（留空表示不變）</label>
+          <input name="newpw" type="password" placeholder="留空 = 不修改密碼">
+
+          <div class="form-actions">
+            <button class="btn primary" type="submit"><?= icon_svg('check') ?>儲存變更</button>
+            <a class="btn ghost" href="admin_users.php">取消</a>
           </div>
-          <div>
-            <label>啟用</label>
-            <label style="display:flex;gap:10px;align-items:center;margin-top:8px;">
-              <input type="checkbox" name="is_active" <?= ((int)$u['is_active']===1)?'checked':'' ?> style="width:auto;">
-              <?= ((int)$u['is_active']===1) ? '啟用' : '停用' ?>
-            </label>
-          </div>
-        </div>
 
-        <label>重設密碼（可空白）</label>
-        <input name="newpw" type="password" placeholder="不修改就留空白">
-
-        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn primary" type="submit"><?= icon_svg('check') ?>儲存</button>
-          <a class="btn" href="admin_users.php"><?= icon_svg('users') ?>回帳號管理</a>
-        </div>
-
-        <?php if($my_role!=='boss'): ?>
-          <div class="muted" style="margin-top:10px;">管理員只能管理員工。</div>
-        <?php endif; ?>
-              </fieldset>
+          <?php if($my_role!=='boss'): ?>
+            <div class="muted" style="margin-top:14px;font-size:13px;">admin 僅能管理 employee；如需調整其他角色請聯絡 boss。</div>
+          <?php endif; ?>
+        </fieldset>
       </form>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>

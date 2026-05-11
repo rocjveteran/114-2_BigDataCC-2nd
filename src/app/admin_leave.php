@@ -77,46 +77,41 @@ function st_badge($st){
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>請假審核</title>
-  <link rel="stylesheet" href="style.css">
+  <title>請假審核 · 海事勤務</title>
+  <?php style_link(); ?>
 </head>
 <body>
-  <?php nav_top('請假審核'); ?>
+  <?php nav_top(); ?>
 
   <div class="wrap">
+    <?php page_header(
+      '請假審核',
+      '核准或拒絕請假申請。boss 可審核所有人，admin 僅能審核 employee。',
+      'ADMIN · 管理'
+    ); ?>
+
+    <?php if ($msg): ?>
+      <p class="msg ok"><?= h($msg) ?></p>
+    <?php endif; ?>
+
     <div class="card">
-      <div class="toolbar">
+      <form method="get" class="filter-bar">
         <div>
-          <div class="title">請假審核</div>
-          <div class="sub">核准/拒絕（僅 boss/admin 可操作）</div>
+          <label>狀態</label>
+          <select name="only">
+            <option value="pending"  <?= $only==='pending'?'selected':''  ?>>待審核</option>
+            <option value="approved" <?= $only==='approved'?'selected':'' ?>>已核准</option>
+            <option value="rejected" <?= $only==='rejected'?'selected':'' ?>>已拒絕</option>
+          </select>
         </div>
-
-        <div class="actions">
-          <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
-            <div style="min-width:160px;">
-              <label style="margin-top:0;">狀態</label>
-              <select name="only">
-                <option value="pending" <?= $only==='pending'?'selected':'' ?>>待審核</option>
-                <option value="approved" <?= $only==='approved'?'selected':'' ?>>已核准</option>
-                <option value="rejected" <?= $only==='rejected'?'selected':'' ?>>已拒絕</option>
-              </select>
-            </div>
-
-            <div style="min-width:220px;">
-              <label style="margin-top:0;">搜尋</label>
-              <input name="q" value="<?= h($q) ?>" placeholder="帳號或姓名">
-            </div>
-
-            <div>
-              <button class="btn primary" type="submit"><?= icon_svg('list') ?>查詢</button>
-            </div>
-          </form>
+        <div style="flex:2;">
+          <label>搜尋</label>
+          <input name="q" value="<?= h($q) ?>" placeholder="帳號或姓名">
         </div>
-      </div>
-
-      <?php if ($msg): ?>
-        <p class="msg ok" style="margin-top:10px;"><?= h($msg) ?></p>
-      <?php endif; ?>
+        <div class="filter-actions">
+          <button class="btn primary" type="submit"><?= icon_svg('list') ?>查詢</button>
+        </div>
+      </form>
 
       <table>
         <tr>
@@ -159,5 +154,6 @@ function st_badge($st){
       </table>
     </div>
   </div>
+  <?php page_footer(); ?>
 </body>
 </html>
