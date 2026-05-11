@@ -10,6 +10,7 @@
 
 ```bash
 cd 114-2_BigDataCC-2nd
+cp .env.example docker/.env              # 先確認 docker/.env 存在
 docker compose -f docker/docker-compose.yml down -v   # 清空舊資料
 docker compose -f docker/docker-compose.yml up --build -d
 # 等待約 60 秒讓 MySQL healthcheck 通過

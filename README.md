@@ -81,9 +81,9 @@
 git clone https://github.com/rocjveteran/114-2_BigDataCC-2nd.git
 cd 114-2_BigDataCC-2nd
 
-# 2. 建立環境變數檔
-cp .env.example .env
-# 編輯 .env，填入 DB 密碼
+# 2. 建立環境變數檔（.env 需放在 docker/ 目錄內）
+cp .env.example docker/.env
+# 編輯 docker/.env，填入 DB 密碼（CWA_API_KEY 可留空）
 
 # 3. 啟動三容器（首次會建置映像，約 3–5 分鐘）
 cd docker
