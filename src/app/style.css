@@ -518,6 +518,107 @@ td .btn{ vertical-align: middle; }
   display: block;
 }
 
+/* ── Insight panel (統計洞察區) ── */
+.insight-section .kpi-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.insight-section .kpi{
+  background: var(--card);
+  padding: 18px 20px;
+}
+.insight-section .kpi-num{
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+  color: var(--text);
+}
+.insight-section .kpi-lbl{
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.test-list{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.test-item{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.test-head{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.test-name{
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+}
+.test-body{ font-size: 13.5px; line-height: 1.6; }
+.test-row{
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+.test-row .test-lbl{ color: var(--muted); flex-shrink: 0; }
+.test-row .test-val{ color: var(--text); text-align: right; }
+.test-row .test-val.mono{ font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+.test-conclusion{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+.test-conclusion.sig{ color: var(--ok); font-weight: 500; }
+
+.insight-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.insight-card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.insight-title{
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text);
+  letter-spacing: -0.05px;
+}
+.insight-text{
+  font-size: 13.5px;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.6;
+}
+
 /* ── Empty state ── */
 .empty-state{
   text-align: center;

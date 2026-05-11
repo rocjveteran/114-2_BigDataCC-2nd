@@ -21,6 +21,10 @@ CHART_LABELS = [
     "各海況值勤時數分布",
     "人員月度出勤熱力圖",
     "每月核准請假件數",
+    "海域×海況平均工時",
+    "異常值勤偵測（Z-score）",
+    "週幾出勤模式",
+    "船艦使用 Pareto 圖",
 ]
 
 ZONE_OPTIONS = ["港口", "近海", "外海"]
@@ -73,17 +77,12 @@ with gr.Blocks(title="海事勤務分析系統", theme=gr.themes.Base(primary_hu
         with gr.Column(scale=3):
             gr.Markdown("### 分析結果")
             charts = []
-            with gr.Row():
-                charts.append(gr.Image(label=CHART_LABELS[0], type="filepath"))
-                charts.append(gr.Image(label=CHART_LABELS[1], type="filepath"))
-            with gr.Row():
-                charts.append(gr.Image(label=CHART_LABELS[2], type="filepath"))
-                charts.append(gr.Image(label=CHART_LABELS[3], type="filepath"))
-            with gr.Row():
-                charts.append(gr.Image(label=CHART_LABELS[4], type="filepath"))
-                charts.append(gr.Image(label=CHART_LABELS[5], type="filepath"))
-            with gr.Row():
-                charts.append(gr.Image(label=CHART_LABELS[6], type="filepath"))
+            # 11 張圖每列 2 張，最後一列補滿
+            for i in range(0, len(CHART_LABELS), 2):
+                with gr.Row():
+                    charts.append(gr.Image(label=CHART_LABELS[i], type="filepath"))
+                    if i + 1 < len(CHART_LABELS):
+                        charts.append(gr.Image(label=CHART_LABELS[i + 1], type="filepath"))
 
     def on_run(date_from, date_to, zones, vessels):
         v_filter = [v for v in vessels if v != "（全部）"] or None
@@ -97,7 +96,7 @@ with gr.Blocks(title="海事勤務分析系統", theme=gr.themes.Base(primary_hu
                                     vessels=v_filter)
             return paths + ["✅ 分析完成"]
         except Exception as e:
-            return [None] * 7 + [f"❌ 錯誤：{e}"]
+            return [None] * len(CHART_LABELS) + [f"❌ 錯誤：{e}"]
 
     run_btn.click(
         fn=on_run,

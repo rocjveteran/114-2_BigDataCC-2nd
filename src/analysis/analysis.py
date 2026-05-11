@@ -8,6 +8,7 @@
 """
 
 import os
+import json
 from pathlib import Path
 
 import matplotlib
@@ -16,6 +17,8 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import seaborn as sns
 import pandas as pd
+import numpy as np
+from scipy import stats as sps
 import mysql.connector
 
 # ── 連線設定 ──────────────────────────────────────────────────────────────────
@@ -113,13 +116,17 @@ def generate_charts(
 
     paths = []
     for fn, chart_fn in [
-        (f"{prefix}monthly_trend.png",   lambda: _chart_monthly_trend(att)),
+        (f"{prefix}monthly_trend.png",    lambda: _chart_monthly_trend(att)),
         (f"{prefix}zone_bar.png",         lambda: _chart_zone_bar(att)),
         (f"{prefix}zone_sea_stacked.png", lambda: _chart_zone_sea_stacked(att)),
         (f"{prefix}vessel_count.png",     lambda: _chart_vessel_count(att)),
         (f"{prefix}hours_boxplot.png",    lambda: _chart_hours_boxplot(att)),
         (f"{prefix}person_heatmap.png",   lambda: _chart_person_heatmap(att)),
         (f"{prefix}leave_trend.png",      lambda: _chart_leave_trend(leaves)),
+        (f"{prefix}hours_heatmap.png",    lambda: _chart_hours_heatmap(att)),
+        (f"{prefix}anomaly_detect.png",   lambda: _chart_anomaly_detect(att)),
+        (f"{prefix}weekday_pattern.png",  lambda: _chart_weekday_pattern(att)),
+        (f"{prefix}vessel_pareto.png",    lambda: _chart_vessel_pareto(att)),
     ]:
         fig = chart_fn()
         path = out / fn
@@ -127,6 +134,13 @@ def generate_charts(
         plt.close(fig)
         print(f"  ✔ {fn}")
         paths.append(str(path))
+
+    # 寫統計檢定報告（PHP 儀表板會讀此檔）
+    stats_data = compute_stats(att, leaves)
+    stats_path = out / f"{prefix}stats_summary.json"
+    with open(stats_path, "w", encoding="utf-8") as f:
+        json.dump(stats_data, f, ensure_ascii=False, indent=2)
+    print(f"  ✔ {stats_path.name}")
 
     return paths
 
@@ -282,7 +296,200 @@ def _chart_leave_trend(leaves):
     fig.tight_layout(); return fig
 
 
-# ── 圖 8：模擬 vs 觀測海況對照（需先執行 fetch_sea_data.py）────────────────────
+# ── 圖 8：海域 × 海況 平均工時熱力圖 ─────────────────────────────────────────
+def _chart_hours_heatmap(att):
+    """揭露兩個維度的交互效應：同樣海況下，不同海域工時差多少？"""
+    sea_order  = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].values]
+    zone_order = [z for z in ["港口", "近海", "外海"] if z in att["duty_zone"].values]
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    if att.empty or not sea_order or not zone_order:
+        ax.set_title("海域×海況平均工時（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    pivot = (att.groupby(["duty_zone", "sea_state"])["hours"].mean()
+                .unstack(fill_value=np.nan)
+                .reindex(index=zone_order, columns=sea_order))
+    sns.heatmap(pivot, annot=True, fmt=".2f", cmap="YlOrRd",
+                linewidths=0.6, linecolor="#ffffff",
+                cbar_kws={"label": "平均工時（小時）"}, ax=ax)
+    ax.set_title("海域 × 海況：平均工時交互效應", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("海況"); ax.set_ylabel("值勤海域")
+    fig.tight_layout(); return fig
+
+
+# ── 圖 9：異常值勤偵測（Z-score）─────────────────────────────────────────────
+def _chart_anomaly_detect(att):
+    """以 Z-score > 2 標示異常工時，視覺化離群點分布。"""
+    fig, ax = plt.subplots(figsize=(10, 4.5))
+    if att.empty or len(att) < 10:
+        ax.set_title("異常值勤偵測（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    z = np.abs(sps.zscore(att["hours"]))
+    normal = att[z <= 2]; outlier = att[z > 2]
+    ax.scatter(normal["work_date"], normal["hours"],
+               s=22, alpha=0.45, color=BLUE_PAL[3], label=f"正常 ({len(normal)})", edgecolors="none")
+    if not outlier.empty:
+        ax.scatter(outlier["work_date"], outlier["hours"],
+                   s=70, alpha=0.95, color="#c0001e", marker="X",
+                   label=f"異常 |z|>2 ({len(outlier)})", edgecolors="white", linewidth=0.8)
+    mean = att["hours"].mean(); std = att["hours"].std()
+    ax.axhline(mean, color="#888", linestyle="--", linewidth=1, alpha=0.6, label=f"平均 {mean:.2f}h")
+    ax.axhspan(mean - 2*std, mean + 2*std, color="#888", alpha=0.06, label="±2σ 區間")
+    ax.set_title("異常值勤偵測（Z-score 法）", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("值勤日期"); ax.set_ylabel("值勤時數（小時）")
+    ax.legend(loc="best", framealpha=0.9, fontsize=10)
+    fig.autofmt_xdate(); fig.tight_layout(); return fig
+
+
+# ── 圖 10：週幾出勤模式 ──────────────────────────────────────────────────────
+def _chart_weekday_pattern(att):
+    """分析星期效應：哪天人力最忙、哪天最閒？"""
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    if att.empty:
+        ax.set_title("週幾出勤模式（無資料）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    wd_zh = ["一", "二", "三", "四", "五", "六", "日"]
+    att2 = att.copy()
+    att2["weekday"] = att2["work_date"].dt.weekday
+    counts = att2.groupby("weekday").size().reindex(range(7), fill_value=0)
+    hours_avg = att2.groupby("weekday")["hours"].mean().reindex(range(7))
+    x = np.arange(7)
+    bars = ax.bar(x, counts.values, color=BLUE_PAL[:7], edgecolor="white", width=0.65)
+    ax.bar_label(bars, padding=3, fontsize=9)
+    ax.set_xticks(x); ax.set_xticklabels(wd_zh)
+    ax.set_title("週幾出勤模式：值勤次數 + 平均工時", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("星期"); ax.set_ylabel("值勤次數")
+    ax2 = ax.twinx()
+    ax2.plot(x, hours_avg.values, color="#c0001e", marker="o", linewidth=2, markersize=7, label="平均工時")
+    ax2.set_ylabel("平均工時（小時）", color="#c0001e")
+    ax2.tick_params(axis="y", labelcolor="#c0001e")
+    ax2.grid(False)
+    fig.tight_layout(); return fig
+
+
+# ── 圖 11：船艦利用率 Pareto 圖 ───────────────────────────────────────────────
+def _chart_vessel_pareto(att):
+    """80/20 法則：少數船艦扛多數工作量？"""
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    if att.empty:
+        ax.set_title("船艦使用 Pareto（無資料）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    counts = att["vessel_id"].value_counts().sort_values(ascending=False)
+    cum_pct = counts.cumsum() / counts.sum() * 100
+    x = np.arange(len(counts))
+    bars = ax.bar(x, counts.values, color=BLUE_PAL[2], edgecolor="white", width=0.75)
+    ax.bar_label(bars, padding=3, fontsize=9)
+    ax.set_xticks(x); ax.set_xticklabels(counts.index, rotation=30, ha="right")
+    ax.set_title("船艦使用 Pareto 圖（80/20 法則檢視）", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("船艦"); ax.set_ylabel("值勤次數")
+    ax2 = ax.twinx()
+    ax2.plot(x, cum_pct.values, color="#c96442", marker="o", linewidth=2, markersize=6, label="累積佔比")
+    ax2.axhline(80, color="#888", linestyle="--", linewidth=1, alpha=0.7)
+    ax2.text(len(counts) - 0.5, 82, "80%", color="#666", fontsize=10, ha="right")
+    ax2.set_ylabel("累積佔比 (%)", color="#c96442")
+    ax2.set_ylim(0, 105)
+    ax2.tick_params(axis="y", labelcolor="#c96442")
+    ax2.grid(False)
+    fig.tight_layout(); return fig
+
+
+# ── 統計檢定報告 ─────────────────────────────────────────────────────────────
+def compute_stats(att, leaves) -> dict:
+    """
+    跑 ANOVA、卡方獨立性檢定、Pareto 80/20、Gini，回傳結構化結果。
+    供 PHP 儀表板用 JSON 形式呈現。
+    """
+    out = {"generated_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+           "summary": {}, "tests": [], "insights": []}
+
+    if att.empty:
+        out["summary"]["error"] = "無有效值勤資料"
+        return out
+
+    # ── 基本摘要 ──
+    out["summary"]["records"]      = int(len(att))
+    out["summary"]["people"]       = int(att["user_id"].nunique())
+    out["summary"]["vessels"]      = int(att["vessel_id"].nunique())
+    out["summary"]["date_range"]   = f"{att['work_date'].min().date()} ～ {att['work_date'].max().date()}"
+    out["summary"]["hours_mean"]   = round(float(att["hours"].mean()), 2)
+    out["summary"]["hours_median"] = round(float(att["hours"].median()), 2)
+    out["summary"]["hours_std"]    = round(float(att["hours"].std()), 2)
+
+    # ── 檢定 1：海況是否影響工時（單因子 ANOVA）──
+    sea_groups = [g["hours"].values for _, g in att.groupby("sea_state") if len(g) >= 3]
+    if len(sea_groups) >= 2:
+        f, p = sps.f_oneway(*sea_groups)
+        out["tests"].append({
+            "name": "海況對工時的影響（單因子 ANOVA）",
+            "h0": "各海況下的平均工時相同",
+            "statistic": f"F = {f:.3f}",
+            "p_value": float(p),
+            "p_display": f"{p:.4f}" if p >= 0.0001 else "< 0.0001",
+            "significant": bool(p < 0.05),
+            "conclusion": "拒絕 H0：海況顯著影響工時" if p < 0.05 else "未達顯著水準，無法證明海況影響工時",
+        })
+
+    # ── 檢定 2：海域與海況是否獨立（卡方獨立性）──
+    cross = pd.crosstab(att["duty_zone"], att["sea_state"])
+    if cross.shape[0] >= 2 and cross.shape[1] >= 2:
+        chi2, p, dof, _ = sps.chi2_contingency(cross)
+        out["tests"].append({
+            "name": "海域與海況的獨立性（卡方檢定）",
+            "h0": "海域與海況彼此獨立（隨機分布）",
+            "statistic": f"χ² = {chi2:.3f}, df = {dof}",
+            "p_value": float(p),
+            "p_display": f"{p:.4f}" if p >= 0.0001 else "< 0.0001",
+            "significant": bool(p < 0.05),
+            "conclusion": "拒絕 H0：海域分布與海況有顯著關聯" if p < 0.05 else "未達顯著水準，可視為獨立",
+        })
+
+    # ── 洞察 1：Pareto 80/20 ──
+    counts = att["vessel_id"].value_counts().sort_values(ascending=False)
+    if len(counts) > 0:
+        cum = counts.cumsum() / counts.sum()
+        n_for_80 = int((cum <= 0.8).sum() + 1)
+        pct_vessel = round(n_for_80 / len(counts) * 100, 1)
+        out["insights"].append({
+            "title": "Pareto 80/20 法則檢視",
+            "text": f"承擔前 80% 工作量需 {n_for_80} / {len(counts)} 艘船艦（{pct_vessel}%）。"
+                    f"{'符合' if pct_vessel <= 30 else '不符合'} Pareto 集中度（≤ 30% 為集中）。"
+        })
+
+    # ── 洞察 2：人員工作分配 Gini 係數 ──
+    person_hours = att.groupby("user_id")["hours"].sum().values
+    if len(person_hours) >= 3:
+        sorted_h = np.sort(person_hours)
+        n = len(sorted_h); idx = np.arange(1, n + 1)
+        gini = (2 * (idx * sorted_h).sum() - (n + 1) * sorted_h.sum()) / (n * sorted_h.sum())
+        out["insights"].append({
+            "title": "人員工時分配公平性（Gini 係數）",
+            "text": f"Gini = {gini:.3f}（0 = 完全平均、1 = 極度集中）。"
+                    f"{'分配相當均勻' if gini < 0.2 else '分配尚算合理' if gini < 0.35 else '分配明顯不均，建議重新調度'}。"
+        })
+
+    # ── 洞察 3：異常值勤 ──
+    if len(att) >= 10:
+        z = np.abs(sps.zscore(att["hours"]))
+        n_outlier = int((z > 2).sum())
+        out["insights"].append({
+            "title": "異常工時檢測",
+            "text": f"共 {n_outlier} 筆值勤之工時偏離平均 2 個標準差以上（占 {n_outlier/len(att)*100:.1f}%）。"
+                    f"{'建議覆核這些紀錄' if n_outlier > 0 else '所有紀錄都在正常範圍內'}。"
+        })
+
+    # ── 洞察 4：請假狀況 ──
+    if not leaves.empty:
+        approved = leaves[leaves["status"] == "approved"]
+        pending  = leaves[leaves["status"] == "pending"]
+        out["insights"].append({
+            "title": "請假狀態總覽",
+            "text": f"共 {len(leaves)} 件請假申請，已核准 {len(approved)} 件、待審 {len(pending)} 件。"
+                    f"{'有待審件，建議盡快處理' if len(pending) > 0 else '無待審件'}。"
+        })
+
+    return out
+
+
+# ── 圖 12：模擬 vs 觀測海況對照（需先執行 fetch_sea_data.py）────────────────────
 def chart_sea_obs_comparison(output_dir: Path) -> str | None:
     """
     比較模擬值勤資料與 CWA 海象觀測資料的海況分布。
@@ -349,7 +556,7 @@ def _print_stats(att, leaves):
 def main():
     print("連線至資料庫...")
     conn = get_connection()
-    att, leaves = _load_data(conn, None, None, None, None)
+    att, leaves = _load_data(conn, None, None)
     conn.close()
     att, leaves = _clean(att, leaves)
     _print_stats(att, leaves)
