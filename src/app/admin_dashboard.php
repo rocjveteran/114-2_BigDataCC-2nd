@@ -56,7 +56,10 @@ $gradio_url = 'http://localhost:7860';
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:1.5rem">
     <?php foreach ($charts as $file => $title):
       $path = $chart_dir . $file;
+      // 若無前綴檔不存在，嘗試 filtered_ 前綴
+      if (!file_exists($path)) $path = $chart_dir . 'filtered_' . $file;
       if (!file_exists($path)) continue;
+      $file = basename($path);
       $mtime = date('Y-m-d H:i', filemtime($path));
     ?>
     <div class="card" style="padding:1rem">

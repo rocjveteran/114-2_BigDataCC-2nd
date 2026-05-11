@@ -87,7 +87,8 @@ with gr.Blocks(title="海事勤務分析系統", theme=gr.themes.Base(primary_hu
 
     def on_run(date_from, date_to, zones, vessels):
         v_filter = [v for v in vessels if v != "（全部）"] or None
-        z_filter = zones if zones else None
+        # 全選等同無篩選，這樣圖表會存為無前綴的檔名，PHP 儀表板才能讀到
+        z_filter = zones if zones and set(zones) != set(ZONE_OPTIONS) else None
         try:
             paths = generate_charts(OUTPUT_DIR,
                                     date_from=date_from or None,
