@@ -53,6 +53,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
+      CWA_API_KEY: ${CWA_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

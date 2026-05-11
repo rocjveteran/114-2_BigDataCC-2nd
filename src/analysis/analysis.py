@@ -232,6 +232,55 @@ def _chart_leave_trend(leaves):
     fig.tight_layout(); return fig
 
 
+# ── 圖 8：模擬 vs 觀測海況對照（需先執行 fetch_sea_data.py）────────────────────
+def chart_sea_obs_comparison(output_dir: Path) -> str | None:
+    """
+    比較模擬值勤資料與 CWA 海象觀測資料的海況分布。
+    若 sea_observations 表不存在或無資料，靜默跳過並回傳 None。
+    """
+    try:
+        conn = get_connection()
+        obs = pd.read_sql(
+            "SELECT sea_state, COUNT(*) AS cnt FROM sea_observations GROUP BY sea_state",
+            conn,
+        )
+        sim = pd.read_sql(
+            "SELECT sea_state, COUNT(*) AS cnt FROM attendance "
+            "WHERE sea_state IS NOT NULL GROUP BY sea_state",
+            conn,
+        )
+        conn.close()
+    except Exception:
+        return None
+
+    if obs.empty:
+        return None
+
+    sea_order = ["平靜", "輕浪", "中浪", "大浪"]
+
+    obs_pct = obs.set_index("sea_state")["cnt"] / obs["cnt"].sum() * 100
+    sim_pct = sim.set_index("sea_state")["cnt"] / sim["cnt"].sum() * 100
+
+    df = pd.DataFrame({
+        "觀測資料（CWA）": obs_pct.reindex(sea_order, fill_value=0),
+        "模擬資料": sim_pct.reindex(sea_order, fill_value=0),
+    })
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    df.plot(kind="bar", ax=ax, color=[BLUE_PAL[2], BLUE_PAL[4]],
+            edgecolor="white", linewidth=0.6)
+    ax.set_title("海況分布對照：觀測資料 vs 模擬資料", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("海況"); ax.set_ylabel("佔比 (%)")
+    ax.set_xticklabels(sea_order, rotation=0)
+    ax.legend(loc="upper right")
+    fig.tight_layout()
+
+    path = output_dir / "sea_obs_comparison.png"
+    fig.savefig(path, dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    return str(path)
+
+
 # ── 統計摘要 ──────────────────────────────────────────────────────────────────
 def _print_stats(att, leaves):
     print(f"\n{'─'*48}")
@@ -256,6 +305,14 @@ def main():
     _print_stats(att, leaves)
     print("產生圖表...")
     generate_charts(OUTPUT_DIR)
+
+    print("產生海象對照圖（需先執行 fetch_sea_data.py）...")
+    cmp_path = chart_sea_obs_comparison(OUTPUT_DIR)
+    if cmp_path:
+        print(f"  ✔ sea_obs_comparison.png")
+    else:
+        print("  ℹ sea_observations 無資料，跳過對照圖")
+
     print(f"\n所有圖表已輸出至 {OUTPUT_DIR}/")
 
 
