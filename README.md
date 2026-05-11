@@ -1,291 +1,259 @@
-# 114-2 巨量資料與雲端運算 期末專題
+# 海事勤務值勤雲端管理系統
 
-## 專題資訊
+> 114-2 巨量資料與雲端運算 ── 期末專題 ── 第 2 組
 
-| 項目 | 說明 |
-|------|------|
-| 課程 | 114-2 巨量資料與雲端運算 |
-| 組別 | 第 2 組 |
-| 組長 | 黃宇平 |
-| 組員 | 傅瀚鋌 曾紹喆 劉家样 李翊丞 林秉賢|
-| 專題名稱 | 海事勤務值勤雲端管理系統 |
-
-## 專題說明
-
-本專題要求使用 Docker 容器部署一個包含資料分析或 AI 功能的完整應用。專題需涵蓋從資料處理到模型部署的完整流程，並以 Docker 容器化方式部署，展現本學期所學的技術整合能力。
-
-## 專題要求
-
-### 必要技術
-
-專題必須包含以下技術要素：
-
-1. **Python 資料分析**：使用 Pandas、NumPy 進行資料清洗、轉換與統計分析
-2. **資料視覺化**：使用 Matplotlib 或 Seaborn 產出分析圖表
-3. **Docker 容器化**：撰寫 Dockerfile，將應用打包為容器
-4. **Git 版本控制**：所有程式碼透過 GitHub 管理，commit 紀錄完整
-
-### 選擇性技術（至少包含一項）
-
-- 使用 Keras 預訓練模型進行影像辨識或文字分類
-- 使用 Gradio 建立 AI 互動介面
-- 使用 Jupyter Notebook 進行探索式資料分析
-- 使用 MySQL 資料庫儲存與查詢資料
-- 使用 Apache + PHP 建立 Web 前端
-
-## 專題時程
-
-| 週次 | 階段 | 繳交項目 |
-|------|------|---------|
-| 第 5 週 | 題目探索 | 公布專題題目參考清單，每人開始蒐集有興趣的題目 |
-| 第 6 週 | 個人選題 | 每人在自己的 Fork 中建立 `my-topics/` 資料夾，提出 1-3 個題目構想 |
-| 第 7 週 | 分組 | 公布分組名單，各組成員互相了解彼此的題目構想 |
-| 第 8 週 | 組內討論 | 各組從所有成員的題目中討論、投票，選出一個小組題目 |
-| 第 10 週 | 正式提案 | 組長建立專題 Repo，繳交 proposal/proposal.md |
-| 第 11 週 | 提案審查 | 教師審查提案，提供修改建議 |
-| 第 12-13 週 | 資料收集與分析 | 更新 src/ 和 data/ |
-| 第 14-15 週 | 系統開發 | 更新 src/ 和 docker/ |
-| 第 16 週 | 整合測試 | 確保 Docker 部署正常 |
-| 第 17 週 | 成果展示準備 | 繳交 docs/report.md 和投影片 |
-| 第 18 週 | 期末發表 | 口頭報告 + Demo |
-
-## 選題流程說明
-
-專題題目的產生分為四個階段，從個人發想到小組共識：
-
-### 第一階段：個人題目探索（第 5-6 週）
-
-每位同學在自己 Fork 的 Repo 中建立 `my-topics/` 資料夾，提出 1-3 個有興趣的題目。每個題目建立一個 markdown 檔案，格式如下：
-
-```
-my-topics/
-├── topic1_船舶影像辨識.md
-├── topic2_海溫趨勢分析.md
-└── topic3_港口壅塞預測.md
-```
-
-每個題目檔案需包含：
-- 題目名稱
-- 為什麼對這個題目有興趣（50 字以上）
-- 可能使用的資料來源
-- 預計使用的技術
-
-#### 如何找到好題目？
-
-1. **從日常觀察出發**：想想海事或海洋領域中，有什麼問題是你好奇的？
-2. **瀏覽資料來源**：先看看有什麼資料可以用，有資料才做得出來
-3. **參考本文件的題目清單**：從建議題目中找靈感，也可以延伸或組合
-4. **關注新聞時事**：近期有什麼海事相關的議題或事件？
-5. **思考實用性**：這個題目做出來，對誰有幫助？能解決什麼問題？
-
-#### 好題目的標準
-
-- 資料取得可行（有公開資料或可自行收集）
-- 範圍適中（一學期內 4-5 人可完成）
-- 與海事海洋相關
-- 能運用課程所學的技術
-- 有明確的分析目標或應用場景
-
-### 第二階段：分組（第 7 週）
-
-教師公布分組名單，每組 4-5 人。
-
-### 第三階段：組內討論與投票（第 8 週）
-
-1. 各組成員分享自己提出的 1-3 個題目構想
-2. 組內討論每個題目的可行性、有趣程度、技術難度
-3. 透過投票或共識決定一個小組題目
-4. 可以選擇某位成員的題目，也可以組合多個題目的元素
-
-### 第四階段：正式提案（第 10 週）
-
-由組長或組內討論後的代表：
-1. 用模板建立專題 Repo（如 `114-2_BigDataCC-G01`）
-2. 邀請組員、老師、助教為 Collaborator
-3. 繳交正式的 `proposal/proposal.md`
-
-## 評分標準
-
-| 項目 | 配分 | 說明 |
-|------|------|------|
-| 專題提案 | 10 分 | 題目合理性、可行性、創新性 |
-| 資料分析品質 | 20 分 | 資料清洗完整、分析有洞察、圖表清楚 |
-| 程式碼品質 | 20 分 | 結構清楚、有註解、可讀性高 |
-| Docker 部署 | 20 分 | Dockerfile 正確、容器可正常執行 |
-| GitHub 管理 | 10 分 | commit 紀錄完整、分工明確、PR 使用得當 |
-| 口頭報告與 Demo | 15 分 | 表達清楚、Demo 順暢、回答提問 |
-| 文件完整度 | 5 分 | README、報告、投影片齊全 |
-
-## 專題題目參考
-
-以下為建議方向，專題須與海事或海洋領域相關。也可自行提案，但需經教師同意。
-
-### 海洋資料分析類
-
-- 台灣近海海溫變化趨勢分析：利用中央氣象署海洋觀測資料，分析近年海溫變化與季節趨勢
-- 港口船舶進出資料分析：分析高雄港或其他國際港口的船舶進出頻率、貨運量趨勢
-- AIS 船舶軌跡資料視覺化：利用自動識別系統資料，繪製船舶航行路徑與密度熱力圖
-- 海洋廢棄物分布分析：整合淨灘資料或海洋廢棄物監測資料，分析分布熱點與種類比例
-- 漁獲量與海洋環境關聯分析：結合漁業統計與海溫、洋流資料，探索漁獲量變化因素
-- 全球航運碳排放資料分析：分析國際航運碳排放趨勢與減碳政策影響
-- 潮汐與海流資料視覺化：利用觀測資料繪製潮汐預報與海流分布圖
-
-### 海事 AI 應用類
-
-- 船舶影像辨識：利用預訓練模型辨識船舶類型（貨輪、油輪、漁船、軍艦等）
-- 海洋生物影像辨識：辨識魚類、珊瑚、海洋哺乳類等海洋生物
-- 海事新聞自動分類：爬取海事相關新聞，利用 NLP 模型進行主題分類與情感分析
-- 海上天氣預警文字分析：分析氣象預報文字，自動判斷航行風險等級
-- 港口壅塞預測：利用歷史資料預測港口船舶等待時間
-
-### 海事整合應用類
-
-- 航運資料儀表板：用 Gradio 建立互動式航運資料分析與視覺化儀表板
-- 船舶監控系統：結合 AIS 資料與地圖，建立即時船舶位置追蹤介面
-- 海洋環境監測平台：整合海溫、鹽度、浪高等資料，建立多指標監測儀表板
-- 漁船作業分析系統：利用 VMS 漁船監控資料，分析漁場分布與作業模式
-- 港口智慧管理原型：整合船舶進出、貨物、天氣等資料的多容器管理系統
-
-### 建議資料來源
-
-| 資料集 | 來源 | 網址 |
-|--------|------|------|
-| 海洋觀測資料 | 中央氣象署 | https://ocean.cwa.gov.tw |
-| 港口統計資料 | 交通部航港局 | https://www.motcmpb.gov.tw |
-| AIS 船舶資料 | MarineTraffic | https://www.marinetraffic.com |
-| 全球漁業資料 | Global Fishing Watch | https://globalfishingwatch.org |
-| 海洋廢棄物監測 | 環境部 | https://ocean.epa.gov.tw |
-| 國際航運統計 | UNCTAD | https://unctad.org/statistics |
-| 海洋環境資料 | Copernicus Marine | https://marine.copernicus.eu |
-| 台灣漁業統計 | 農業部漁業署 | https://www.fa.gov.tw |
+延續上學期 PHP + MySQL 值勤管理雛形，改造為 Linux 雲端容器化系統，並整合 Python 資料分析模組與 Gradio 互動儀表板。一指令 `docker compose up` 完成三容器部署。
 
 ---
 
-## Repo 結構說明
+## 組員
 
-```
-114-2_BigDataCC-G01/
-│
-├── README.md              ← 本檔案：專題總覽與說明
-│
-├── proposal/              ← 專題提案
-│   └── proposal.md        ← 提案內容（第 11 週繳交）
-│
-├── data/                  ← 資料集
-│   ├── raw/               ← 原始資料
-│   ├── processed/         ← 清洗後的資料
-│   └── README.md          ← 資料來源說明
-│
-├── src/                   ← 程式碼
-│   ├── analysis/          ← 資料分析程式
-│   ├── model/             ← 模型相關程式
-│   ├── app/               ← 應用程式（Gradio / Flask）
-│   └── utils/             ← 共用工具函式
-│
-├── notebooks/             ← Jupyter Notebook
-│   └── exploration.ipynb  ← 資料探索與分析
-│
-├── docker/                ← Docker 部署
-│   ├── Dockerfile         ← 容器建置檔
-│   └── docker-compose.yml ← 多容器編排（如需要）
-│
-├── docs/                  ← 文件
-│   ├── report.md          ← 期末報告
-│   └── slides/            ← 投影片
-│
-├── .gitignore             ← Git 忽略規則
-└── requirements.txt       ← Python 套件需求
-```
-
-## 各資料夾使用說明
-
-### proposal/
-
-第 11 週前繳交專題提案，`proposal.md` 需包含：
-- 專題名稱與動機
-- 使用的資料集來源
-- 預計使用的技術
-- 分工規劃
-- 預期成果
-
-### data/
-
-- `raw/`：放原始資料檔案（CSV、JSON 等）
-- `processed/`：放清洗處理過的資料
-- `README.md`：說明資料來源、欄位定義、授權方式
-- 注意：大型檔案（超過 100MB）請使用 .gitignore 排除，改在 README 中提供下載連結
-
-### src/
-
-所有程式碼放在此處，依功能分子資料夾：
-- `analysis/`：資料分析用的 Python 程式
-- `model/`：機器學習模型訓練與推論
-- `app/`：Gradio 或 Flask 應用程式
-- `utils/`：共用的工具函式
-
-### docker/
-
-- `Dockerfile`：定義容器映像檔的建置步驟
-- `docker-compose.yml`：如果使用多個容器（例如 Python + MySQL），用此檔案編排
-
-### docs/
-
-- `report.md`：期末報告，第 17 週前繳交
-- `slides/`：發表用投影片
+| 角色 | 姓名 / 學號 |
+|------|------------|
+| 組長 | 黃宇平 / C112181108 |
+| 組員 | 傅瀚鋌 / C112181112 |
+| 組員 | 曾紹喆 / C112181182 |
+| 組員 | 劉家样 / C111181141 |
+| 組員 | 李翊丞 / C111181134 |
+| 組員 | 林秉賢 / C112181148 |
 
 ---
 
-## 操作指南
+## 系統架構
 
-### 組長建立 Repo
+```
+                          使用者瀏覽器
+                                │
+              ┌─────────────────┴─────────────────┐
+              │                                   │
+       :8080 (PHP/Apache)                   :7860 (Gradio)
+       ┌──────────────┐                  ┌──────────────────┐
+       │  web 容器     │                  │  analysis 容器   │
+       │ php:8.2      │                  │ python:3.11     │
+       │ - 登入/打卡  │                  │ - Pandas 清洗   │
+       │ - 請假審核   │                  │ - Seaborn 圖表  │
+       │ - 分析儀表板 │                  │ - Gradio 介面   │
+       └───────┬──────┘                  └──────┬───────────┘
+               │                                │
+               └──── analysis_output volume ────┘
+                          (PNG 圖表共享)
+                                │
+                       ┌────────┴─────────┐
+                       │   db 容器        │
+                       │   mysql:8.0      │
+                       │   maritime_duty  │
+                       └──────────────────┘
+```
 
-1. 到模板頁面點選「**Use this template**」>「**Create a new repository**」
-2. Repository name 填入：`114-2_BigDataCC-G01`（替換為你的組別編號）
-3. 設為 **Public**
-4. 點選 **Create repository**
+三容器以 Docker Compose 編排，共用內部網路；PHP 與 Python 透過 named volume 共享分析圖表，並連向同一 MySQL 實例。
 
-### 邀請組員和老師
+---
 
-1. 進入 Repo > **Settings** > **Collaborators**
-2. 點選 **Add people**
-3. 加入組員（權限：**Write**）
-4. 加入老師 `pychang-ai` 和助教帳號（權限：**Write**）
+## 技術清單
 
-### 組員日常操作
+| 必要技術 | 應用位置 |
+|---------|---------|
+| **Python + Pandas** | `src/analysis/analysis.py` 資料清洗與統計 |
+| **Matplotlib / Seaborn** | 七張視覺化圖表 |
+| **Docker / Docker Compose** | `docker/` 三容器架構 |
+| **Git / GitHub** | 全部開發歷程 |
+
+| 選擇性技術 | 應用位置 |
+|-----------|---------|
+| **MySQL 8.0** | `src/app/schema.sql` 三張資料表 |
+| **Apache + PHP 8.2** | `src/app/` 22 個 PHP 檔 |
+| **Gradio** | `src/analysis/app.py` 互動分析介面 |
+| **Jupyter Notebook** | （後續可補 EDA notebook） |
+
+---
+
+## 快速啟動
+
+### 必要環境
+
+- Docker Desktop 4.x 以上（Windows + WSL2 / macOS / Linux 皆可）
+- 約 2 GB 可用磁碟空間（映像檔 + 模擬資料）
+
+### 步驟
 
 ```bash
-git clone https://github.com/組長帳號/114-2_BigDataCC-G01.git
-cd 114-2_BigDataCC-G01
+# 1. clone 專案
+git clone https://github.com/rocjveteran/114-2_BigDataCC-2nd.git
+cd 114-2_BigDataCC-2nd
 
-# 每次工作前先拉最新版本
-git pull origin main
+# 2. 建立環境變數檔
+cp .env.example .env
+# 編輯 .env，填入 DB 密碼
 
-# 完成工作後
-git add .
-git commit -m "描述你做了什麼"
-git push origin main
+# 3. 啟動三容器（首次會建置映像，約 3–5 分鐘）
+cd docker
+docker compose up --build
+
+# 4. 首次使用：產生模擬資料 + 圖表（另開終端機）
+docker compose run analysis python generate_mock_data.py
+docker compose run analysis python analysis.py
 ```
 
-### 建議的 commit 訊息格式
+### 存取服務
+
+| 服務 | 網址 | 說明 |
+|------|------|------|
+| PHP 系統 | http://localhost:8080 | 登入、值勤、請假、管理介面 |
+| Gradio 分析 | http://localhost:7860 | 互動式篩選分析 |
+
+### 預設帳號
+
+| 帳號 | 角色 | 密碼 |
+|------|------|------|
+| boss1 | 老闆 | （見 `src/app/schema.sql` 註解） |
+| admin1 | 管理員 | （見 `src/app/schema.sql` 註解） |
+| em1 | 員工 | （見 `src/app/schema.sql` 註解） |
+| chen_wei, lin_jia, ... | 員工 | `maritime2025` |
+
+---
+
+## 專案結構
+
+```
+114-2_BigDataCC-2nd/
+│
+├── README.md                  ← 本檔案
+├── .env.example               ← 資料庫連線變數範本
+├── .gitignore
+├── requirements.txt           ← Python 套件需求
+│
+├── docker/                    ← Docker 容器配置
+│   ├── docker-compose.yml     ← 三容器編排
+│   ├── web/Dockerfile         ← php:8.2-apache
+│   └── analysis/Dockerfile    ← python:3.11-slim + fonts-noto-cjk
+│
+├── src/
+│   ├── app/                   ← PHP 應用程式（22 檔案）
+│   │   ├── db.php             ← PDO 連線（讀取環境變數）
+│   │   ├── schema.sql         ← MySQL schema（含海事擴充欄位）
+│   │   ├── login.php / auth.php / logout.php
+│   │   ├── punch.php / records.php / leave.php
+│   │   ├── admin_*.php        ← 管理介面
+│   │   ├── admin_dashboard.php ← 分析儀表板
+│   │   ├── ui.php / style.css
+│   │   └── ...
+│   │
+│   └── analysis/              ← Python 分析程式
+│       ├── generate_mock_data.py  ← 模擬資料生成
+│       ├── analysis.py            ← 資料清洗 + 7 張圖表
+│       └── app.py                 ← Gradio 互動介面
+│
+├── notebooks/                 ← Jupyter Notebook（探索分析）
+├── data/                      ← 原始與清洗後資料
+│
+├── docs/
+│   ├── report.md              ← 期末報告
+│   └── slides_outline.md      ← 投影片大綱
+│
+├── proposal/
+│   └── proposal.md            ← 專題提案
+│
+└── my-topics/                 ← 個人題目構想
+```
+
+---
+
+## 主要功能
+
+### PHP 系統 (port 8080)
+
+| 頁面 | 功能 | 角色限制 |
+|------|------|---------|
+| 登入 / 登出 | Session 認證 | 全部 |
+| 上下勤打卡 | 含當日狀態顯示 | 全部 |
+| 我的值勤 | 個人歷史記錄 | 全部 |
+| 請假申請 | 起訖日、假別、事由 | 全部 |
+| 值勤總覽 | 全員當日狀態 | 管理員以上 |
+| 請假審核 | 核准 / 拒絕 | 管理員以上 |
+| 帳號管理 | 新增、停用、改密 | 管理員以上 |
+| **分析儀表板** | 顯示 7 張 Python 圖表 | 管理員以上 |
+| CSV 匯出 | 值勤記錄下載 | 管理員以上 |
+
+### Python 分析模組
+
+七張分析圖表，輸出至 `analysis_output/` 共用 volume：
+
+1. `monthly_trend.png` — 月度值勤人次趨勢
+2. `zone_bar.png` — 值勤海域分布
+3. `zone_sea_stacked.png` — 各海域海況分布
+4. `vessel_count.png` — 各船艦值勤次數
+5. `hours_boxplot.png` — 各海況值勤時數箱型圖
+6. `person_heatmap.png` — 人員月度出勤熱力圖
+7. `leave_trend.png` — 每月核准請假件數
+
+### Gradio 互動介面 (port 7860)
+
+- 日期區間篩選
+- 海域勾選（港口 / 近海 / 外海，可多選）
+- 船艦下拉（從 DB 動態載入，可多選）
+- 即時執行分析，2 欄網格顯示 7 張圖
+
+---
+
+## 資料 Schema 設計
+
+`attendance` 表本學期擴充三個海事業務欄位：
+
+```sql
+duty_zone  ENUM('港口','近海','外海')   NULL,
+sea_state  ENUM('平靜','輕浪','中浪','大浪') NULL,
+vessel_id  VARCHAR(20)                   NULL,
+```
+
+模擬資料機率模型：
+
+| 海況 \ 海域 | 港口 | 近海 | 外海 |
+|-----------|------|------|------|
+| 平靜 | 70% | 40% | 15% |
+| 輕浪 | 25% | 35% | 30% |
+| 中浪 | 4% | 20% | 35% |
+| 大浪 | 1% | 5% | **20%** |
+
+外海大浪天會提前下勤 100 分鐘，模擬實際海象對勤務時數的影響。
+
+---
+
+## 開發指引
+
+### Commit 訊息格式
 
 ```
 [分類] 說明
 
-範例：
-[data] 新增台北市交通資料 CSV
-[analysis] 完成資料清洗與缺失值處理
-[model] 加入 ResNet50 影像辨識功能
-[docker] 建立 Dockerfile 和 docker-compose
-[docs] 更新期末報告初稿
-[fix] 修正資料讀取路徑錯誤
+[data]      資料相關（生成、來源說明）
+[analysis]  分析程式（Pandas、視覺化）
+[docker]    容器化（Dockerfile、compose）
+[app]       PHP 應用程式
+[docs]      文件
+[fix]       修正錯誤
+[chore]     雜項清理
 ```
+
+### 安全規範
+
+- ✅ `db.php` 不寫死 DB 帳號密碼，改讀環境變數
+- ✅ `.env` 已加入 `.gitignore`，不推送至 GitHub
+- ✅ PHP 使用 PDO prepared statement 防 SQL Injection
+- ✅ MySQL 使用非 root 帳號連線應用程式
 
 ---
 
-## 注意事項
+## 文件索引
 
-1. 每位組員都要有 commit 紀錄，不接受只有一人提交的專題
-2. 資料集請注明來源與授權方式，不可使用未經授權的資料
-3. 程式碼需有適當的註解，方便他人理解
-4. Docker 部署必須能在乾淨的環境中正常啟動
-5. 期末報告和投影片請在第 17 週前上傳
+| 文件 | 用途 |
+|------|------|
+| [proposal/proposal.md](proposal/proposal.md) | 專題提案 |
+| [docs/report.md](docs/report.md) | 期末報告（十章） |
+| [docs/slides_outline.md](docs/slides_outline.md) | 投影片大綱 |
+| [docs/demo_script.md](docs/demo_script.md) | Demo 演練腳本 |
+
+---
+
+## 授權
+
+本專案為學校課程作業，僅供學術參考。模擬資料為自有生成，不含真實人員資訊。
