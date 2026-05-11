@@ -51,14 +51,17 @@ _cjk_file = _find_cjk_font()
 if _cjk_file:
     fm.fontManager.addfont(_cjk_file)
     _cjk_prop = fm.FontProperties(fname=_cjk_file)
-    plt.rcParams["font.family"] = _cjk_prop.get_name()
+    _cjk_name = _cjk_prop.get_name()
 else:
     _cjk = [f.name for f in fm.fontManager.ttflist if "Noto" in f.name and "CJK" in f.name]
-    plt.rcParams["font.family"] = _cjk[0] if _cjk else "DejaVu Sans"
-plt.rcParams["axes.unicode_minus"] = False
+    _cjk_name = _cjk[0] if _cjk else "DejaVu Sans"
 
 BLUE_PAL = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
+# set_theme 會重置 rcParams，字型設定必須在它之後
 sns.set_theme(style="whitegrid", palette=BLUE_PAL)
+plt.rcParams["font.family"] = [_cjk_name, "DejaVu Sans"]
+plt.rcParams["font.sans-serif"] = [_cjk_name, "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 
 
 # ── 公開 API（供 app.py 呼叫）────────────────────────────────────────────────
