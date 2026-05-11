@@ -16,7 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN python -c "\
 import glob, os, matplotlib; \
 [os.remove(f) for f in glob.glob(os.path.join(matplotlib.get_cachedir(),'fontlist-*.json'))]; \
-import matplotlib.font_manager as fm; fm._rebuild(); \
+import matplotlib.font_manager as fm; \
+fm.fontManager = fm.FontManager(); \
 cjk=[f.name for f in fm.fontManager.ttflist if 'CJK' in f.name]; \
 print('CJK fonts:', cjk[:3] if cjk else 'NOT FOUND')"
 
