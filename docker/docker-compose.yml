@@ -38,7 +38,9 @@ services:
       - app_network
 
   analysis:
-    build: ./analysis
+    build:
+      context: ..
+      dockerfile: docker/analysis/Dockerfile
     ports:
       - "7860:7860"
     volumes:
