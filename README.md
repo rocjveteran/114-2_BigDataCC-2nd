@@ -63,7 +63,7 @@
 | **MySQL 8.0** | `src/app/schema.sql` 三張資料表 |
 | **Apache + PHP 8.2** | `src/app/` 22 個 PHP 檔 |
 | **Gradio** | `src/analysis/app.py` 互動分析介面 |
-| **Jupyter Notebook** | （後續可補 EDA notebook） |
+| **Jupyter Notebook** | `notebooks/eda.ipynb` 探索性資料分析 |
 
 ---
 
@@ -92,6 +92,10 @@ docker compose up --build
 # 4. 首次使用：產生模擬資料 + 圖表（另開終端機）
 docker compose run analysis python generate_mock_data.py
 docker compose run analysis python analysis.py
+
+# 5.（選用）開啟 Jupyter 進行探索性分析
+docker compose run -p 8888:8888 analysis \
+  jupyter notebook --ip=0.0.0.0 --no-browser --allow-root /notebooks
 ```
 
 ### 存取服務

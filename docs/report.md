@@ -162,6 +162,8 @@
 
 ## 四、資料分析過程
 
+本章節分為兩階段呈現：**探索性分析**（`notebooks/eda.ipynb`）以 Jupyter Notebook 呈現完整推理過程，**正式分析管線**（`src/analysis/analysis.py`）則將結論落實為可重複執行的圖表生成程式。
+
 ### 4.1 資料清洗
 
 清洗邏輯位於 `src/analysis/analysis.py` 的 `_clean()` 函式，分三步驟執行：
@@ -211,6 +213,15 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | `hours_boxplot.png` | 箱型圖 | 四種海況下值勤時數分布，驗證大浪縮班假設 |
 | `person_heatmap.png` | 熱力圖 | 人員 × 月份出勤天數矩陣，快速識別出勤不規律者 |
 | `leave_trend.png` | 分組長條圖 | 每月各假別核准件數，供人力規劃參考 |
+
+### 4.4 統計檢定
+
+於 `notebooks/eda.ipynb` 中另以兩項統計檢定驗證視覺觀察：
+
+- **Welch's t-test**（平靜天 vs 大浪天值勤時數）：拒絕虛無假設（p < 0.05），確認大浪天時數顯著較短
+- **單因子 ANOVA**（四種海況下值勤時數）：F 檢定結果顯著，四組間至少存在一對差異
+
+此結果為「海況影響值勤時數」之假設提供統計學上的支持，補強純視覺觀察的不足。
 
 ---
 
