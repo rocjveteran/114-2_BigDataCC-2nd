@@ -149,12 +149,6 @@ def _load_data(conn, date_from, date_to):
     att = pd.read_sql(sql_att, conn, params=params or None,
                       parse_dates=["work_date", "check_in", "check_out"])
 
-    # Python-side filtering for CJK strings (avoids mysql.connector charset issues)
-    if zones:
-        att = att[att["duty_zone"].isin(zones)]
-    if vessels:
-        att = att[att["vessel_id"].isin(vessels)]
-
     leaves = pd.read_sql(
         """SELECT l.leave_id, l.user_id, u.full_name,
                   l.date_from, l.date_to, l.leave_type, l.status
