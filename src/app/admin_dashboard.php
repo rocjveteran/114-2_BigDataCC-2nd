@@ -10,7 +10,8 @@ $charts = [
     'vessel_count.png'     => '各船艦值勤次數',
     'hours_boxplot.png'    => '各海況值勤時數分布',
     'person_heatmap.png'   => '人員月度出勤熱力圖',
-    'leave_trend.png'      => '每月核准請假件數',
+    'leave_trend.png'         => '每月核准請假件數',
+    'sea_obs_comparison.png'  => '海況分布對照：觀測 vs 模擬（需先執行 fetch_sea_data.py）',
 ];
 
 $chart_dir  = __DIR__ . '/analysis_output/';
