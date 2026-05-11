@@ -55,44 +55,96 @@ maritime_theme = gr.themes.Base(
     font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"],
     font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "ui-monospace", "monospace"],
 ).set(
+    # 亮色 & 暗色都用同一組顏色，停用 dark-mode 自動切換
     body_background_fill="#faf9f5",
+    body_background_fill_dark="#faf9f5",
     body_text_color="#141413",
+    body_text_color_dark="#141413",
     background_fill_primary="#ffffff",
+    background_fill_primary_dark="#ffffff",
     background_fill_secondary="#faf9f5",
+    background_fill_secondary_dark="#faf9f5",
     border_color_primary="#e8e5dc",
+    border_color_primary_dark="#e8e5dc",
     border_color_accent="#c96442",
+    border_color_accent_dark="#c96442",
     button_primary_background_fill="#c96442",
+    button_primary_background_fill_dark="#c96442",
     button_primary_background_fill_hover="#b5502f",
+    button_primary_background_fill_hover_dark="#b5502f",
     button_primary_text_color="#ffffff",
+    button_primary_text_color_dark="#ffffff",
     button_primary_border_color="*primary_500",
+    button_primary_border_color_dark="*primary_500",
     button_secondary_background_fill="#ffffff",
+    button_secondary_background_fill_dark="#ffffff",
     button_secondary_background_fill_hover="#f1efe7",
+    button_secondary_background_fill_hover_dark="#f1efe7",
     button_secondary_text_color="#141413",
+    button_secondary_text_color_dark="#141413",
     button_secondary_border_color="#e8e5dc",
+    button_secondary_border_color_dark="#e8e5dc",
     block_background_fill="#ffffff",
+    block_background_fill_dark="#ffffff",
     block_border_color="#e8e5dc",
+    block_border_color_dark="#e8e5dc",
     block_border_width="1px",
     block_radius="10px",
     block_shadow="none",
+    block_shadow_dark="none",
     block_label_text_color="#6b6862",
+    block_label_text_color_dark="#6b6862",
+    block_label_background_fill="#ffffff",
+    block_label_background_fill_dark="#ffffff",
     block_label_text_weight="500",
     block_label_text_size="13px",
     block_title_text_color="#141413",
+    block_title_text_color_dark="#141413",
     block_title_text_weight="500",
     input_background_fill="#ffffff",
+    input_background_fill_dark="#ffffff",
     input_background_fill_focus="#ffffff",
+    input_background_fill_focus_dark="#ffffff",
     input_border_color="#e8e5dc",
+    input_border_color_dark="#e8e5dc",
     input_border_color_focus="#c96442",
+    input_border_color_focus_dark="#c96442",
     input_shadow_focus="0 0 0 3px rgba(201,100,66,0.1)",
+    input_shadow_focus_dark="0 0 0 3px rgba(201,100,66,0.1)",
     panel_background_fill="#ffffff",
+    panel_background_fill_dark="#ffffff",
     panel_border_color="#e8e5dc",
+    panel_border_color_dark="#e8e5dc",
     color_accent_soft="rgba(201,100,66,0.08)",
+    color_accent_soft_dark="rgba(201,100,66,0.08)",
+    checkbox_background_color="#ffffff",
+    checkbox_background_color_dark="#ffffff",
+    checkbox_background_color_selected="#c96442",
+    checkbox_background_color_selected_dark="#c96442",
+    checkbox_border_color="#e8e5dc",
+    checkbox_border_color_dark="#e8e5dc",
+    checkbox_label_background_fill="#ffffff",
+    checkbox_label_background_fill_dark="#ffffff",
+    checkbox_label_background_fill_hover="#f1efe7",
+    checkbox_label_background_fill_hover_dark="#f1efe7",
+    checkbox_label_text_color="#141413",
+    checkbox_label_text_color_dark="#141413",
 )
 
 
 # ── 自訂 CSS ──────────────────────────────────────────────────────────────────
 CUSTOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Inter:wght@400;500;600&family=Noto+Serif+TC:wght@400;500&display=swap');
+
+/* 強制亮色：覆蓋系統 dark mode preference */
+html, html.dark, body, body.dark { color-scheme: light !important; background: #faf9f5 !important; color: #141413 !important; }
+.dark { --body-background-fill: #faf9f5 !important; --body-text-color: #141413 !important; }
+.dark *, .dark .form, .dark .gr-form, .dark .gr-box, .dark .gr-panel, .dark .gr-group {
+  background-color: transparent;
+  color: #141413 !important;
+}
+.dark .gr-input, .dark input, .dark textarea, .dark select { background: #ffffff !important; color: #141413 !important; border-color: #e8e5dc !important; }
+.dark .gr-button-primary, .dark button.primary { background: #c96442 !important; color: #ffffff !important; }
 
 .gradio-container {
   max-width: 1280px !important;
@@ -155,12 +207,20 @@ footer { display: none !important; }
 }
 
 /* ── 篩選欄位卡片 ── */
-.filter-panel {
+.filter-panel,
+.filter-panel > div,
+.filter-panel .form,
+.filter-panel .gr-form {
   background: #ffffff !important;
+  border-color: #e8e5dc !important;
+}
+.filter-panel {
   border: 1px solid #e8e5dc !important;
   border-radius: 10px !important;
-  padding: 22px !important;
+  padding: 20px !important;
+  box-shadow: none !important;
 }
+.filter-panel > div { border: none !important; padding: 0 !important; }
 
 /* ── Labels ── */
 label > span.svelte-1gfkn6j,
