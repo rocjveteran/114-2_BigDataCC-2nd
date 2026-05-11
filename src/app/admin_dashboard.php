@@ -17,8 +17,17 @@ $charts = [
 $chart_dir  = __DIR__ . '/analysis_output/';
 $gradio_url = 'http://localhost:7860';
 
-nav_top('分析儀表板');
 ?>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>分析儀表板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<?php nav_top('分析儀表板'); ?>
 <div class="wrap" style="padding:2rem 0">
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
@@ -65,3 +74,5 @@ nav_top('分析儀表板');
 
   <?php endif; ?>
 </div>
+</body>
+</html>
