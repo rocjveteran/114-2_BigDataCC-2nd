@@ -174,7 +174,8 @@ def _chart_zone_sea_stacked(att):
     zone_order = [z for z in ["港口", "近海", "外海"] if z in att["duty_zone"].unique()]
     pivot = (att.groupby(["duty_zone", "sea_state"]).size()
                .unstack(fill_value=0)
-               .reindex(index=zone_order, columns=sea_order, fill_value=0))
+               .reindex(index=zone_order, columns=sea_order, fill_value=0)
+               .astype(int))
     fig, ax = plt.subplots(figsize=(7, 5))
     pivot.plot(kind="bar", stacked=True, color=BLUE_PAL[:len(sea_order)],
                edgecolor="white", linewidth=0.6, ax=ax)
