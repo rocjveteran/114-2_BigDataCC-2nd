@@ -100,10 +100,16 @@ docker compose run -p 8888:8888 analysis \
 
 ### 存取服務
 
+容器啟動後在瀏覽器打開：
+
 | 服務 | 網址 | 說明 |
 |------|------|------|
-| PHP 系統 | http://localhost:8080 | 登入、值勤、請假、管理介面 |
-| Gradio 分析 | http://localhost:7860 | 互動式篩選分析 |
+| **登入頁** | **http://localhost:8080/login.php** | 系統入口（首頁也會自動轉跳到此） |
+| PHP 系統首頁 | http://localhost:8080 | `index.php` 會 redirect 到登入或值勤頁 |
+| 分析儀表板 | http://localhost:8080/admin_dashboard.php | 顯示 7 張 Python 圖表（需管理員以上） |
+| Gradio 互動分析 | http://localhost:7860 | 篩選日期/海域/船艦，即時產圖 |
+
+> PHP 檔案不能直接用檔案總管雙擊開啟（會跳出原始碼），必須走 Apache 服務（即上方 `localhost:8080` 網址），所以**先確認三個容器都在 Up 狀態**再開瀏覽器。
 
 ### 預設帳號
 
@@ -113,6 +119,82 @@ docker compose run -p 8888:8888 analysis \
 | admin1 | 管理員 | （見 `src/app/schema.sql` 註解） |
 | em1 | 員工 | （見 `src/app/schema.sql` 註解） |
 | chen_wei, lin_jia, ... | 員工 | `maritime2025` |
+
+---
+
+## 操作步驟（端到端流程）
+
+完整跑一次以驗收系統功能：
+
+1. **打開登入頁** → http://localhost:8080/login.php
+2. **以 boss1 登入**（管理者權限）
+3. **打卡測試**：點上方「值勤」→ 按「開始值勤」→ 再按「結束值勤」
+4. **看個人紀錄**：點「我的紀錄」確認剛才打卡有出現
+5. **試請假**：點「請假」→ 填日期/假別 → 送出
+6. **管理員審核**：點「請假審核」→ 把剛才送出的請假核准
+7. **看勤務總覽**：點「勤務總覽」→ 切換日期查看全員狀態
+8. **產生分析圖表**：點「分析儀表板」右上「開啟互動分析介面」→ 跳到 Gradio (http://localhost:7860) → 點「執行分析」
+9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 7 張圖表
+10. **下載日報表**：勤務總覽右上「匯出日報表」會下載當日 CSV
+
+---
+
+## 換到另一台電腦重新開啟（例如帶到學校）
+
+### 第一次部署（新機器，從 0 開始）
+
+```bash
+# 1. 確認已裝好 Docker Desktop 並啟動（系統匣有鯨魚圖示且為綠燈）
+
+# 2. clone 專案
+git clone https://github.com/rocjveteran/114-2_BigDataCC-2nd.git
+cd 114-2_BigDataCC-2nd
+
+# 3. 建立 docker/.env（.gitignore 不會推這個檔，必須手動建）
+cp .env.example docker/.env
+# 或在 Windows PowerShell：
+#   Copy-Item .env.example docker/.env
+# 然後用編輯器打開 docker/.env，把 change_me_root 與 change_me_user 改成你想要的密碼
+
+# 4. 啟動三容器（首次會建置映像，大約 3–5 分鐘）
+cd docker
+docker compose up --build -d
+
+# 5. 等 DB 就緒（約 20–30 秒）後產生模擬資料 + 圖表
+docker compose run --rm analysis python generate_mock_data.py
+docker compose run --rm analysis python analysis.py
+
+# 6. 開瀏覽器 → http://localhost:8080/login.php
+```
+
+### 第二次以後（同一台機器）
+
+關機後再開機只需：
+
+```bash
+cd 114-2_BigDataCC-2nd/docker
+docker compose up -d
+```
+
+容器會記得上次的資料庫內容（`db_data` named volume 持久化）與分析圖表（`analysis_output` named volume），所以**不需要重新跑 generate_mock_data.py 或 analysis.py**，除非你想重新生成。
+
+### 完全停止
+
+```bash
+cd docker
+docker compose down              # 停容器但保留資料
+docker compose down -v           # 連 DB 資料一起清掉（要重灌時用）
+```
+
+### 常見狀況
+
+| 症狀 | 處理 |
+|------|------|
+| `localhost:8080` 連不上 | `docker compose ps` 看 web 是否 Up；若 Exit，跑 `docker compose logs web` 看錯誤 |
+| 登入頁顯示 DB 連線失敗 | 檢查 `docker/.env` 是否存在、密碼是否與容器一致；可 `docker compose down -v && docker compose up --build` 重灌 |
+| 分析儀表板顯示「尚未產生圖表」 | 跑 `docker compose run --rm analysis python analysis.py`，或從 Gradio 點「執行分析」 |
+| Gradio 介面打不開 | `docker compose logs analysis` 看是否 import error，多半是建置時 pip 沒裝完 |
+| 中文字變方塊 | 重建 analysis 容器 `docker compose build --no-cache analysis` 強制重灌字型 |
 
 ---
 

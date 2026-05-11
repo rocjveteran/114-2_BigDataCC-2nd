@@ -35,4 +35,8 @@ Thumbs.db
 
 # Environment variables
 .env
+.env.txt
 docker/.env
+
+# Claude Code local settings
+.claude/
