@@ -136,15 +136,18 @@ maritime_theme = gr.themes.Base(
 CUSTOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Inter:wght@400;500;600&family=Noto+Serif+TC:wght@400;500&display=swap');
 
-/* 強制亮色：覆蓋系統 dark mode preference */
-html, html.dark, body, body.dark { color-scheme: light !important; background: #faf9f5 !important; color: #141413 !important; }
-.dark { --body-background-fill: #faf9f5 !important; --body-text-color: #141413 !important; }
-.dark *, .dark .form, .dark .gr-form, .dark .gr-box, .dark .gr-panel, .dark .gr-group {
-  background-color: transparent;
-  color: #141413 !important;
+/* 強制亮色：覆蓋系統 dark mode preference（精準覆蓋、不動 checkbox/dropdown 狀態） */
+html, body { color-scheme: light !important; }
+html.dark, body.dark, .dark { background: #faf9f5 !important; color: #141413 !important; }
+.dark .gradio-container { background: #faf9f5 !important; color: #141413 !important; }
+.dark .block, .dark .form, .dark .gr-form, .dark .gr-box, .dark .gr-panel { background: #ffffff !important; border-color: #e8e5dc !important; }
+.dark label, .dark .label-wrap span, .dark .block label span { color: #36352f !important; }
+.dark input[type="text"], .dark input[type="number"], .dark input[type="date"], .dark textarea {
+  background: #ffffff !important; color: #141413 !important; border-color: #e8e5dc !important;
 }
-.dark .gr-input, .dark input, .dark textarea, .dark select { background: #ffffff !important; color: #141413 !important; border-color: #e8e5dc !important; }
-.dark .gr-button-primary, .dark button.primary { background: #c96442 !important; color: #ffffff !important; }
+.dark .gr-button-primary, .dark button.primary { background: #c96442 !important; color: #ffffff !important; border-color: #c96442 !important; }
+.dark .gr-check-radio input[type="checkbox"]:checked,
+.dark input[type="checkbox"]:checked { accent-color: #c96442 !important; }
 
 .gradio-container {
   max-width: 1280px !important;
