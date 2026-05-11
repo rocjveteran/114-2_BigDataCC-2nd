@@ -52,12 +52,12 @@ CREATE TABLE IF NOT EXISTS leaves (
 -- Default accounts (seeded)
 -- boss: can manage boss/admin/employee (including self)
 INSERT INTO users(username, password_hash, full_name, role, is_active) VALUES
-('boss1', '$2y$10$itPGMmy4BKmYhf.hQAdH7uv6385Bpq67wju8Zrm94rP7hCVovewGW', 'Boss', 'boss', 1);
+('boss1', '$2y$10$74/Dh9n/MLxTKopstTwvvuyb/XR0lY6.QK/oNrIgYp6IgdnTacovW', 'Boss', 'boss', 1); -- password: boss1234
 
 -- admin: can manage employee only
 INSERT INTO users(username, password_hash, full_name, role, is_active) VALUES
-('admin1', '$2y$10$wCc0DcBSTluIebi0SickjeHLADMAhgCxapPjypNEfu2SajoCR.Ige', 'Admin', 'admin', 1);
+('admin1', '$2y$10$KRC4JX.5wL3WQdt5Wy/Wv.4Jweva.Wm9C1MYOIHbgtYeQGCau3JvC', 'Admin', 'admin', 1); -- password: admin1234
 
 -- employee: view-only for account management
 INSERT INTO users(username, password_hash, full_name, role, is_active) VALUES
-('em1', '$2y$10$nXEo.qOQC0n30fF0yIAL5.7HruHRx8i5f0Oz5Dh19bILmEa2DeO0.', 'Employee', 'employee', 1);
+('em1', '$2y$10$XjWHhrwlPp3VRcD41gApOu/YTs0MQD.7Gfrtl9KVsqlMasoyvIbGG', 'Employee', 'employee', 1); -- password: em1234
