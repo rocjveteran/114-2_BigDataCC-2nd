@@ -72,6 +72,7 @@ function nav_top($title){
       echo '<a class="btn small" href="admin_status.php">'.icon_svg('list').'值勤總覽</a>';
       echo '<a class="btn small" href="admin_leave.php">'.icon_svg('check').'請假審核</a>';
       echo '<a class="btn small" href="admin_users.php">'.icon_svg('users').'帳號管理</a>';
+      echo '<a class="btn small" href="admin_dashboard.php">'.icon_svg('download').'分析儀表板</a>';
     }
     echo '<a class="btn small" href="logout.php">'.icon_svg('logout').'登出</a>';
   } else {
