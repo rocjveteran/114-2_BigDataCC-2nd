@@ -55,7 +55,6 @@ if _cjk_file:
 else:
     _cjk = [f.name for f in fm.fontManager.ttflist if "Noto" in f.name and "CJK" in f.name]
     plt.rcParams["font.family"] = _cjk[0] if _cjk else "DejaVu Sans"
-main
 plt.rcParams["axes.unicode_minus"] = False
 
 BLUE_PAL = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
@@ -139,7 +138,6 @@ def _load_data(conn, date_from, date_to):
     if date_to:
         where.append("a.work_date <= %s"); params.append(date_to)
 
-main
     sql_att = f"""
         SELECT a.att_id, a.user_id, u.full_name, u.role,
                a.work_date, a.check_in, a.check_out,
