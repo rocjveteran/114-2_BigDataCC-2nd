@@ -107,12 +107,16 @@ with gr.Blocks(title="海事勤務分析系統", theme=gr.themes.Base(primary_hu
     def on_run(date_from, date_to, zones, vessels):
         v_filter = [v for v in vessels if v != "（全部）"] or None
         z_filter = zones if zones else None
-        paths = generate_charts(OUTPUT_DIR,
-                                date_from=date_from or None,
-                                date_to=date_to or None,
-                                zones=z_filter,
-                                vessels=v_filter)
-        return paths + ["✅ 分析完成"]
+        try:
+            paths = generate_charts(OUTPUT_DIR,
+                                    date_from=date_from or None,
+                                    date_to=date_to or None,
+                                    zones=z_filter,
+                                    vessels=v_filter)
+            return paths + ["✅ 分析完成"]
+        except Exception as e:
+            import traceback
+            return [None] * 7 + [f"❌ 錯誤：{e}\n{traceback.format_exc()}"]
 
     run_btn.click(
         fn=on_run,
