@@ -204,8 +204,11 @@ def _chart_vessel_count(att):
 
 
 def _chart_hours_boxplot(att):
-    sea_order = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].unique()]
+    sea_order = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].values]
     fig, ax = plt.subplots(figsize=(8, 5))
+    if att.empty or not sea_order:
+        ax.set_title("各海況值勤時數分布（無資料）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
     sns.boxplot(data=att, x="sea_state", y="hours", order=sea_order,
                 palette=BLUE_PAL[:4], linewidth=1.2, ax=ax)
     ax.set_title("各海況值勤時數分布", fontsize=14, fontweight="bold", pad=10)
@@ -214,9 +217,16 @@ def _chart_hours_boxplot(att):
 
 
 def _chart_person_heatmap(att):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    if att.empty:
+        ax.set_title("人員月度出勤熱力圖（無資料）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
     pivot = att.groupby(["full_name", "month_str"]).size().unstack(fill_value=0)
+    if pivot.empty or pivot.shape[0] == 0 or pivot.shape[1] == 0:
+        ax.set_title("人員月度出勤熱力圖（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
     h = max(5, len(pivot) * 0.55); w = max(8, len(pivot.columns) * 1.3)
-    fig, ax = plt.subplots(figsize=(w, h))
+    fig.set_size_inches(w, h)
     sns.heatmap(pivot, annot=True, fmt="d", cmap="Blues",
                 linewidths=0.5, linecolor="#e0e0e0",
                 cbar_kws={"label": "值勤天數", "shrink": 0.7}, ax=ax)
@@ -227,12 +237,18 @@ def _chart_person_heatmap(att):
 
 
 def _chart_leave_trend(leaves):
+    fig, ax = plt.subplots(figsize=(9, 4))
     approved = leaves[leaves["status"] == "approved"].copy()
+    if approved.empty:
+        ax.set_title("每月核准請假件數（無資料）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
     approved["month_str"] = approved["date_from"].dt.strftime("%Y-%m")
     pivot = (approved.groupby(["month_str", "leave_type"]).size()
                      .unstack(fill_value=0)
                      .rename(columns={"personal": "事假", "sick": "病假", "other": "其他"}))
-    fig, ax = plt.subplots(figsize=(9, 4))
+    if pivot.empty:
+        ax.set_title("每月核准請假件數（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
     pivot.plot(kind="bar", stacked=False, color=BLUE_PAL[:3], edgecolor="white", linewidth=0.6, ax=ax)
     ax.set_title("每月核准請假件數（依假別）", fontsize=14, fontweight="bold", pad=10)
     ax.set_xlabel("月份"); ax.set_ylabel("件數")
