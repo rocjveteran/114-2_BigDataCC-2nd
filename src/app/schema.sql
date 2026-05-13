@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(100) NOT NULL,
   role ENUM('boss','admin','employee') NOT NULL DEFAULT 'employee',
+  duty_position VARCHAR(20) NOT NULL DEFAULT '前甲板',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -53,13 +54,13 @@ CREATE TABLE IF NOT EXISTS leaves (
 
 -- Default accounts (seeded)
 -- boss: can manage boss/admin/employee (including self)
-INSERT INTO users(username, password_hash, full_name, role, is_active) VALUES
-('boss1', '$2y$10$74/Dh9n/MLxTKopstTwvvuyb/XR0lY6.QK/oNrIgYp6IgdnTacovW', 'Boss', 'boss', 1); -- password: boss1234
+INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
+('boss1', '$2y$10$74/Dh9n/MLxTKopstTwvvuyb/XR0lY6.QK/oNrIgYp6IgdnTacovW', 'Boss', 'boss', '艦橋', 1); -- password: boss1234
 
 -- admin: can manage employee only
-INSERT INTO users(username, password_hash, full_name, role, is_active) VALUES
-('admin1', '$2y$10$KRC4JX.5wL3WQdt5Wy/Wv.4Jweva.Wm9C1MYOIHbgtYeQGCau3JvC', 'Admin', 'admin', 1); -- password: admin1234
+INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
+('admin1', '$2y$10$KRC4JX.5wL3WQdt5Wy/Wv.4Jweva.Wm9C1MYOIHbgtYeQGCau3JvC', 'Admin', 'admin', '通訊室', 1); -- password: admin1234
 
 -- employee: view-only for account management
-INSERT INTO users(username, password_hash, full_name, role, is_active) VALUES
-('em1', '$2y$10$XjWHhrwlPp3VRcD41gApOu/YTs0MQD.7Gfrtl9KVsqlMasoyvIbGG', 'Employee', 'employee', 1); -- password: em1234
+INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
+('em1', '$2y$10$XjWHhrwlPp3VRcD41gApOu/YTs0MQD.7Gfrtl9KVsqlMasoyvIbGG', 'Employee', 'employee', '前甲板', 1); -- password: em1234

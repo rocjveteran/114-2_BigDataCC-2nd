@@ -776,3 +776,106 @@ td .btn{ vertical-align: middle; }
 .footer-brand{ color: var(--text-soft); font-weight: 400; }
 .footer-brand .footer-logo{ display: none; }
 .footer-meta{ letter-spacing: 0; }
+
+/* ── Ship crew visualization ─────────────────────────────── */
+.ship-card{ overflow: visible; }
+
+.ship-svg{
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 4px 0 0;
+}
+/* Ship structure — all in muted warm-grey */
+.sh-hull{
+  fill: var(--bg-alt);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.sh-struct{
+  fill: var(--bg);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.sh-mast{
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.sh-railing{
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 5 3;
+  opacity: .6;
+}
+.sh-window{
+  fill: rgba(42,90,153,.07);
+  stroke: var(--line-strong);
+  stroke-width: .75;
+}
+.sh-porthole{
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: .75;
+  opacity: .4;
+}
+.sh-funnel{
+  fill: var(--bg-alt);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.sh-detail{
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  opacity: .45;
+}
+.sh-water{
+  stroke: var(--info);
+  stroke-width: 1;
+  stroke-dasharray: 7 4;
+  opacity: .18;
+}
+.sh-pos-lbl{
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  fill: var(--muted);
+}
+/* Crew dots */
+.sh-dot{ transition: opacity .15s; }
+.sh-dot.on   { fill: var(--info);        stroke: var(--info);        stroke-width: 2; }
+.sh-dot.done { fill: var(--ok);          stroke: var(--ok);          stroke-width: 2; }
+.sh-dot.leave{ fill: var(--warn);        stroke: var(--warn);        stroke-width: 2; }
+.sh-dot.off  { fill: var(--bg-alt);      stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.sh-dot.me   { stroke-width: 3.5; filter: drop-shadow(0 0 4px rgba(0,0,0,.18)); }
+.sh-crew-marker:hover .sh-dot{ opacity: .8; }
+.sh-init{
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+/* Legend row */
+.ship-legend{
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 0 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+}
+.ship-legend-item{ display:flex; align-items:center; gap:6px; }
+.ship-legend-me  { margin-left: auto; font-size: 11.5px; }
+.ship-legend-dot{
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ship-legend-dot.on   { background: var(--info); }
+.ship-legend-dot.done { background: var(--ok); }
+.ship-legend-dot.leave{ background: var(--warn); }
+.ship-legend-dot.off  { background: var(--bg-alt); border: 1.5px dashed var(--line-strong); }
