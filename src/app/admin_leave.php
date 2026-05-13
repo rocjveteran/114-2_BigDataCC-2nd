@@ -7,6 +7,7 @@ date_default_timezone_set('Asia/Taipei');
 
 $aid = (int)($_SESSION['user_id'] ?? 0);
 $msg = null;
+$err = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $id = (int)($_POST['id'] ?? 0);
@@ -22,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tid   = (int)($t['user_id'] ?? 0);
 
     if (!$t || !can_manage_user($trole, $tid)) {
-      $msg = '你沒有權限';
+      $err = '你沒有權限';
     } else {
       $st = ($act === 'approve') ? 'approved' : 'rejected';
       try {
@@ -90,9 +91,8 @@ function st_badge($st){
       'ADMIN · 管理'
     ); ?>
 
-    <?php if ($msg): ?>
-      <p class="msg ok"><?= h($msg) ?></p>
-    <?php endif; ?>
+    <?php if ($err): ?><p class="msg err"><?= h($err) ?></p><?php endif; ?>
+    <?php if ($msg): ?><p class="msg ok"><?= h($msg) ?></p><?php endif; ?>
 
     <div class="card">
       <form method="get" class="filter-bar">

@@ -4,7 +4,8 @@ require_once 'admin_only.php';
 require_once 'ui.php';
 
 $chart_dir  = __DIR__ . '/analysis_output/';
-$gradio_url = 'http://localhost:7860';
+$_host      = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? 'localhost');
+$gradio_url = 'http://' . $_host . ':7860';
 
 // 章節分組：每組 = [eyebrow, 標題, 描述, [檔名 => [圖表名, 一行說明]]]
 $sections = [
@@ -81,7 +82,7 @@ foreach (['filtered_stats_summary.json', 'stats_summary.json'] as $sfile) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -118,7 +118,7 @@ $u = $stmt->fetchAll();
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>勤務總覽 · 海事勤務</title>
-  <?php require_once 'ui.php'; style_link(); ?>
+  <?php style_link(); ?>
 </head>
 <body>
   <?php nav_top(); ?>
@@ -189,7 +189,6 @@ $u = $stmt->fetchAll();
             <td><?= h($a['check_in'] ?? '-') ?></td>
             <td><?= h($a['check_out'] ?? '-') ?></td>
             <td>
-              <?php $can = can_manage_user(($x["role"] ?? ""), (int)$uid); ?>
               <form method="post" style="display:flex;gap:6px;flex-wrap:wrap;">
                 <input type="hidden" name="uid" value="<?= h($uid) ?>">
                 <input type="hidden" name="d" value="<?= h($d) ?>">

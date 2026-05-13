@@ -26,53 +26,55 @@ $msg = null;
 $err = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (!$can) { $err = '你沒有權限'; }
-  else 
-  $username  = trim($_POST['username'] ?? '');
-  $full_name = trim($_POST['full_name'] ?? '');
-  $is_active = isset($_POST['is_active']) ? 1 : 0;
-  $newpw     = $_POST['newpw'] ?? '';
-
-  // role: only boss can change role; admin can only keep employee
-  $role = $u['role'];
-  if ($my_role === 'boss') {
-    $role = $_POST['role'] ?? $u['role'];
-    if (!in_array($role, ['boss','admin','employee'], true)) $role = $u['role'];
+  if (!$can) {
+    $err = '你沒有權限';
   } else {
-    $role = 'employee';
-  }
+    $username  = trim($_POST['username'] ?? '');
+    $full_name = trim($_POST['full_name'] ?? '');
+    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $newpw     = $_POST['newpw'] ?? '';
 
-  if ($username === '' || $full_name === '') $err = "帳號/姓名不可空白";
-
-  // avoid disabling / demoting last boss
-  if (!$err && $u['role']==='boss' && (int)$u['is_active']===1) {
-    $will_not_boss = ($role !== 'boss');
-    $will_disable  = ($is_active === 0);
-    if (($will_not_boss || $will_disable) && boss_count($pdo) <= 1) {
-      $err = "不可移除/停用最後一個老闆";
+    // role: only boss can change role; admin can only keep employee
+    $role = $u['role'];
+    if ($my_role === 'boss') {
+      $role = $_POST['role'] ?? $u['role'];
+      if (!in_array($role, ['boss','admin','employee'], true)) $role = $u['role'];
+    } else {
+      $role = 'employee';
     }
-  }
 
-  if (!$err) {
-    try {
-      if ($newpw !== '') {
-        $hash = password_hash($newpw, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("UPDATE users SET username=?, full_name=?, role=?, is_active=?, password_hash=? WHERE user_id=?");
-        $stmt->execute([$username, $full_name, $role, $is_active, $hash, $uid]);
-      } else {
-        $stmt = $pdo->prepare("UPDATE users SET username=?, full_name=?, role=?, is_active=? WHERE user_id=?");
-        $stmt->execute([$username, $full_name, $role, $is_active, $uid]);
+    if ($username === '' || $full_name === '') $err = "帳號/姓名不可空白";
+
+    // avoid disabling / demoting last boss
+    if (!$err && $u['role']==='boss' && (int)$u['is_active']===1) {
+      $will_not_boss = ($role !== 'boss');
+      $will_disable  = ($is_active === 0);
+      if (($will_not_boss || $will_disable) && boss_count($pdo) <= 1) {
+        $err = "不可移除/停用最後一個老闆";
       }
-      $msg = "已更新";
-    } catch (Exception $e) {
-      $err = "更新失敗（可能帳號重複）";
     }
-  }
 
-  // reload
-  $stmt = $pdo->prepare("SELECT user_id, username, full_name, role, is_active, created_at FROM users WHERE user_id=? LIMIT 1");
-  $stmt->execute([$uid]);
-  $u = $stmt->fetch();
+    if (!$err) {
+      try {
+        if ($newpw !== '') {
+          $hash = password_hash($newpw, PASSWORD_DEFAULT);
+          $stmt = $pdo->prepare("UPDATE users SET username=?, full_name=?, role=?, is_active=?, password_hash=? WHERE user_id=?");
+          $stmt->execute([$username, $full_name, $role, $is_active, $hash, $uid]);
+        } else {
+          $stmt = $pdo->prepare("UPDATE users SET username=?, full_name=?, role=?, is_active=? WHERE user_id=?");
+          $stmt->execute([$username, $full_name, $role, $is_active, $uid]);
+        }
+        $msg = "已更新";
+      } catch (Exception $e) {
+        $err = "更新失敗（可能帳號重複）";
+      }
+    }
+
+    // reload
+    $stmt = $pdo->prepare("SELECT user_id, username, full_name, role, is_active, created_at FROM users WHERE user_id=? LIMIT 1");
+    $stmt->execute([$uid]);
+    $u = $stmt->fetch();
+  }
 }
 ?>
 <!doctype html>

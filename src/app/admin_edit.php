@@ -17,8 +17,6 @@ $u = $stmt->fetch();
 if (!$u) { http_response_code(404); echo 'not found'; exit; }
 if (!can_manage_user($u['role'], (int)$u['user_id'])) { http_response_code(403); echo '你沒有權限'; exit; }
 
-if (!$u) { http_response_code(404); echo "user not found"; exit; }
-
 // attendance
 $stmt = $pdo->prepare("SELECT * FROM attendance WHERE user_id=? AND work_date=? LIMIT 1");
 $stmt->execute([$uid, $d]);
@@ -103,7 +101,7 @@ function to_local($dt) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>編輯值勤 · 海事勤務</title>
-  <?php require_once 'ui.php'; style_link(); ?>
+  <?php style_link(); ?>
 </head>
 <body>
   <?php nav_top(); ?>
