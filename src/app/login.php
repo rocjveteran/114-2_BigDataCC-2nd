@@ -2,7 +2,7 @@
 session_start();
 
 if (isset($_SESSION['user_id'])) {
-  header("Location: punch.php");
+  header("Location: dashboard.php");
   exit;
 }
 
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['user_id'] = (int)$u['user_id'];
     $_SESSION['full_name'] = $u['full_name'];
     $_SESSION['role'] = $u['role'];
-    header("Location: punch.php");
+    header("Location: dashboard.php");
     exit;
   }
 }

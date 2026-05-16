@@ -3,7 +3,7 @@
 session_start();
 
 if (isset($_SESSION['user_id'])) {
-  header("Location: punch.php");
+  header("Location: dashboard.php");
   exit;
 }
 header("Location: login.php");
