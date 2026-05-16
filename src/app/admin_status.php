@@ -197,7 +197,7 @@ $u = $stmt->fetchAll();
                 <button class="btn small" name="act2" value="clear" type="submit" <?= $can2?"":"disabled" ?>><?= icon_svg("trash") ?>清除</button>
               </form>
             </td>
-            <td><?php if($can): ?>
+            <td><?php if($can2): ?>
               <a class="btn small" href="admin_edit.php?uid=<?= h($uid) ?>&d=<?= h($d) ?>"><?= icon_svg("edit") ?>編輯</a>
             <?php else: ?>
               <span class="btn small disabled" title="你沒有權限"><?= icon_svg("edit") ?>編輯</span>
