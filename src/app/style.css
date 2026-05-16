@@ -869,6 +869,50 @@ td .btn{ vertical-align: middle; }
   stroke-dasharray: 2 2;
   opacity: .55;
 }
+
+/* Anping-class details */
+.sh-stripe{
+  fill: var(--primary);
+  opacity: .82;
+}
+.sh-reg{
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  fill: #fff;
+}
+.sh-mast-thin{
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+.sh-platform{
+  fill: var(--bg-alt);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.sh-dome{
+  fill: var(--card);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.sh-halyard{
+  stroke: var(--line-strong);
+  stroke-width: 0.6;
+  stroke-dasharray: 1.5 2.5;
+  opacity: .35;
+}
+.sh-weapon{
+  fill: var(--bg-alt);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.sh-waterline{
+  stroke: var(--primary);
+  stroke-width: 1.2;
+  opacity: .3;
+}
 /* Crew dot halo — white ring under the dot to mask structure underneath */
 .sh-halo{
   fill: var(--card);
