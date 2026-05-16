@@ -84,7 +84,7 @@ foreach ($crew_all as $cr) {
 }
 $crew_total = count($crew_all);
 
-// Today's ship conditions
+// Today's ship conditions (DB mode → session fallback)
 $today_zone = null; $today_sea = null;
 $stmt = $pdo->prepare("SELECT duty_zone FROM attendance WHERE work_date=? AND duty_zone IS NOT NULL GROUP BY duty_zone ORDER BY COUNT(*) DESC LIMIT 1");
 $stmt->execute([$today]);
@@ -92,6 +92,8 @@ $today_zone = $stmt->fetchColumn() ?: null;
 $stmt = $pdo->prepare("SELECT sea_state FROM attendance WHERE work_date=? AND sea_state IS NOT NULL GROUP BY sea_state ORDER BY COUNT(*) DESC LIMIT 1");
 $stmt->execute([$today]);
 $today_sea = $stmt->fetchColumn() ?: null;
+if (!$today_zone) $today_zone = $_SESSION['today_zone'] ?? null;
+if (!$today_sea)  $today_sea  = $_SESSION['today_sea']  ?? null;
 
 // Today status label
 if ($today_leave)                                                $today_status = ['請假中','warn'];
