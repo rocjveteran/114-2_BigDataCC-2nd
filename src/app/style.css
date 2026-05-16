@@ -1,5 +1,5 @@
-/* 海事勤務值勤管理系統 — Anthropic-inspired editorial theme */
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Inter:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap');
+/* 海事勤務值勤管理系統 — Anthropic-inspired theme (sans-only) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
 
 :root{
   --bg: #faf9f5;
@@ -36,9 +36,10 @@
   --bad:  #a8341a;
   --info: #2a5a99;
 
-  /* type stacks */
-  --font-serif: "Source Serif 4", "Source Serif Pro", "Noto Serif TC", "Charter", "Iowan Old Style", "PingFang TC", Georgia, serif;
-  --font-sans:  "Inter", system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", Roboto, Arial, sans-serif;
+  /* type stacks — all sans (Anthropic-style) */
+  --font-sans:    "Inter", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "PingFang TC", Roboto, Arial, sans-serif;
+  --font-display: "Inter", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "PingFang TC", Roboto, Arial, sans-serif;
+  --font-serif:   var(--font-display); /* legacy alias — used by .serif & display headings, now sans */
 
   --radius: 10px;
   --radius-sm: 6px;
@@ -852,9 +853,26 @@ td .btn{ vertical-align: middle; }
 }
 .sh-pos-lbl{
   font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   fill: var(--muted);
+}
+.sh-deck{
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  opacity: .65;
+}
+.sh-leader{
+  stroke: var(--line-strong);
+  stroke-width: 0.75;
+  stroke-dasharray: 2 2;
+  opacity: .55;
+}
+/* Crew dot halo — white ring under the dot to mask structure underneath */
+.sh-halo{
+  fill: var(--card);
+  stroke: none;
 }
 /* Crew dots */
 .sh-dot{ transition: opacity .15s; }

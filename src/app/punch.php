@@ -220,16 +220,29 @@ $wd = $weekday_zh[(int)date('w')];
       ];
     }
 
-    // SVG coordinate map: cx/cy = dot centre, lx/ly = label anchor, ta = text-anchor
+    // Coords (cx/cy = anchor of crew dot cluster; label placed in caption band y=252)
+    // Canvas 800 x 320. Mast 18-72 / Bridge 72-110 / SuperStruct 110-150 / Hull 150-225
     $pos_coords = [
-      '艦橋'   => ['cx'=>338, 'cy'=>68,  'lx'=>338, 'ly'=>42,  'ta'=>'middle'],
-      '瞭望台' => ['cx'=>338, 'cy'=>28,  'lx'=>374, 'ly'=>28,  'ta'=>'start' ],
-      '前甲板' => ['cx'=>128, 'cy'=>140, 'lx'=>128, 'ly'=>157, 'ta'=>'middle'],
-      '後甲板' => ['cx'=>538, 'cy'=>140, 'lx'=>538, 'ly'=>157, 'ta'=>'middle'],
-      '通訊室' => ['cx'=>248, 'cy'=>108, 'lx'=>248, 'ly'=>95,  'ta'=>'middle'],
-      '機艙'   => ['cx'=>488, 'cy'=>170, 'lx'=>520, 'ly'=>170, 'ta'=>'start' ],
+      '瞭望台' => ['cx'=>400, 'cy'=>42,  'cap'=>['x'=>440, 'y'=>46, 'leader'=>true, 'ta'=>'start']],
+      '艦橋'   => ['cx'=>370, 'cy'=>92,  'cap'=>['x'=>370, 'y'=>62, 'ta'=>'middle']],
+      '通訊室' => ['cx'=>270, 'cy'=>130, 'cap'=>['x'=>270, 'y'=>252, 'leader'=>true, 'ta'=>'middle']],
+      '前甲板' => ['cx'=>155, 'cy'=>135, 'cap'=>['x'=>155, 'y'=>252, 'ta'=>'middle']],
+      '後甲板' => ['cx'=>600, 'cy'=>135, 'cap'=>['x'=>600, 'y'=>252, 'ta'=>'middle']],
+      '機艙'   => ['cx'=>490, 'cy'=>197, 'cap'=>['x'=>490, 'y'=>252, 'leader'=>true, 'ta'=>'middle']],
     ];
     $st_zh_map = ['on'=>'值勤中','done'=>'已結束','leave'=>'請假','off'=>'未值勤'];
+
+    // Compute crew dot position. Max 3 per row, rows 28px apart, cols 36px apart.
+    function dot_pos($i, $n, $cx, $cy){
+      $per_row = min($n, 3);
+      $rows = (int)ceil($n / $per_row);
+      $row = (int)floor($i / $per_row);
+      $col = $i % $per_row;
+      $items_this_row = ($row === $rows - 1) ? ($n - $row * $per_row) : $per_row;
+      $offset_x = ($col - ($items_this_row - 1) / 2.0) * 36;
+      $offset_y = ($row - ($rows - 1) / 2.0) * 28;
+      return [$cx + $offset_x, $cy + $offset_y];
+    }
     ?>
 
     <div class="card ship-card">
@@ -249,69 +262,82 @@ $wd = $weekday_zh[(int)date('w')];
           <span class="muted" style="font-size:12.5px;margin-left:6px;"><?= h($d) ?> · 星期<?= h($wd) ?></span>
         </div>
       </div>
-      <svg class="ship-svg" viewBox="0 0 680 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="艦上人員配置示意圖">
-        <!-- Hull -->
-        <path class="sh-hull" d="M28,175 L70,128 L618,128 L644,152 L644,188 L28,188 Z"/>
-        <!-- Deck railing (dashed lines fore/aft of superstructure) -->
-        <line class="sh-railing" x1="72"  y1="128" x2="210" y2="128"/>
-        <line class="sh-railing" x1="468" y1="128" x2="617" y2="128"/>
-        <!-- Superstructure block -->
-        <rect class="sh-struct" x="210" y="85" width="258" height="43" rx="2"/>
+      <svg class="ship-svg" viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="艦上人員配置示意圖">
+        <!-- Hull (slightly more nautical silhouette, bow on left with sweep) -->
+        <path class="sh-hull" d="M40,212 Q60,210 80,205 L100,150 L680,150 L730,178 L730,225 L40,225 Q35,222 40,212 Z"/>
+        <!-- Main deck top line -->
+        <line class="sh-deck" x1="100" y1="150" x2="680" y2="150"/>
+        <!-- Deck railings (fore & aft of superstructure) -->
+        <line class="sh-railing" x1="100" y1="150" x2="220" y2="150"/>
+        <line class="sh-railing" x1="500" y1="150" x2="680" y2="150"/>
+        <!-- Lower superstructure -->
+        <rect class="sh-struct" x="220" y="110" width="280" height="40" rx="3"/>
         <!-- Bridge on top -->
-        <rect class="sh-struct" x="235" y="52" width="208" height="35" rx="3"/>
-        <!-- Mast & antenna crosspiece -->
-        <line class="sh-mast" x1="338" y1="52" x2="338" y2="12"/>
-        <line class="sh-mast" x1="308" y1="24" x2="368" y2="24"/>
-        <circle cx="338" cy="12" r="3" fill="var(--muted)" opacity=".35"/>
-        <!-- Funnel -->
-        <rect class="sh-funnel" x="385" y="64" width="24" height="24" rx="2"/>
-        <!-- Bridge windows -->
-        <rect class="sh-window" x="252" y="61" width="14" height="9" rx="1"/>
-        <rect class="sh-window" x="274" y="61" width="14" height="9" rx="1"/>
-        <rect class="sh-window" x="296" y="61" width="14" height="9" rx="1"/>
-        <rect class="sh-window" x="370" y="61" width="14" height="9" rx="1"/>
-        <rect class="sh-window" x="392" y="61" width="14" height="9" rx="1"/>
-        <rect class="sh-window" x="414" y="61" width="14" height="9" rx="1"/>
-        <!-- Superstructure portholes -->
-        <circle class="sh-porthole" cx="228" cy="107" r="5"/>
-        <circle class="sh-porthole" cx="254" cy="107" r="5"/>
-        <circle class="sh-porthole" cx="434" cy="107" r="5"/>
-        <circle class="sh-porthole" cx="460" cy="107" r="5"/>
-        <!-- Hull portholes -->
-        <circle class="sh-porthole" cx="100" cy="158" r="4"/>
-        <circle class="sh-porthole" cx="126" cy="158" r="4"/>
-        <circle class="sh-porthole" cx="152" cy="158" r="4"/>
-        <circle class="sh-porthole" cx="508" cy="158" r="4"/>
-        <circle class="sh-porthole" cx="536" cy="158" r="4"/>
-        <circle class="sh-porthole" cx="564" cy="158" r="4"/>
-        <!-- Bow anchor detail -->
-        <path class="sh-detail" d="M70,175 L50,168 L44,158"/>
+        <rect class="sh-struct" x="280" y="72" width="180" height="38" rx="3"/>
+        <!-- Mast & antenna -->
+        <line class="sh-mast" x1="370" y1="72" x2="370" y2="18"/>
+        <line class="sh-mast" x1="340" y1="32" x2="400" y2="32"/>
+        <circle cx="370" cy="18" r="2.6" fill="var(--muted)" opacity=".4"/>
+        <!-- Funnel (rear of bridge) -->
+        <rect class="sh-funnel" x="440" y="78" width="28" height="32" rx="2"/>
+        <line class="sh-mast" x1="446" y1="78" x2="446" y2="68"/>
+        <!-- Bridge window strip (single subtle band so crew dot has clear space) -->
+        <rect class="sh-window" x="295" y="80" width="150" height="6" rx="1"/>
+        <!-- A few light portholes far from crew clusters -->
+        <circle class="sh-porthole" cx="120" cy="195" r="3"/>
+        <circle class="sh-porthole" cx="145" cy="195" r="3"/>
+        <circle class="sh-porthole" cx="630" cy="195" r="3"/>
+        <circle class="sh-porthole" cx="655" cy="195" r="3"/>
+        <!-- Bow line accent -->
+        <path class="sh-detail" d="M100,150 L100,180 L80,205"/>
         <!-- Waterline -->
-        <line class="sh-water" x1="24" y1="178" x2="648" y2="178"/>
+        <line class="sh-water" x1="40" y1="222" x2="730" y2="222"/>
 
         <!-- Sea waves (amplitude reflects today's sea state) -->
         <g class="sh-wave-group <?= h($sea_anim) ?>">
-          <path class="sh-wave w1" d="<?= h(wave_path(202, $sea_amp)) ?>"/>
+          <path class="sh-wave w1" d="<?= h(wave_path(270, $sea_amp,    40, -80, 880)) ?>"/>
           <?php if ($sea_amp >= 3): ?>
-            <path class="sh-wave w2" d="<?= h(wave_path(216, $sea_amp * 0.8, 50)) ?>"/>
+            <path class="sh-wave w2" d="<?= h(wave_path(287, $sea_amp * 0.78, 50, -80, 880)) ?>"/>
           <?php endif; ?>
           <?php if ($sea_amp >= 6): ?>
-            <path class="sh-wave w3" d="<?= h(wave_path(229, $sea_amp * 0.6, 60)) ?>"/>
+            <path class="sh-wave w3" d="<?= h(wave_path(303, $sea_amp * 0.58, 62, -80, 880)) ?>"/>
           <?php endif; ?>
         </g>
 
+        <!-- Crew dots & station labels -->
         <?php foreach ($pos_coords as $pos_name => $c):
           $people = $pos_groups[$pos_name] ?? [];
           $n = count($people);
+          $cap = $c['cap'];
         ?>
-          <text class="sh-pos-lbl" x="<?= $c['lx'] ?>" y="<?= $c['ly'] ?>" text-anchor="<?= $c['ta'] ?>"><?= h($pos_name) ?></text>
+          <!-- Station label -->
+          <text class="sh-pos-lbl" x="<?= $cap['x'] ?>" y="<?= $cap['y'] ?>" text-anchor="<?= $cap['ta'] ?>"><?= h($pos_name) ?> · <?= h($n) ?></text>
+          <?php if (!empty($cap['leader'])):
+            $dx = $cap['x'] - $c['cx'];
+            $dy = $cap['y'] - $c['cy'];
+            if (abs($dx) > abs($dy)) {
+              // horizontal leader (e.g., 瞭望台)
+              $lx1 = $c['cx'] + ($dx > 0 ?  14 : -14);
+              $ly1 = $c['cy'];
+              $lx2 = $cap['x'] + ($dx > 0 ? -4 :  4);
+              $ly2 = $cap['y'];
+            } else {
+              // vertical leader (e.g., 通訊室, 機艙)
+              $lx1 = $c['cx'];
+              $ly1 = $c['cy'] + ($dy > 0 ?  14 : -14);
+              $lx2 = $cap['x'];
+              $ly2 = $cap['y'] + ($dy > 0 ? -12 : 12);
+            }
+          ?>
+            <line class="sh-leader" x1="<?= $lx1 ?>" y1="<?= $ly1 ?>" x2="<?= $lx2 ?>" y2="<?= $ly2 ?>"/>
+          <?php endif; ?>
+
           <?php if ($n === 0): ?>
+            <circle class="sh-halo" cx="<?= $c['cx'] ?>" cy="<?= $c['cy'] ?>" r="13"/>
             <circle class="sh-dot off" cx="<?= $c['cx'] ?>" cy="<?= $c['cy'] ?>" r="11"/>
           <?php else: ?>
             <?php foreach ($people as $i => $person):
-              $offset = (int)round(($i - ($n - 1) / 2.0) * 28);
-              $cx    = $c['cx'] + $offset;
-              $cy    = $c['cy'];
+              [$cx, $cy] = dot_pos($i, $n, $c['cx'], $c['cy']);
               $st    = $person['status'];
               $me    = $person['is_me'] ? ' me' : '';
               $init  = mb_substr($person['name'], 0, 1);
@@ -320,8 +346,9 @@ $wd = $weekday_zh[(int)date('w')];
             ?>
               <g class="sh-crew-marker">
                 <title><?= h($person['name']) ?> · <?= $st_zh ?></title>
-                <circle class="sh-dot <?= h($st.$me) ?>" cx="<?= $cx ?>" cy="<?= $cy ?>" r="12"/>
-                <text class="sh-init" x="<?= $cx ?>" y="<?= ($cy + 4) ?>" text-anchor="middle" fill="<?= $tfill ?>"><?= h($init) ?></text>
+                <circle class="sh-halo" cx="<?= round($cx, 1) ?>" cy="<?= round($cy, 1) ?>" r="14"/>
+                <circle class="sh-dot <?= h($st.$me) ?>" cx="<?= round($cx, 1) ?>" cy="<?= round($cy, 1) ?>" r="12"/>
+                <text class="sh-init" x="<?= round($cx, 1) ?>" y="<?= round($cy + 4, 1) ?>" text-anchor="middle" fill="<?= $tfill ?>"><?= h($init) ?></text>
               </g>
             <?php endforeach; ?>
           <?php endif; ?>
