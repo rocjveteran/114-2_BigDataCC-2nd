@@ -18,7 +18,7 @@
 
 | 嚴重度 | 項目 | 狀態 |
 |--------|------|------|
-| **HIGH** | H-1：DB 密碼 commit 至 git 歷史並推上公開 origin | 待你決定是否輪換、是否改寫歷史 |
+| **HIGH** | H-1：DB 密碼 commit 至 git 歷史並推上公開 origin | **已執行選項 B**：git 歷史改寫；force-push 待用戶手動執行 |
 | **MEDIUM** | M-1：全站 POST 表單缺 CSRF token | 本次自動修補 |
 | **MEDIUM** | M-2：登入無暴力破解節流 | 本次自動修補 |
 | **MEDIUM** | M-3：session cookie 屬性未硬化 | 本次自動修補 |
@@ -27,6 +27,8 @@
 | **LOW** | L-2：未顯式關閉 `display_errors` | 本次自動修補 |
 | **LOW** | L-3：`admin_export.php` Content-Disposition 未過濾 | 本次自動修補 |
 | OK | XSS / SQL Injection / Authorization / bcrypt | 無發現 |
+
+**字串約定**：因 git 歷史改寫，本文件中原本出現的明碼 `[REDACTED-ROOT-PWD]` / `[REDACTED-USER-PWD]` 已全部替換為 `[REDACTED-ROOT-PWD]` / `[REDACTED-USER-PWD]`。底下範例指令中的密碼欄位請替換為你實際輪換後的值。
 
 ---
 
@@ -46,7 +48,7 @@
 - 即使 Docker 內部網路隔離，密碼一旦泄漏即視為失守，應該輪換
 - 攻擊者可從 GitHub 公開歷史複製 `.env.txt` 後重現本地環境，但不能直接攻擊未暴露之 DB
 
-### 補救選項（皆需你同意，不自動執行）
+### 補救選項
 
 | 選項 | 動作 | 副作用 |
 |------|------|--------|
@@ -55,7 +57,13 @@
 | C | 同時 A + B + 撤銷舊密碼 | 最完整 |
 | D | 教育用途接受風險，只更新 `.gitignore` 並加註解 | 最弱 |
 
-**建議**：A（輪換）必做。B（改寫歷史）視專案是否要對外公開的程度決定。本次自動執行**只能做到 A 的「先改檔不執行 ALTER」**，等你回來確認後 `docker exec` 跑 ALTER 一行就完成。
+**已執行 B**（本 session 內，2026-05-17）：
+- 用 `python3 git-filter-repo --invert-paths --path .env.txt --force` 從所有 ref 中清除 `.env.txt`
+- 用 `python3 git-filter-repo --replace-text ...` 將歷史中其他殘留的密碼字串替換為 `[REDACTED]`
+- 結果：本地 repo 已乾淨，但 `origin/main` 仍是舊歷史
+- **需要你 force-push**：見本檔最下方「修補後須請你執行的人工動作」
+
+**仍建議再做 A**（輪換密碼）：即使歷史已清，舊密碼字串仍可能在 GitHub 的 reflog/快照/screenshots 中流傳；視為失守、輪換最穩。
 
 ---
 
@@ -170,43 +178,68 @@ header('Content-Disposition: attachment; filename="duty_'.$d.'.csv"');
 
 ## 修補後須請你執行的人工動作
 
-1. **輪換 DB 密碼**（H-1）：
-   ```bash
-   # 1. 修改 docker/.env 任一新值（非 [REDACTED-ROOT-PWD]）
-   # 2. 在 DB 內 ALTER:
-   docker exec docker-db-1 mysql -uroot -p'[REDACTED-ROOT-PWD]' -e \
-     "ALTER USER 'root'@'%' IDENTIFIED BY '新root密碼'; \
-      ALTER USER 'maritime_user'@'%' IDENTIFIED BY '新user密碼'; \
-      FLUSH PRIVILEGES;"
-   # 3. 重啟 web/analysis 容器讓它讀新 .env：
-   docker compose restart web analysis
-   ```
+### 1. **Force-push 改寫後的 git 歷史**（必做，完成 H-1 選項 B）
 
-2. **（選擇性）改寫 git 歷史抹去 `.env.txt`**：
-   ```bash
-   # 此操作會 force-push，需通知所有協作者重新 clone
-   pip install git-filter-repo
-   git filter-repo --invert-paths --path .env.txt
-   git push --force origin main
-   ```
+本 session 已在本地完成歷史改寫，本地 `main` 已乾淨。但 `origin/main` 仍是舊（含洩漏）歷史。
 
-3. **更新預設帳號密碼**（M-4）：若部署上線，請在 schema 載入後立即 `UPDATE users SET password_hash=... WHERE username='boss1'`。
+打開 VS Code Source Control → … 三點選單 → Push, Force（或命令列：`git push --force-with-lease origin main`）。
+
+注意：
+- 此操作會覆寫 GitHub 上的 main 分支，所有 commit hash 都會變
+- `claude/fix-dockerfile-font`、`claude/confirm-current-goals-idbMp` 兩個遠端分支已合進 main，建議直接到 GitHub 刪除
+- 任何其他 collaborator / 其他機器上的 clone 都需要重新 clone
+
+備援：如需回復，本地 `.git.backup-before-filter` 目錄保留改寫前的 git 物件。
+
+### 2. **輪換 DB 密碼**（H-1 選項 A，建議與 1 同時做）
+
+```bash
+# 1. 編輯 docker/.env：將 DB_ROOT_PASS 與 DB_PASS 改為新值
+# 2. 在 DB 內 ALTER（用「目前實際在跑」的舊密碼登入）：
+docker exec docker-db-1 mysql -uroot -p'目前舊root密碼' -e \
+  "ALTER USER 'root'@'%' IDENTIFIED BY '新root密碼'; \
+   ALTER USER 'maritime_user'@'%' IDENTIFIED BY '新user密碼'; \
+   FLUSH PRIVILEGES;"
+# 3. 重啟 web/analysis 容器讓它讀新 .env：
+cd docker && docker compose restart web analysis
+```
+
+### 3. **更新預設帳號密碼**（M-4，若部署上線）
+
+```bash
+# 在 web 容器內產 hash：
+docker exec docker-web-1 php -r "echo password_hash('新密碼', PASSWORD_DEFAULT);"
+# 在 DB 內 UPDATE：
+docker exec docker-db-1 mysql -uroot -p"$DB_ROOT_PASS" maritime_duty -e \
+  "UPDATE users SET password_hash='上一步輸出的 hash' WHERE username='boss1';"
+```
+
+### 4. **清理本地備份**
+
+確認 force-push 成功、所有同步都正確之後，可刪除本地 `.git.backup-before-filter`：
+```bash
+rm -rf .git.backup-before-filter
+```
 
 ---
 
 ## 自動修補的 commits 列表
 
+> 注意：因 git 歷史已被改寫（H-1 選項 B），下列 hash 為改寫後的新值。
+
 | Commit | 涵蓋項目 |
 |--------|----------|
-| `0bd4500` | M-1 CSRF token 系統 + 9 個 POST 端點 + sidebar logout |
-| `0bd4500` | M-2 登入失敗節流（5 次/15 分鐘） |
-| `0bd4500` | M-3 session 硬化（HttpOnly / SameSite / use_strict_mode） |
-| `0bd4500` | L-1 logout 改為 POST + CSRF + 303 redirect |
-| `a6511ad` | M-4 schema 註解明碼移除 + demo_credentials.md (gitignored) |
-| `a6511ad` | L-2 db.php APP_ENV-guarded error reporting |
-| `a6511ad` | L-3 admin_export.php 日期格式嚴格驗證 |
+| `ace0cdd` | M-1 CSRF token 系統 + 9 個 POST 端點 + sidebar logout |
+| `ace0cdd` | M-2 登入失敗節流（5 次/15 分鐘） |
+| `ace0cdd` | M-3 session 硬化（HttpOnly / SameSite / use_strict_mode） |
+| `ace0cdd` | L-1 logout 改為 POST + CSRF + 303 redirect |
+| `a91f030` | M-4 schema 註解明碼移除 + demo_credentials.md (gitignored) |
+| `a91f030` | L-2 db.php APP_ENV-guarded error reporting |
+| `a91f030` | L-3 admin_export.php 日期格式嚴格驗證 |
+| `5b98882` | 額外：admin_users.php 補上 admin_only guard |
 
-## H-1 狀態：**未自動修補**（需你同意）
+## H-1 狀態：**已執行選項 B（本地）**
 
-git 歷史的 `.env.txt` 仍存在於 `origin/main`，現行 `docker/.env` 仍使用同組已洩漏密碼。
-看本檔上方「補救選項」決定如何處理；建議至少執行選項 A（密碼輪換）。
+- 本地 git 歷史已用 `git-filter-repo` 改寫，`.env.txt` 完全移除、明碼密碼字串改為 `[REDACTED]`
+- 仍待用戶 force-push 將乾淨歷史推上 origin（見上方「修補後須請你執行的人工動作」第 1 項）
+- 建議搭配選項 A（DB 密碼輪換）以根除已洩漏密碼的後續使用風險
