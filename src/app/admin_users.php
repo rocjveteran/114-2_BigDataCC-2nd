@@ -1,5 +1,5 @@
 <?php
-require 'auth.php';
+require 'admin_only.php';
 require 'db.php';
 require_once 'ui.php';
 
