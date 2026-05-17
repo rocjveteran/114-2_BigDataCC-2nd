@@ -6,6 +6,8 @@ require_once 'ui.php';
 date_default_timezone_set('Asia/Taipei');
 
 $d = $_GET['d'] ?? date('Y-m-d');
+// Validate date format strictly to prevent header injection in Content-Disposition.
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$d)) $d = date('Y-m-d');
 
 // Fetch users + attendance of that date
 $users = $pdo->query("SELECT user_id, username, full_name FROM users ORDER BY user_id ASC")->fetchAll();

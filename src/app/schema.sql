@@ -47,20 +47,20 @@ CREATE TABLE IF NOT EXISTS leaves (
   INDEX idx_leave_status (status)
 ) ENGINE=InnoDB;
 
--- Default accounts (seeded)
--- boss: can manage self/admin/employee
--- admin: can manage employees only
--- employee: read-only for account management
-
--- Default accounts (seeded)
--- boss: can manage boss/admin/employee (including self)
+-- Default seed accounts (passwords stored as bcrypt hashes).
+-- Cleartext credentials kept ONLY in docs/demo_credentials.md (gitignored) for educational demo.
+--
+-- Role hierarchy:
+--   boss     -- can manage all (boss/admin/employee, including self)
+--   admin    -- can manage employees only
+--   employee -- read-only for account management
+--
+-- ⚠️ Production: rotate all seed passwords immediately after first deployment.
 INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
-('boss1', '$2y$10$74/Dh9n/MLxTKopstTwvvuyb/XR0lY6.QK/oNrIgYp6IgdnTacovW', 'Boss', 'boss', '艦橋', 1); -- password: boss1234
+('boss1', '$2y$10$74/Dh9n/MLxTKopstTwvvuyb/XR0lY6.QK/oNrIgYp6IgdnTacovW', 'Boss', 'boss', '艦橋', 1);
 
--- admin: can manage employee only
 INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
-('admin1', '$2y$10$KRC4JX.5wL3WQdt5Wy/Wv.4Jweva.Wm9C1MYOIHbgtYeQGCau3JvC', 'Admin', 'admin', '通訊室', 1); -- password: admin1234
+('admin1', '$2y$10$KRC4JX.5wL3WQdt5Wy/Wv.4Jweva.Wm9C1MYOIHbgtYeQGCau3JvC', 'Admin', 'admin', '通訊室', 1);
 
--- employee: view-only for account management
 INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
-('em1', '$2y$10$XjWHhrwlPp3VRcD41gApOu/YTs0MQD.7Gfrtl9KVsqlMasoyvIbGG', 'Employee', 'employee', '前甲板', 1); -- password: em1234
+('em1', '$2y$10$XjWHhrwlPp3VRcD41gApOu/YTs0MQD.7Gfrtl9KVsqlMasoyvIbGG', 'Employee', 'employee', '前甲板', 1);

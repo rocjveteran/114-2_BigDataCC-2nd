@@ -36,7 +36,12 @@ Thumbs.db
 # Environment variables
 .env
 .env.txt
+.env.*
+!.env.example
 docker/.env
+
+# Seed / demo credentials (do not commit)
+docs/demo_credentials.md
 
 # Claude Code local settings
 .claude/
