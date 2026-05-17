@@ -1,33 +1,76 @@
 <?php
-session_start();
+require 'db.php';
+require 'ui.php';   // session_start + hardening + csrf
 
 if (isset($_SESSION['user_id'])) {
   header("Location: dashboard.php");
   exit;
 }
 
-require 'db.php';
-require 'ui.php';
-
 $error = null;
+$locked_until = null;
+
+// ── Login throttle: 5 attempts per 15 min per session ──
+$MAX_ATTEMPTS  = 5;
+$LOCK_SECONDS  = 900;
+$now = time();
+$fail_count = (int)($_SESSION['login_fail_count']  ?? 0);
+$fail_first = (int)($_SESSION['login_fail_first']  ?? 0);
+$fail_last  = (int)($_SESSION['login_fail_last']   ?? 0);
+
+// Reset counter if last failure older than the lockout window
+if ($fail_count > 0 && ($now - $fail_last) > $LOCK_SECONDS) {
+  $_SESSION['login_fail_count'] = 0;
+  $_SESSION['login_fail_first'] = 0;
+  $_SESSION['login_fail_last']  = 0;
+  $fail_count = 0;
+}
+
+$is_locked = false;
+if ($fail_count >= $MAX_ATTEMPTS && ($now - $fail_last) <= $LOCK_SECONDS) {
+  $is_locked   = true;
+  $locked_until = $fail_last + $LOCK_SECONDS;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $username = trim($_POST['username'] ?? '');
-  $password = $_POST['password'] ?? '';
+  csrf_require();
 
-  $stmt = $pdo->prepare("SELECT user_id, full_name, role, is_active, password_hash FROM users WHERE username=? LIMIT 1");
-  $stmt->execute([$username]);
-  $u = $stmt->fetch();
-
-  if (!$u || !(int)$u['is_active'] || !password_verify($password, $u['password_hash'])) {
-    $error = "帳號或密碼錯誤 / 帳號未啟用";
+  if ($is_locked) {
+    $remain = max(1, (int)ceil(($locked_until - $now) / 60));
+    $error = "登入嘗試過多，請於 {$remain} 分鐘後再試。";
   } else {
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = (int)$u['user_id'];
-    $_SESSION['full_name'] = $u['full_name'];
-    $_SESSION['role'] = $u['role'];
-    header("Location: dashboard.php");
-    exit;
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    $stmt = $pdo->prepare("SELECT user_id, full_name, role, is_active, password_hash FROM users WHERE username=? LIMIT 1");
+    $stmt->execute([$username]);
+    $u = $stmt->fetch();
+
+    if (!$u || !(int)$u['is_active'] || !password_verify($password, $u['password_hash'])) {
+      // Count failure
+      $_SESSION['login_fail_count'] = $fail_count + 1;
+      if (!$fail_first) $_SESSION['login_fail_first'] = $now;
+      $_SESSION['login_fail_last'] = $now;
+      $remaining = $MAX_ATTEMPTS - $_SESSION['login_fail_count'];
+      $error = "帳號或密碼錯誤 / 帳號未啟用" . ($remaining > 0 ? "（剩 {$remaining} 次）" : "");
+      // Trigger lock if reached
+      if ($_SESSION['login_fail_count'] >= $MAX_ATTEMPTS) {
+        $is_locked = true;
+        $locked_until = $now + $LOCK_SECONDS;
+        $error = "登入嘗試過多，請於 15 分鐘後再試。";
+      }
+    } else {
+      // Success — reset counter and regenerate session
+      $_SESSION['login_fail_count'] = 0;
+      $_SESSION['login_fail_first'] = 0;
+      $_SESSION['login_fail_last']  = 0;
+      session_regenerate_id(true);
+      $_SESSION['user_id']   = (int)$u['user_id'];
+      $_SESSION['full_name'] = $u['full_name'];
+      $_SESSION['role']      = $u['role'];
+      header("Location: dashboard.php");
+      exit;
+    }
   }
 }
 ?>
@@ -51,14 +94,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endif; ?>
 
       <form method="post" autocomplete="on">
+        <?= csrf_input() ?>
         <label>帳號</label>
-        <input name="username" autocomplete="username" required placeholder="例如：admin">
+        <input name="username" autocomplete="username" required placeholder="例如：admin" <?= $is_locked?'disabled':'' ?>>
 
         <label>密碼</label>
-        <input name="password" type="password" autocomplete="current-password" required placeholder="輸入您的密碼">
+        <input name="password" type="password" autocomplete="current-password" required placeholder="輸入您的密碼" <?= $is_locked?'disabled':'' ?>>
 
         <div class="form-actions">
-          <button class="btn primary" type="submit" style="flex:1;"><?= icon_svg('login') ?>登入</button>
+          <button class="btn primary" type="submit" style="flex:1;" <?= $is_locked?'disabled':'' ?>><?= icon_svg('login') ?>登入</button>
         </div>
       </form>
     </div>

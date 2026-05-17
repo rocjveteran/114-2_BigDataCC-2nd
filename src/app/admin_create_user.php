@@ -7,6 +7,7 @@ $msg = null;
 $err = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   $username = trim($_POST['username'] ?? '');
   $full_name = trim($_POST['full_name'] ?? '');
   $password = $_POST['password'] ?? '';
@@ -69,6 +70,7 @@ $users = $stmt->fetchAll();
 
     <div class="card">
       <form method="post" autocomplete="off">
+        <?= csrf_input() ?>
         <div class="row">
           <div>
             <label>帳號 (username)</label>

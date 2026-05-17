@@ -36,6 +36,7 @@ function to_dt($s) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   $in_s  = to_dt($_POST['in'] ?? '');
   $out_s = to_dt($_POST['out'] ?? '');
 
@@ -121,6 +122,7 @@ function to_local($dt) {
 
     <div class="card">
       <form method="post">
+        <?= csrf_input() ?>
         <div class="row">
           <div>
             <label>值勤開始時間</label>

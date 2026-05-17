@@ -15,6 +15,7 @@ function boss_count($pdo){
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   $act = $_POST['act'] ?? '';
   $uid = (int)($_POST['uid'] ?? 0);
 
@@ -125,6 +126,7 @@ $rows = $stmt->fetchAll();
               <?php if($can): ?>
                 <a class="btn small" href="admin_user_edit.php?uid=<?= h($uid) ?>"><?= icon_svg('edit') ?>修改</a>
                 <form method="post">
+                  <?= csrf_input() ?>
                   <input type="hidden" name="act" value="toggle">
                   <input type="hidden" name="uid" value="<?= h($uid) ?>">
                   <button class="btn small" type="submit"><?= ((int)$u['is_active']===1) ? '停用' : '啟用' ?></button>

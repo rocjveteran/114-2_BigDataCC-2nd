@@ -22,6 +22,7 @@ $lv = $stmt->fetchColumn();
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   $act = $_POST['act'] ?? '';
 
   $pdo->beginTransaction();
@@ -140,6 +141,7 @@ $wd = $weekday_zh[(int)date('w')];
         </div>
         <div class="t serif"><?= h($in ?? '—') ?></div>
         <form method="post" style="margin-top:8px;">
+          <?= csrf_input() ?>
           <input type="hidden" name="act" value="in">
           <button class="btn primary" type="submit" style="width:100%;" <?= $can_in ? '' : 'disabled' ?>>
             <?= icon_svg('clock') ?>開始值勤
@@ -154,6 +156,7 @@ $wd = $weekday_zh[(int)date('w')];
         </div>
         <div class="t serif"><?= h($out ?? '—') ?></div>
         <form method="post" style="margin-top:8px;">
+          <?= csrf_input() ?>
           <input type="hidden" name="act" value="out">
           <button class="btn primary" type="submit" style="width:100%;" <?= $can_out ? '' : 'disabled' ?>>
             <?= icon_svg('check') ?>結束值勤
@@ -407,6 +410,7 @@ $wd = $weekday_zh[(int)date('w')];
 
       <?php if (is_admin()): ?>
         <form method="post" class="ship-cond-form">
+          <?= csrf_input() ?>
           <div>
             <label>今日海域</label>
             <select name="duty_zone">

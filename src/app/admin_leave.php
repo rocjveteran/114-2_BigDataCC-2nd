@@ -10,6 +10,7 @@ $msg = null;
 $err = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   $id = (int)($_POST['id'] ?? 0);
   $act = $_POST['act'] ?? '';
 
@@ -135,6 +136,7 @@ function st_badge($st){
             <td>
               <?php if ($x['status'] === 'pending'): ?>
                 <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <?= csrf_input() ?>
                   <input type="hidden" name="id" value="<?= h($x['leave_id']) ?>">
 
                   <button class="btn small okfill" name="act" value="approve" type="submit">

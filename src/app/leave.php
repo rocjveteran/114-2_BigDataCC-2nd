@@ -9,6 +9,8 @@ $uid = (int)$_SESSION['user_id'];
 $msg = null;
 $err = null;
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') csrf_require();
+
 if (($_POST['act'] ?? '') === 'cancel') {
   $id = (int)($_POST['id'] ?? 0);
   if ($id > 0) {
@@ -93,6 +95,7 @@ function st_badge($st){
       </div>
 
       <form method="post">
+        <?= csrf_input() ?>
         <div class="row">
           <div>
             <label>開始日期</label>
@@ -147,6 +150,7 @@ function st_badge($st){
             <td>
               <?php if($x['status']==='pending'): ?>
                 <form method="post" style="margin:0;">
+                  <?= csrf_input() ?>
                   <input type="hidden" name="act" value="cancel">
                   <input type="hidden" name="id" value="<?= h($x['leave_id']) ?>">
                   <button class="btn small danger" type="submit"><?= icon_svg('x') ?>取消</button>

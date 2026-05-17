@@ -1,6 +1,22 @@
 <?php
 // ui.php - shared UI helpers
-if (session_status() === PHP_SESSION_NONE) session_start();
+// ── Session hardening (must run before session_start) ──
+if (session_status() === PHP_SESSION_NONE) {
+  ini_set('session.use_strict_mode', '1');
+  ini_set('session.cookie_httponly', '1');
+  $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+         || ($_SERVER['SERVER_PORT'] ?? '') == 443;
+  session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $secure,
+    'httponly' => true,
+    'samesite' => 'Lax',
+  ]);
+  session_start();
+}
+require_once __DIR__ . '/csrf.php';
 
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
@@ -180,7 +196,11 @@ function nav_top($title = ''){
   echo '<div class="sb-foot">';
   echo avatar_initial($name, 32, 'primary');
   echo '<span class="sb-user"><span class="sb-uname">'.h($name).'</span><span class="sb-urole">'.h(role_name($role)).'</span></span>';
-  echo '<a class="sb-logout" href="logout.php" title="登出">'.icon_svg('logout').'</a>';
+  // Logout via POST + CSRF token (so it can't be triggered by GET / <img>)
+  echo '<form method="post" action="logout.php" style="display:inline;margin:0;padding:0;">';
+  echo csrf_input();
+  echo '<button class="sb-logout" type="submit" title="登出" aria-label="登出">'.icon_svg('logout').'</button>';
+  echo '</form>';
   echo '</div>';
   echo '</aside>';
 }

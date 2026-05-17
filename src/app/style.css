@@ -1056,8 +1056,10 @@ td .btn{ vertical-align: middle; }
   color: rgba(245,244,239,.7);
   background: transparent;
   border: 1px solid rgba(255,255,255,.08);
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
   transition: background .12s;
+  cursor: pointer;
+  font-family: inherit;
 }
 .sb-logout:hover{ background: rgba(255,255,255,.07); color: #fff; }
 .sb-logout .ico{ width: 14px; height: 14px; }

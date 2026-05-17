@@ -26,6 +26,7 @@ $msg = null;
 $err = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   if (!$can) {
     $err = '你沒有權限';
   } else {
@@ -104,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="card">
       <form method="post">
+        <?= csrf_input() ?>
         <fieldset <?= (!$can)?'disabled':'' ?> style="border:0;padding:0;margin:0;">
           <div class="row">
             <div>

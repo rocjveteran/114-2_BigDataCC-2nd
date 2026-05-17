@@ -17,6 +17,7 @@ $me_role = $_SESSION['role'] ?? 'employee';
 
 // 1) quick attendance action (start/end/clear)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_require();
   $uid = (int)($_POST['uid'] ?? 0);
   $act2 = $_POST['act2'] ?? '';
   if ($uid > 0 && in_array($act2, ['start','end','clear'], true)) {
@@ -176,6 +177,7 @@ $u = $stmt->fetchAll();
               <?= ((int)($x['is_active'] ?? 0)===1) ? badge('啟用','ok') : badge('停用','off') ?>
               <?php if($uid !== (int)($_SESSION['user_id'] ?? 0) || is_boss()): ?>
                 <form method="post" style="margin-top:6px;">
+                  <?= csrf_input() ?>
                   <input type="hidden" name="act3" value="toggle_active">
                   <input type="hidden" name="uid3" value="<?= h($uid) ?>">
                   <button class="btn small" type="submit" <?= $can2?"":"disabled" ?>><?= ((int)($x['is_active'] ?? 0)===1) ? '停用' : '啟用' ?></button>
@@ -190,6 +192,7 @@ $u = $stmt->fetchAll();
             <td><?= h($a['check_out'] ?? '-') ?></td>
             <td>
               <form method="post" style="display:flex;gap:6px;flex-wrap:wrap;">
+                <?= csrf_input() ?>
                 <input type="hidden" name="uid" value="<?= h($uid) ?>">
                 <input type="hidden" name="d" value="<?= h($d) ?>">
                 <button class="btn small primary" name="act2" value="start" type="submit" <?= $can2?"":"disabled" ?>><?= icon_svg("check") ?>開始</button>
