@@ -918,7 +918,17 @@ td .btn{ vertical-align: middle; }
   fill: var(--card);
   stroke: none;
 }
-/* Crew dots */
+
+/* Small crew marker dots (single-row cluster, no initials) */
+.sh-mark{ transition: transform .12s, opacity .12s; cursor: default; }
+.sh-mark.on   { fill: var(--info); stroke: var(--card); stroke-width: 1.2; }
+.sh-mark.done { fill: var(--ok);   stroke: var(--card); stroke-width: 1.2; }
+.sh-mark.leave{ fill: var(--warn); stroke: var(--card); stroke-width: 1.2; }
+.sh-mark.off  { fill: var(--bg-alt); stroke: var(--line-strong); stroke-width: 1.1; stroke-dasharray: 2 1.5; }
+.sh-mark.me   { stroke: var(--accent); stroke-width: 2; }
+.sh-crew-marker:hover .sh-mark{ transform: scale(1.4); transform-origin: center; transform-box: fill-box; }
+
+/* Crew dots (legacy big initialled style — kept for backward compat but unused) */
 .sh-dot{ transition: opacity .15s; }
 .sh-dot.on   { fill: var(--info);        stroke: var(--info);        stroke-width: 2; }
 .sh-dot.done { fill: var(--ok);          stroke: var(--ok);          stroke-width: 2; }
@@ -955,6 +965,62 @@ td .btn{ vertical-align: middle; }
 .ship-legend-dot.done { background: var(--ok); }
 .ship-legend-dot.leave{ background: var(--warn); }
 .ship-legend-dot.off  { background: var(--bg-alt); border: 1.5px dashed var(--line-strong); }
+
+/* ── Station roster (below ship, lists who is at each station) ── */
+.ship-roster{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.srs-station{
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.srs-head{
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--line);
+}
+.srs-name{ font-size: 13.5px; font-weight: 600; color: var(--text); }
+.srs-cnt{
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: -0.3px;
+}
+.srs-people{ display: flex; flex-wrap: wrap; gap: 5px; }
+.srs-empty{ font-size: 12px; color: var(--muted); font-style: normal; padding: 3px 0; }
+.srs-chip{
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.srs-chip .srs-dot{
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.srs-chip.on    { border-color: rgba(42,90,153,.30); }
+.srs-chip.on    .srs-dot{ background: var(--info); }
+.srs-chip.done  { border-color: rgba(58,107,74,.30); }
+.srs-chip.done  .srs-dot{ background: var(--ok); }
+.srs-chip.leave { border-color: rgba(138,90,12,.32); }
+.srs-chip.leave .srs-dot{ background: var(--warn); }
+.srs-chip.off   { border-style: dashed; opacity: .65; }
+.srs-chip.off   .srs-dot{ background: var(--bg-alt); border: 1px dashed var(--line-strong); }
+.srs-chip.me    { border: 1.5px solid var(--accent); background: var(--accent_soft); color: var(--text); font-weight: 500; }
 
 /* ══════════════════════════════════════════════════════════════════════
    Sidebar navigation (RAL 7013 themed)

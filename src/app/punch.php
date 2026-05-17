@@ -223,15 +223,16 @@ $wd = $weekday_zh[(int)date('w')];
       ];
     }
 
-    // Coords for Anping-class side profile (canvas 900 x 360)
-    // Hull line at y=215; superstructure y=160-215; bridge y=105-160; mast y=40-105; waves y=340+
+    // Anping-class side profile (canvas 900 x 360)
+    // Vertical zones:  mast 20-115 / bridge 115-170 / lower-super 170-215 / hull 215-300
+    // Label band: y=325. Waves: y>=340.
     $pos_coords = [
-      '瞭望台' => ['cx'=>420, 'cy'=>60,  'cap'=>['x'=>500, 'y'=>62,  'leader'=>true, 'ta'=>'start' ]],
-      '艦橋'   => ['cx'=>430, 'cy'=>130, 'cap'=>['x'=>430, 'y'=>95,  'ta'=>'middle']],
-      '通訊室' => ['cx'=>300, 'cy'=>185, 'cap'=>['x'=>300, 'y'=>328, 'leader'=>true, 'ta'=>'middle']],
-      '前甲板' => ['cx'=>130, 'cy'=>195, 'cap'=>['x'=>130, 'y'=>328, 'leader'=>true, 'ta'=>'middle']],
-      '後甲板' => ['cx'=>700, 'cy'=>195, 'cap'=>['x'=>700, 'y'=>328, 'leader'=>true, 'ta'=>'middle']],
-      '機艙'   => ['cx'=>520, 'cy'=>262, 'cap'=>['x'=>520, 'y'=>328, 'leader'=>true, 'ta'=>'middle']],
+      '瞭望台' => ['cx'=>415, 'cy'=>40,  'cap'=>['x'=>465, 'y'=>42,  'leader'=>true, 'ta'=>'start' ]],
+      '艦橋'   => ['cx'=>415, 'cy'=>145, 'cap'=>['x'=>415, 'y'=>104, 'ta'=>'middle']],
+      '通訊室' => ['cx'=>260, 'cy'=>192, 'cap'=>['x'=>260, 'y'=>325, 'leader'=>true, 'ta'=>'middle']],
+      '前甲板' => ['cx'=>140, 'cy'=>192, 'cap'=>['x'=>140, 'y'=>325, 'leader'=>true, 'ta'=>'middle']],
+      '後甲板' => ['cx'=>705, 'cy'=>192, 'cap'=>['x'=>705, 'y'=>325, 'leader'=>true, 'ta'=>'middle']],
+      '機艙'   => ['cx'=>520, 'cy'=>258, 'cap'=>['x'=>520, 'y'=>325, 'leader'=>true, 'ta'=>'middle']],
     ];
     $st_zh_map = ['on'=>'值勤中','done'=>'已結束','leave'=>'請假','off'=>'未值勤'];
 
@@ -267,75 +268,64 @@ $wd = $weekday_zh[(int)date('w')];
       </div>
       <svg class="ship-svg" viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="海巡署安平級巡防艦人員配置示意圖">
         <!-- ═══════════════════════════════════════════════════════════════
-             安平級巡防艦 (Anping-class OPV, 600t)
-             Wave-piercing catamaran, angular stealth profile
+             安平級巡防艦 (Anping-class OPV, 600t) — minimalist line-art
+             人物以小圓點呈現，hover 顯示姓名；詳細名單於下方獨立區塊。
              ═══════════════════════════════════════════════════════════════ -->
 
-        <!-- Hull — sharp wave-piercing bow, flat bottom, vertical stern -->
+        <!-- HULL: low freeboard, angular wave-piercing bow, vertical stern -->
         <path class="sh-hull" d="
-          M 60,300
-          L 50,275
-          L 90,245
-          L 170,215
-          L 820,215
-          L 840,232
-          L 840,300
+          M 55,300
+          L 48,278
+          L 88,250
+          L 195,215
+          L 800,215
+          L 830,235
+          L 830,300
           Z"/>
-        <!-- Hull diagonal stripe (海巡 identification, RAL primary subtle) -->
-        <path class="sh-stripe" d="M 100,295 L 820,250 L 820,265 L 110,300 Z"/>
-        <!-- Bow registration text -->
-        <text class="sh-reg" x="125" y="270" text-anchor="start">CG-601</text>
 
-        <!-- Lower superstructure (comms/cabin tier) -->
-        <path class="sh-struct" d="M 200,215 L 215,165 L 615,165 L 630,215 Z"/>
-        <!-- Upper bridge tier (raised, narrower, with forward-raked front) -->
-        <path class="sh-struct" d="M 285,165 L 305,108 L 555,108 L 575,165 Z"/>
-        <!-- Bridge front raked window band (sloped to follow front edge) -->
-        <path class="sh-window" d="M 308,115 L 322,128 L 538,128 L 552,115 Z"/>
-        <!-- Bridge side window strip (long horizontal slot) -->
-        <rect class="sh-window" x="340" y="140" width="180" height="9" rx="1"/>
-        <!-- Wing platform (port bridge wing extension) -->
-        <line class="sh-railing" x1="262" y1="160" x2="285" y2="160"/>
-        <line class="sh-railing" x1="575" y1="160" x2="598" y2="160"/>
+        <!-- Thin subtle accent stripe (海巡 identification — single line, no fill wedge) -->
+        <line class="sh-stripe-line" x1="110" y1="260" x2="790" y2="245"/>
 
-        <!-- Mast assembly (single integrated mast with radar dome) -->
-        <line class="sh-mast" x1="420" y1="108" x2="420" y2="32"/>
-        <!-- Mast struts (tripod-like) -->
-        <line class="sh-mast-thin" x1="420" y1="108" x2="400" y2="80"/>
-        <line class="sh-mast-thin" x1="420" y1="108" x2="440" y2="80"/>
-        <!-- Lower antenna platform -->
-        <rect class="sh-platform" x="402" y="92" width="36" height="4" rx="1"/>
-        <!-- Radar dome (signature feature of Anping) -->
-        <circle class="sh-dome" cx="420" cy="78" r="11"/>
-        <!-- Upper antenna platform / sensor mount -->
-        <line class="sh-mast" x1="397" y1="55" x2="443" y2="55"/>
-        <line class="sh-mast-thin" x1="403" y1="55" x2="403" y2="46"/>
-        <line class="sh-mast-thin" x1="437" y1="55" x2="437" y2="46"/>
-        <!-- Top antenna -->
-        <line class="sh-mast-thin" x1="420" y1="32" x2="420" y2="20"/>
-        <circle cx="420" cy="20" r="2" fill="var(--muted)" opacity=".5"/>
-        <!-- Signal flag halyards (dashed lines from mast to bow/stern, decorative) -->
-        <line class="sh-halyard" x1="420" y1="50" x2="170" y2="215"/>
-        <line class="sh-halyard" x1="420" y1="50" x2="700" y2="215"/>
+        <!-- LOWER SUPERSTRUCTURE -->
+        <path class="sh-struct" d="M 195,215 L 210,170 L 615,170 L 630,215 Z"/>
 
-        <!-- Funnel (integrated, aft of bridge, low profile for stealth) -->
-        <path class="sh-funnel" d="M 590,165 L 595,138 L 615,138 L 620,165 Z"/>
+        <!-- UPPER BRIDGE (raised, raked-forward front) -->
+        <path class="sh-struct" d="M 295,170 L 312,118 L 540,118 L 558,170 Z"/>
 
-        <!-- Foredeck weapon — NCSIST 2.75in rocket launcher pedestal -->
-        <rect class="sh-weapon" x="142" y="208" width="22" height="10" rx="1"/>
-        <rect class="sh-weapon" x="146" y="200" width="14" height="10" rx="1"/>
-        <line class="sh-mast-thin" x1="153" y1="200" x2="153" y2="194"/>
+        <!-- Bridge front: 3 forward-raked windows -->
+        <path class="sh-window" d="M 316,125 L 326,138 L 392,138 Z"/>
+        <rect class="sh-window" x="395" y="125" width="65" height="13"/>
+        <path class="sh-window" d="M 463,125 L 534,125 L 524,138 L 463,138 Z"/>
 
-        <!-- Afterdeck weapon — 20mm autocannon -->
-        <rect class="sh-weapon" x="745" y="208" width="18" height="10" rx="1"/>
-        <line class="sh-mast-thin" x1="754" y1="208" x2="754" y2="198"/>
+        <!-- Lower super side windows (4 discrete panes, not a long strip) -->
+        <rect class="sh-window" x="240" y="186" width="22" height="10" rx="1.5"/>
+        <rect class="sh-window" x="338" y="186" width="22" height="10" rx="1.5"/>
+        <rect class="sh-window" x="430" y="186" width="22" height="10" rx="1.5"/>
+        <rect class="sh-window" x="565" y="186" width="22" height="10" rx="1.5"/>
 
-        <!-- Water cannon mount (above lower super, port side aft) -->
-        <circle class="sh-weapon" cx="635" cy="180" r="4"/>
-        <line class="sh-mast-thin" x1="635" y1="180" x2="660" y2="172"/>
+        <!-- FUNNEL (single, aft of bridge) -->
+        <path class="sh-funnel" d="M 575,170 L 580,142 L 605,142 L 610,170 Z"/>
 
-        <!-- Catamaran twin hull hint (visible at stern through water) -->
-        <line class="sh-water" x1="60" y1="305" x2="840" y2="305"/>
+        <!-- MAST: single vertical, one radar dome, one antenna crossbar -->
+        <line class="sh-mast" x1="415" y1="118" x2="415" y2="32"/>
+        <circle class="sh-dome" cx="415" cy="58" r="10"/>
+        <line class="sh-mast-thin" x1="397" y1="85" x2="433" y2="85"/>
+        <line class="sh-mast-thin" x1="415" y1="32" x2="415" y2="22"/>
+        <circle cx="415" cy="22" r="2" fill="var(--muted)" opacity=".5"/>
+
+        <!-- Bow weapon: NCSIST 70mm rocket pod (cylindrical mount) -->
+        <rect class="sh-weapon" x="146" y="202" width="26" height="13" rx="2"/>
+
+        <!-- Aft weapon: 20mm cannon -->
+        <rect class="sh-weapon" x="732" y="202" width="22" height="13" rx="2"/>
+
+        <!-- Deck rails on fore / aft -->
+        <line class="sh-railing" x1="100" y1="215" x2="195" y2="215"/>
+        <line class="sh-railing" x1="630" y1="215" x2="800" y2="215"/>
+
+        <!-- Hull registration (subtle, on upper hull) -->
+        <text class="sh-reg" x="210" y="240" text-anchor="start" fill="var(--text-soft)">CG-601</text>
+
         <!-- Waterline -->
         <line class="sh-waterline" x1="40" y1="300" x2="860" y2="300"/>
 
@@ -350,27 +340,26 @@ $wd = $weekday_zh[(int)date('w')];
           <?php endif; ?>
         </g>
 
-        <!-- Crew dots & station labels -->
+        <!-- Crew markers: small dots only (no initials), hover for tooltip; details in roster below -->
         <?php foreach ($pos_coords as $pos_name => $c):
           $people = $pos_groups[$pos_name] ?? [];
           $n = count($people);
           $cap = $c['cap'];
         ?>
-          <!-- Station label -->
+          <!-- Station label with count -->
           <text class="sh-pos-lbl" x="<?= $cap['x'] ?>" y="<?= $cap['y'] ?>" text-anchor="<?= $cap['ta'] ?>"><?= h($pos_name) ?> · <?= h($n) ?></text>
+
           <?php if (!empty($cap['leader'])):
             $dx = $cap['x'] - $c['cx'];
             $dy = $cap['y'] - $c['cy'];
             if (abs($dx) > abs($dy)) {
-              // horizontal leader (e.g., 瞭望台)
-              $lx1 = $c['cx'] + ($dx > 0 ?  14 : -14);
+              $lx1 = $c['cx'] + ($dx > 0 ?  10 : -10);
               $ly1 = $c['cy'];
               $lx2 = $cap['x'] + ($dx > 0 ? -4 :  4);
               $ly2 = $cap['y'];
             } else {
-              // vertical leader (e.g., 通訊室, 機艙)
               $lx1 = $c['cx'];
-              $ly1 = $c['cy'] + ($dy > 0 ?  14 : -14);
+              $ly1 = $c['cy'] + ($dy > 0 ?  10 : -10);
               $lx2 = $cap['x'];
               $ly2 = $cap['y'] + ($dy > 0 ? -12 : 12);
             }
@@ -379,27 +368,58 @@ $wd = $weekday_zh[(int)date('w')];
           <?php endif; ?>
 
           <?php if ($n === 0): ?>
-            <circle class="sh-halo" cx="<?= $c['cx'] ?>" cy="<?= $c['cy'] ?>" r="13"/>
-            <circle class="sh-dot off" cx="<?= $c['cx'] ?>" cy="<?= $c['cy'] ?>" r="11"/>
+            <circle class="sh-mark off" cx="<?= $c['cx'] ?>" cy="<?= $c['cy'] ?>" r="5"/>
           <?php else: ?>
-            <?php foreach ($people as $i => $person):
-              [$cx, $cy] = dot_pos($i, $n, $c['cx'], $c['cy']);
-              $st    = $person['status'];
-              $me    = $person['is_me'] ? ' me' : '';
-              $init  = mb_substr($person['name'], 0, 1);
-              $tfill = ($st === 'on' || $st === 'done') ? '#fff' : 'var(--muted)';
-              $st_zh = $st_zh_map[$st];
+            <?php
+              // Small dots in a single horizontal cluster (centered on cx)
+              $gap = 12; // px between dot centers
+              $total_w = ($n - 1) * $gap;
+              $start_x = $c['cx'] - $total_w / 2;
+              foreach ($people as $i => $person):
+                $cx = $start_x + $i * $gap;
+                $cy = $c['cy'];
+                $st = $person['status'];
+                $me = $person['is_me'] ? ' me' : '';
+                $st_zh = $st_zh_map[$st];
             ?>
               <g class="sh-crew-marker">
                 <title><?= h($person['name']) ?> · <?= $st_zh ?></title>
-                <circle class="sh-halo" cx="<?= round($cx, 1) ?>" cy="<?= round($cy, 1) ?>" r="14"/>
-                <circle class="sh-dot <?= h($st.$me) ?>" cx="<?= round($cx, 1) ?>" cy="<?= round($cy, 1) ?>" r="12"/>
-                <text class="sh-init" x="<?= round($cx, 1) ?>" y="<?= round($cy + 4, 1) ?>" text-anchor="middle" fill="<?= $tfill ?>"><?= h($init) ?></text>
+                <circle class="sh-mark <?= h($st.$me) ?>" cx="<?= round($cx, 1) ?>" cy="<?= $cy ?>" r="5"/>
               </g>
             <?php endforeach; ?>
           <?php endif; ?>
         <?php endforeach; ?>
       </svg>
+
+      <!-- ── Station roster (independent zone showing who is at each station) ── -->
+      <div class="ship-roster">
+        <?php foreach ($pos_coords as $pos_name => $c):
+          $people = $pos_groups[$pos_name] ?? [];
+        ?>
+          <div class="srs-station">
+            <div class="srs-head">
+              <span class="srs-name"><?= h($pos_name) ?></span>
+              <span class="srs-cnt"><?= h(count($people)) ?></span>
+            </div>
+            <?php if (empty($people)): ?>
+              <div class="srs-empty">無人值勤</div>
+            <?php else: ?>
+              <div class="srs-people">
+                <?php foreach ($people as $person):
+                  $st = $person['status'];
+                  $me = $person['is_me'] ? ' me' : '';
+                  $st_zh = $st_zh_map[$st];
+                ?>
+                  <span class="srs-chip <?= h($st.$me) ?>" title="<?= h($st_zh) ?>">
+                    <span class="srs-dot"></span><?= h($person['name']) ?>
+                  </span>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </div>
+        <?php endforeach; ?>
+      </div>
+
       <div class="ship-legend">
         <span class="ship-legend-item"><span class="ship-legend-dot on"></span>值勤中</span>
         <span class="ship-legend-item"><span class="ship-legend-dot done"></span>已結束</span>
