@@ -28,7 +28,7 @@
 | **LOW** | L-3：`admin_export.php` Content-Disposition 未過濾 | 本次自動修補 |
 | OK | XSS / SQL Injection / Authorization / bcrypt | 無發現 |
 
-**字串約定**：因 git 歷史改寫，本文件中原本出現的明碼 `[REDACTED-ROOT-PWD]` / `[REDACTED-USER-PWD]` 已全部替換為 `[REDACTED-ROOT-PWD]` / `[REDACTED-USER-PWD]`。底下範例指令中的密碼欄位請替換為你實際輪換後的值。
+**字串約定**：因 git 歷史改寫，原本散見於本檔的明碼資料庫密碼已全部替換為 `[REDACTED-ROOT-PWD]` / `[REDACTED-USER-PWD]`。底下範例指令中的密碼欄位請替換為你實際輪換後的新值。
 
 ---
 
