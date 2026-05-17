@@ -195,11 +195,18 @@ header('Content-Disposition: attachment; filename="duty_'.$d.'.csv"');
 ---
 
 ## 自動修補的 commits 列表
-（將於下方各 commit 後填入）
 
-- _(pending)_ `[fix] M-1 加 CSRF token 系統`
-- _(pending)_ `[fix] M-2 登入失敗節流`
-- _(pending)_ `[fix] M-3 session cookie 硬化`
-- _(pending)_ `[fix] M-4 schema 預設密碼註解移除`
-- _(pending)_ `[fix] L-1 logout 改為 POST + CSRF`
-- _(pending)_ `[fix] L-2 / L-3 error reporting + export header`
+| Commit | 涵蓋項目 |
+|--------|----------|
+| `0bd4500` | M-1 CSRF token 系統 + 9 個 POST 端點 + sidebar logout |
+| `0bd4500` | M-2 登入失敗節流（5 次/15 分鐘） |
+| `0bd4500` | M-3 session 硬化（HttpOnly / SameSite / use_strict_mode） |
+| `0bd4500` | L-1 logout 改為 POST + CSRF + 303 redirect |
+| `a6511ad` | M-4 schema 註解明碼移除 + demo_credentials.md (gitignored) |
+| `a6511ad` | L-2 db.php APP_ENV-guarded error reporting |
+| `a6511ad` | L-3 admin_export.php 日期格式嚴格驗證 |
+
+## H-1 狀態：**未自動修補**（需你同意）
+
+git 歷史的 `.env.txt` 仍存在於 `origin/main`，現行 `docker/.env` 仍使用同組已洩漏密碼。
+看本檔上方「補救選項」決定如何處理；建議至少執行選項 A（密碼輪換）。
