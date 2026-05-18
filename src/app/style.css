@@ -1450,34 +1450,34 @@ td .btn{ vertical-align: middle; }
 /* ── Login page maritime accents (subtle, scoped to login only) ── */
 .login-particles{
   position: fixed;
-  inset: 0;                    /* top/right/bottom/left = 0 */
+  inset: 0;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 5;                  /* 在卡片之上，視覺上「穿過」介面 */
+  z-index: 0;                       /* 卡片自然覆蓋粒子（無 z-index 互鬥） */
+  animation: lp-bob 11s ease-in-out infinite alternate;   /* 整體 SVG 緩慢漂動 */
+}
+@keyframes lp-bob{
+  0%   { transform: translate(0,   0); }
+  100% { transform: translate(-14px, -10px); }
 }
 .login-particles circle{
   opacity: var(--o, 0.3);
-  animation-name: login-particle-drift;
+  animation-name: lp-twinkle;       /* 個別粒子閃爍 */
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
-@keyframes login-particle-drift{
-  0%, 100% { transform: translate(0, 0);                       opacity: var(--o, 0.3); }
-  50%      { transform: translate(var(--dx, 6px), var(--dy, -4px));
-             opacity: calc(var(--o, 0.3) * 0.4); }
+@keyframes lp-twinkle{
+  0%, 100% { opacity: var(--o, 0.3); }
+  50%      { opacity: calc(var(--o, 0.3) * 0.15); }
 }
 @media (prefers-reduced-motion: reduce){
+  .login-particles,
   .login-particles circle{ animation: none; }
 }
 .login-page .card{
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.94);   /* 輕微透明讓背景粒子隱約透出 */
-  backdrop-filter: blur(2px);
+  position: relative;                /* 自然在粒子之上，純白覆蓋無干擾 */
 }
 .login-scope{
   margin-top: 18px;
