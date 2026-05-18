@@ -40,6 +40,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $_SESSION['today_zone'] = $z;
       $_SESSION['today_sea']  = $s;
       $msg = $aff>0 ? "已套用今日海域/海象至 {$aff} 筆紀錄" : "今日尚無人值勤，海象條件已暫存，待人員打卡後將自動套用";
+    } elseif ($act === 'seed_demo' && is_admin()) {
+      // 一鍵示範資料：清掉今日所有打卡與示範用請假，重新分配 on/done/leave/off 四種狀態
+      $today_zone = null; $today_sea = null;
+      $look = $pdo->prepare("SELECT duty_zone, sea_state FROM attendance WHERE work_date=? AND (duty_zone IS NOT NULL OR sea_state IS NOT NULL) LIMIT 1");
+      $look->execute([$d]);
+      if ($r = $look->fetch()) { $today_zone = $r['duty_zone']; $today_sea = $r['sea_state']; }
+      if (!$today_zone) $today_zone = $_SESSION['today_zone'] ?? null;
+      if (!$today_sea)  $today_sea  = $_SESSION['today_sea']  ?? null;
+
+      $pdo->prepare("DELETE FROM attendance WHERE work_date=?")->execute([$d]);
+      $pdo->prepare("DELETE FROM leaves WHERE date_from=? AND date_to=? AND reason='錄影示範用'")->execute([$d, $d]);
+
+      $all = $pdo->query("SELECT user_id FROM users WHERE is_active=1")->fetchAll(PDO::FETCH_COLUMN);
+      $pool = array_values(array_filter($all, fn($u) => (int)$u !== $uid));
+      shuffle($pool);
+      $n = count($pool);
+
+      $on_cnt    = max(1, (int)round($n * 0.30));
+      $done_cnt  = max(1, (int)round($n * 0.25));
+      $leave_cnt = max(1, (int)round($n * 0.15));
+      // 其餘自動成為 off
+
+      $on_users    = array_slice($pool, 0,                       $on_cnt);
+      $done_users  = array_slice($pool, $on_cnt,                 $done_cnt);
+      $leave_users = array_slice($pool, $on_cnt + $done_cnt,     $leave_cnt);
+
+      $ci = $d . ' 08:30:00';
+      $co = $d . ' 17:30:00';
+
+      $ins_a = $pdo->prepare("INSERT INTO attendance(user_id, work_date, check_in, check_out, status, duty_zone, sea_state) VALUES(?,?,?,?,?,?,?)");
+      foreach ($on_users as $u)   { $ins_a->execute([$u, $d, $ci, null, 'open', $today_zone, $today_sea]); }
+      foreach ($done_users as $u) { $ins_a->execute([$u, $d, $ci, $co,   'done', $today_zone, $today_sea]); }
+
+      $ins_l = $pdo->prepare("INSERT INTO leaves(user_id, leave_type, date_from, date_to, reason, status) VALUES(?,?,?,?,?,'approved')");
+      foreach ($leave_users as $u) { $ins_l->execute([$u, 'personal', $d, $d, '錄影示範用']); }
+
+      $off_cnt = $n - $on_cnt - $done_cnt - $leave_cnt;
+      $msg = "示範資料已套用：值勤中 {$on_cnt} · 已結束 {$done_cnt} · 請假 {$leave_cnt} · 未值勤 {$off_cnt}（你自己不在內，可現場打卡示範）";
     } else {
       $stmt = $pdo->prepare("SELECT * FROM attendance WHERE user_id=? AND work_date=? FOR UPDATE");
       $stmt->execute([$uid, $d]);
@@ -272,15 +310,14 @@ $wd = $weekday_zh[(int)date('w')];
              人物以小圓點呈現，hover 顯示姓名；詳細名單於下方獨立區塊。
              ═══════════════════════════════════════════════════════════════ -->
 
-        <!-- HULL: low freeboard, angular wave-piercing bow, vertical stern -->
+        <!-- HULL: curved keel (半月形), raked wave-piercing bow, transom stern -->
         <path class="sh-hull" d="
-          M 55,300
-          L 48,278
-          L 88,250
+          M 50,255
           L 195,215
           L 800,215
-          L 830,235
-          L 830,300
+          L 830,225
+          Q 822,320 460,340
+          Q 95,320 50,255
           Z"/>
 
         <!-- Thin subtle accent stripe (海巡 identification — single line, no fill wedge) -->
@@ -451,6 +488,13 @@ $wd = $weekday_zh[(int)date('w')];
           </div>
           <button class="btn small primary" type="submit" name="act" value="set_cond"><?= icon_svg('check') ?>套用今日</button>
           <span class="cond-hint">套用後會更新今日所有值勤紀錄之海域/海象欄位。</span>
+        </form>
+
+        <form method="post" class="ship-cond-form" onsubmit="return confirm('將清除今日值勤紀錄並重新建立「值勤中／已結束／請假／未值勤」四種狀態的示範資料，確定？');">
+          <?= csrf_input() ?>
+          <input type="hidden" name="act" value="seed_demo">
+          <button class="btn small" type="submit"><?= icon_svg('clock') ?>套用示範資料（四種狀態）</button>
+          <span class="cond-hint">為錄影示範一鍵建立四種值勤狀態，你自己不會被加入，可現場手動打卡。</span>
         </form>
       <?php endif; ?>
     </div>
