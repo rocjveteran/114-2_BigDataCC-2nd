@@ -308,7 +308,20 @@ button.primary:hover,
 .gr-check-radio input[type="checkbox"],
 .gr-check-radio input[type="radio"] { accent-color: #c96442; }
 
-/* （船艦下拉已改用 CheckboxGroup，沿用 .gr-check-radio 既有樣式即可，無需額外覆蓋） */
+/* 船艦勾選旁的全選 / 清空 button row */
+.vessel-actions { gap: 6px !important; margin-top: -6px !important; margin-bottom: 4px !important; }
+.vessel-actions button {
+  flex: 0 0 auto !important;
+  background: #ffffff !important;
+  color: #36352f !important;
+  border: 1px solid #d2cec1 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  min-width: 0 !important;
+}
+.vessel-actions button:hover { background: #f4f2eb !important; border-color: #c96442 !important; }
 
 /* ── 滾動條（編輯感） ── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -367,6 +380,9 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
                     label="船艦（全選等同無篩選）",
                     elem_id="vessel-select",
                 )
+                with gr.Row(elem_classes="vessel-actions"):
+                    vessel_all_btn = gr.Button("全選", size="sm", variant="secondary")
+                    vessel_clr_btn = gr.Button("清空", size="sm", variant="secondary")
                 run_btn = gr.Button("執行分析", variant="primary", size="lg")
                 status_txt = gr.Textbox(
                     label="執行狀態", interactive=False, value="尚未執行",
@@ -408,6 +424,8 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
         inputs=[date_from_input, date_to_input, zone_input, vessel_input],
         outputs=charts + [status_txt],
     )
+    vessel_all_btn.click(lambda: opts["vessels"], outputs=vessel_input)
+    vessel_clr_btn.click(lambda: [], outputs=vessel_input)
 
 if __name__ == "__main__":
     demo.launch(

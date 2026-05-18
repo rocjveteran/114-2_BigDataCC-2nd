@@ -88,6 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="wrap narrow" style="padding-top:48px;">
     <?php page_header('登入系統', '請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
 
+    <svg class="login-wave" viewBox="0 0 800 18" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M 0 10 q 25 -7 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0"
+            fill="none" stroke="var(--primary)" stroke-width="1.2" opacity="0.4"/>
+    </svg>
+
     <div class="card">
       <?php if ($error): ?>
         <p class="msg err"><?= h($error) ?></p>
@@ -105,6 +110,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <button class="btn primary" type="submit" style="flex:1;" <?= $is_locked?'disabled':'' ?>><?= icon_svg('login') ?>登入</button>
         </div>
       </form>
+
+      <div class="login-scope">
+        <span class="scope-dot"></span>
+        勤務打卡 · 請假審核 · 艦上人員配置 · 海象連動 · 統計分析
+      </div>
     </div>
   </div>
   <?php page_footer(); ?>
