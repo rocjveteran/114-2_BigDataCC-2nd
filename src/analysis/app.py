@@ -308,6 +308,48 @@ button.primary:hover,
 .gr-check-radio input[type="checkbox"],
 .gr-check-radio input[type="radio"] { accent-color: #c96442; }
 
+/* ── Multiselect 船艦下拉（修正高度過低、chip 不易見） ── */
+.filter-panel .wrap,
+.filter-panel .wrap-inner,
+.filter-panel .secondary-wrap {
+  min-height: 46px !important;
+  padding: 7px 10px !important;
+  border-radius: 7px !important;
+  border: 1px solid #e8e5dc !important;
+  background: #ffffff !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+.filter-panel .wrap-inner input,
+.filter-panel input[role="combobox"] {
+  font-size: 14px !important;
+  min-height: 28px !important;
+  background: transparent !important;
+}
+.filter-panel .token {
+  background: rgba(201, 100, 66, 0.10) !important;
+  color: #c96442 !important;
+  border: 1px solid rgba(201, 100, 66, 0.40) !important;
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  margin: 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.filter-panel .token .token-remove,
+.filter-panel .token-remove {
+  color: #c96442 !important;
+  opacity: 0.7 !important;
+  cursor: pointer !important;
+}
+.filter-panel .token .token-remove:hover { opacity: 1 !important; }
+/* 下拉箭頭與清除鈕區 */
+.filter-panel .icon-wrap,
+.filter-panel .remove-all { opacity: 0.7 !important; }
+
 /* ── 滾動條（編輯感） ── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #faf9f5; }
