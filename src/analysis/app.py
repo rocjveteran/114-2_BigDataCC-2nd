@@ -308,18 +308,7 @@ button.primary:hover,
 .gr-check-radio input[type="checkbox"],
 .gr-check-radio input[type="radio"] { accent-color: #c96442; }
 
-/* ── Multiselect 船艦下拉（最簡化，只動 chip 與選單項，不動容器） ── */
-#vessel-select [class*="token"] {
-  background: #ffffff !important;
-  color: #141413 !important;
-  border: 1px solid #c96442 !important;
-  border-radius: 999px !important;
-  padding: 2px 10px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-}
-#vessel-select [role="option"] { color: #141413 !important; }
-#vessel-select [role="option"]:hover { background: #f4f2eb !important; }
+/* （船艦下拉已改用 CheckboxGroup，沿用 .gr-check-radio 既有樣式即可，無需額外覆蓋） */
 
 /* ── 滾動條（編輯感） ── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -372,11 +361,10 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
                     value=ZONE_OPTIONS,
                     label="值勤海域（全選等同無篩選）",
                 )
-                vessel_input = gr.Dropdown(
-                    choices=["（全部）"] + opts["vessels"],
-                    value=["（全部）"],
-                    label="船艦（可多選）",
-                    multiselect=True,
+                vessel_input = gr.CheckboxGroup(
+                    choices=opts["vessels"],
+                    value=opts["vessels"],
+                    label="船艦（全選等同無篩選）",
                     elem_id="vessel-select",
                 )
                 run_btn = gr.Button("執行分析", variant="primary", size="lg")
@@ -403,7 +391,7 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
     gr.HTML(FOOTER_HTML)
 
     def on_run(date_from, date_to, zones, vessels):
-        v_filter = [v for v in vessels if v != "（全部）"] or None
+        v_filter = vessels if vessels and set(vessels) != set(opts["vessels"]) else None
         z_filter = zones if zones and set(zones) != set(ZONE_OPTIONS) else None
         try:
             paths = generate_charts(OUTPUT_DIR,
