@@ -310,14 +310,14 @@ $wd = $weekday_zh[(int)date('w')];
              人物以小圓點呈現，hover 顯示姓名；詳細名單於下方獨立區塊。
              ═══════════════════════════════════════════════════════════════ -->
 
-        <!-- HULL: curved keel (半月形), raked wave-piercing bow, transom stern -->
+        <!-- HULL: inverted trapezoid (上寬下窄), flat keel, transom stern -->
         <path class="sh-hull" d="
-          M 50,255
-          L 195,215
+          M 50,215
           L 800,215
-          L 830,225
-          Q 822,320 460,340
-          Q 95,320 50,255
+          L 825,225
+          L 790,305
+          L 120,305
+          L 50,215
           Z"/>
 
         <!-- Thin subtle accent stripe (海巡 identification — single line, no fill wedge) -->
