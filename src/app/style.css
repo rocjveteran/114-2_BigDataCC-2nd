@@ -29,9 +29,9 @@
        更淡霧灰：        #8A8B82 / #777870 / #5F605A
        帶綠苔調：        #6F7568 / #5D6357 / #4A5046
      ════════════════════════════════════════════════════════════════════════ */
-  --primary:        #49483d;
-  --primary2:       #49483d;
-  --primary_strong: #49483d;
+  --primary:        #46463f;
+  --primary2:       #46463f;
+  --primary_strong: #46463f;
   --primary_soft:   rgba(110,111,102,.10);
   --primary_line:   rgba(110,111,102,.30);
   --primary_ghost:  rgba(110,111,102,.04);
@@ -1454,30 +1454,31 @@ td .btn{ vertical-align: middle; }
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 0;                       /* 卡片自然覆蓋粒子（無 z-index 互鬥） */
-  animation: lp-bob 11s ease-in-out infinite alternate;   /* 整體 SVG 緩慢漂動 */
-}
-@keyframes lp-bob{
-  0%   { transform: translate(0,   0); }
-  100% { transform: translate(-14px, -10px); }
+  z-index: 0;                       /* 卡片自然覆蓋粒子 */
 }
 .login-particles circle{
   opacity: var(--o, 0.3);
-  animation-name: lp-twinkle;       /* 個別粒子閃爍 */
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  will-change: opacity;
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, opacity;
+  /* 兩條動畫由 inline style 提供 duration + delay；name/timing/iteration 在此設 */
 }
+/* 波浪：每顆粒子上下擺動，inline animation-delay 依 x 座標推遲，
+   集體看起來像波浪由左向右流動 */
+@keyframes lp-wave{
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-11px); }
+}
+/* 閃爍：每顆獨立呼吸 */
 @keyframes lp-twinkle{
   0%, 100% { opacity: var(--o, 0.3); }
-  50%      { opacity: calc(var(--o, 0.3) * 0.15); }
+  50%      { opacity: calc(var(--o, 0.3) * 0.18); }
 }
 @media (prefers-reduced-motion: reduce){
-  .login-particles,
-  .login-particles circle{ animation: none; }
+  .login-particles circle{ animation: none !important; }
 }
 .login-page .card{
-  position: relative;                /* 自然在粒子之上，純白覆蓋無干擾 */
+  position: relative;                /* 純白覆蓋粒子，輸入區無干擾 */
 }
 .login-scope{
   margin-top: 18px;

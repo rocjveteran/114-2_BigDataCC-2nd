@@ -85,25 +85,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="login-page">
   <?php nav_top(); ?>
 
-  <!-- 全螢幕固定背景粒子波（Spyder-inspired）— 沿正弦波集中，卡片直接覆蓋 -->
+  <!-- 全螢幕固定粒子波 — 振幅減半 / 波浪由左向右傳播 -->
   <svg class="login-particles" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <?php
       mt_srand(0x5A4B);
-      $count = 460;
+      $count    = 460;
+      $wave_dur = 2.4;        // 一個完整波浪週期 2.4 秒 — 比之前快很多
       for ($i = 0; $i < $count; $i++) {
         $x = mt_rand(0, 1920);
-        // 主波形：amplitude 200 / 1.5 個週期橫跨整個螢幕；jitter ±55 保持「粒子」感
-        $wave_y = 520 + 200 * sin($x * 0.0048);
-        $jitter = mt_rand(-55, 55);
+        // 振幅 100（前一版 200，過大），baseline 540 居中
+        $wave_y = 540 + 100 * sin($x * 0.0048);
+        $jitter = mt_rand(-38, 38);
         $y = max(30, min(1050, (int)($wave_y + $jitter)));
-        $r  = mt_rand(8, 24) / 10;          // 0.8 ~ 2.4 px
-        $op = mt_rand(18, 55) / 100;        // 0.18 ~ 0.55 — 略亮，閃爍才看得出來
-        $delay = mt_rand(0, 80) / 10;       // 0 ~ 8s
-        $dur   = mt_rand(28, 70) / 10;      // 2.8 ~ 7s — 比之前快一倍，閃爍頻率明顯
+        $r  = mt_rand(8, 24) / 10;
+        $op = mt_rand(22, 58) / 100;
+        // 波浪傳播：依 x 座標推遲動畫起始，視覺上波浪由左向右流動
+        $wave_delay = -($x / 1920.0) * $wave_dur;
+        // 個別閃爍（獨立隨機）
+        $tw_dur   = mt_rand(28, 60) / 10;
+        $tw_delay = mt_rand(0, 40) / 10;
         echo sprintf(
           '<circle cx="%d" cy="%d" r="%.1f" fill="var(--accent)" '
-          .'style="--o:%.2f;animation-delay:%.1fs;animation-duration:%.1fs"/>',
-          $x, $y, $r, $op, $delay, $dur
+          .'style="--o:%.2f;'
+          .'animation:lp-wave %.1fs ease-in-out %.2fs infinite,'
+          .'lp-twinkle %.1fs ease-in-out %.1fs infinite"/>',
+          $x, $y, $r, $op,
+          $wave_dur, $wave_delay,
+          $tw_dur, $tw_delay
         );
       }
     ?>
