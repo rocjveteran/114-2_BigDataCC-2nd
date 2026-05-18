@@ -82,28 +82,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>登入 · 海事勤務</title>
   <?php style_link(); ?>
 </head>
-<body>
+<body class="login-page">
   <?php nav_top(); ?>
 
-  <div class="wrap narrow" style="padding-top:48px;">
-    <?php page_header('登入系統', '請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
+  <!-- 全螢幕固定背景粒子場（Spyder-inspired）— 跨整個 viewport，穿過登入卡片 -->
+  <svg class="login-particles" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <?php
+      mt_srand(0x5A4B);
+      for ($i = 0; $i < 520; $i++) {
+        $x = mt_rand(0, 1920);
+        $y = mt_rand(0, 1080);
+        $r  = mt_rand(7, 22) / 10;          // 0.7 ~ 2.2 px
+        $op = mt_rand(10, 42) / 100;        // 0.10 ~ 0.42
+        $delay = mt_rand(0, 180) / 10;      // 0 ~ 18s 隨機 delay 避免同步閃爍
+        $dur   = mt_rand(70, 180) / 10;     // 7 ~ 18s 隨機週期
+        $dx = mt_rand(-8, 8);                // 飄移方向 ±8px
+        $dy = mt_rand(-6, 6);
+        echo sprintf(
+          '<circle cx="%d" cy="%d" r="%.1f" fill="var(--accent)" '
+          .'style="--o:%.2f;--dx:%dpx;--dy:%dpx;animation-delay:%.1fs;animation-duration:%.1fs"/>',
+          $x, $y, $r, $op, $dx, $dy, $delay, $dur
+        );
+      }
+    ?>
+  </svg>
 
-    <svg class="login-particles" viewBox="0 0 800 80" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <?php
-        // 散落粒子波（Spyder-inspired）— 固定 seed 確保重整時位置一致，不會跳動
-        mt_srand(0x5A4B);
-        for ($i = 0; $i < 140; $i++) {
-          $x = mt_rand(0, 800);
-          // 主波形 baseline + 隨機 jitter，形成「粒子組成的波帶」
-          $wave_y = 40 + 14 * sin($x * 0.022);
-          $jitter = mt_rand(-26, 26);
-          $y = max(3, min(77, (int)($wave_y + $jitter)));
-          $r  = mt_rand(7, 22) / 10;       // 0.7 ~ 2.2 px
-          $op = mt_rand(14, 50) / 100;     // 0.14 ~ 0.50
-          echo sprintf('<circle cx="%d" cy="%d" r="%.1f" fill="var(--accent)" opacity="%.2f"/>', $x, $y, $r, $op);
-        }
-      ?>
-    </svg>
+  <div class="wrap narrow" style="padding-top:24px;">
+    <?php page_header('登入系統', '請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
 
     <div class="card">
       <?php if ($error): ?>
