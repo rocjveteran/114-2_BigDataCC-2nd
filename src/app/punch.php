@@ -320,8 +320,8 @@ $wd = $weekday_zh[(int)date('w')];
           L 50,215
           Z"/>
 
-        <!-- Thin subtle accent stripe (海巡 identification — single line, no fill wedge) -->
-        <line class="sh-stripe-line" x1="110" y1="260" x2="790" y2="245"/>
+        <!-- 海巡 identification: diagonal accent stripe near bow（海巡署統一標識） -->
+        <polygon class="sh-stripe-band" points="185,220 240,220 275,263 220,263"/>
 
         <!-- LOWER SUPERSTRUCTURE -->
         <path class="sh-struct" d="M 195,215 L 210,170 L 615,170 L 630,215 Z"/>
@@ -340,8 +340,9 @@ $wd = $weekday_zh[(int)date('w')];
         <rect class="sh-window" x="430" y="186" width="22" height="10" rx="1.5"/>
         <rect class="sh-window" x="565" y="186" width="22" height="10" rx="1.5"/>
 
-        <!-- FUNNEL (single, aft of bridge) -->
+        <!-- FUNNEL (single, aft of bridge) + small cap detail at top -->
         <path class="sh-funnel" d="M 575,170 L 580,142 L 605,142 L 610,170 Z"/>
+        <line class="sh-funnel-cap" x1="581" y1="140" x2="604" y2="140"/>
 
         <!-- MAST: single vertical, one radar dome, one antenna crossbar -->
         <line class="sh-mast" x1="415" y1="118" x2="415" y2="32"/>
@@ -360,11 +361,19 @@ $wd = $weekday_zh[(int)date('w')];
         <line class="sh-railing" x1="100" y1="215" x2="195" y2="215"/>
         <line class="sh-railing" x1="630" y1="215" x2="800" y2="215"/>
 
-        <!-- Hull registration (subtle, on upper hull) -->
-        <text class="sh-reg" x="210" y="240" text-anchor="start" fill="var(--text-soft)">CG-601</text>
+        <!-- Hull registration: CG-601 置中於海巡 stripe（白字符合真實塗裝） -->
+        <text class="sh-reg" x="230" y="246" text-anchor="middle">CG-601</text>
 
-        <!-- Waterline -->
+        <!-- Waterline (主水線) + 細微反射線 -->
         <line class="sh-waterline" x1="40" y1="300" x2="860" y2="300"/>
+        <line class="sh-waterline-soft" x1="60" y1="304" x2="840" y2="304"/>
+
+        <!-- Bow cutwater foam: 船艏破浪激起的白色浪花 -->
+        <path class="sh-foam" d="M 6,299 Q 22,294 40,301 M 14,304 Q 28,300 46,306" fill="none"/>
+
+        <!-- Stern wake: 船尾尾流（虛線拖痕） -->
+        <line class="sh-wake" x1="836" y1="301" x2="866" y2="301"/>
+        <line class="sh-wake" x1="846" y1="307" x2="868" y2="307"/>
 
         <!-- Sea waves (amplitude reflects today's sea state) -->
         <g class="sh-wave-group <?= h($sea_anim) ?>">

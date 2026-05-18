@@ -805,7 +805,8 @@ td .btn{ vertical-align: middle; }
 .footer-meta{ letter-spacing: 0; }
 
 /* ── Ship crew visualization ─────────────────────────────── */
-.ship-card{ overflow: visible; }
+.ship-card{ overflow: visible; padding: 22px 14px; }
+.ship-card .card-head{ padding: 0 14px; }
 
 .ship-svg{
   width: 100%;
@@ -886,6 +887,34 @@ td .btn{ vertical-align: middle; }
 .sh-stripe{
   fill: var(--primary);
   opacity: .82;
+}
+.sh-stripe-band{
+  fill: var(--accent);              /* 海巡 livery 橘色 */
+  opacity: .75;
+}
+.sh-funnel-cap{
+  stroke: var(--text-soft);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.sh-waterline-soft{
+  stroke: var(--info);
+  stroke-width: 0.9;
+  opacity: .18;
+}
+.sh-foam{
+  stroke: var(--info);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  fill: none;
+  opacity: .55;
+}
+.sh-wake{
+  stroke: var(--info);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-dasharray: 4 4;
+  opacity: .38;
 }
 .sh-reg{
   font-family: var(--font-sans);
