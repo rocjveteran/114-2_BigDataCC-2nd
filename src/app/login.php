@@ -88,9 +88,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="wrap narrow" style="padding-top:48px;">
     <?php page_header('登入系統', '請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
 
-    <svg class="login-wave" viewBox="0 0 800 18" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M 0 10 q 25 -7 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0"
-            fill="none" stroke="var(--primary)" stroke-width="1.2" opacity="0.4"/>
+    <svg class="login-particles" viewBox="0 0 800 80" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <?php
+        // 散落粒子波（Spyder-inspired）— 固定 seed 確保重整時位置一致，不會跳動
+        mt_srand(0x5A4B);
+        for ($i = 0; $i < 140; $i++) {
+          $x = mt_rand(0, 800);
+          // 主波形 baseline + 隨機 jitter，形成「粒子組成的波帶」
+          $wave_y = 40 + 14 * sin($x * 0.022);
+          $jitter = mt_rand(-26, 26);
+          $y = max(3, min(77, (int)($wave_y + $jitter)));
+          $r  = mt_rand(7, 22) / 10;       // 0.7 ~ 2.2 px
+          $op = mt_rand(14, 50) / 100;     // 0.14 ~ 0.50
+          echo sprintf('<circle cx="%d" cy="%d" r="%.1f" fill="var(--accent)" opacity="%.2f"/>', $x, $y, $r, $op);
+        }
+      ?>
     </svg>
 
     <div class="card">

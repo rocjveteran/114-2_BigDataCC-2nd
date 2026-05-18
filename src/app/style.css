@@ -1448,11 +1448,12 @@ td .btn{ vertical-align: middle; }
 .ship-cond-form .cond-hint{ flex:1; font-size:11.5px; color: var(--muted); align-self:center; margin-top:18px; }
 
 /* ── Login page maritime accents (subtle, scoped to login only) ── */
-.login-wave{
+.login-particles{
   display: block;
   width: 100%;
-  height: 18px;
-  margin: 18px 0 6px;
+  height: 80px;
+  margin: 12px 0 -8px;
+  pointer-events: none;
 }
 .login-scope{
   margin-top: 18px;
