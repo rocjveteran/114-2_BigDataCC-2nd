@@ -16,13 +16,25 @@
   --brand2: #2a2a2a;
   --brand_soft: #efeae1;
 
-  /* primary — RAL 7013 (Brown grey / 灰綠) for structure & navigation */
-  --primary:        #4E4D44;
-  --primary2:       #3D3C35;
-  --primary_strong: #2F2E29;
-  --primary_soft:   rgba(78,77,68,.10);
-  --primary_line:   rgba(78,77,68,.30);
-  --primary_ghost:  rgba(78,77,68,.04);
+  /* ════════════════════════════════════════════════════════════════════════
+     primary — 灰綠調（sidebar / topbar / 強調邊框）
+     ────────────────────────────────────────────────────────────────────────
+     手動調整方法：直接改下面 3 個 hex 值；越靠 #2x 越深、越靠 #8x 越淡。
+       --primary_strong  → sidebar/topbar 主背景（最常見處）
+       --primary2        → sidebar 次層、active 高亮
+       --primary         → 內文標籤、avatar、邊框點綴
+     參考色：
+       原 RAL 7013 暗：  #4E4D44 / #3D3C35 / #2F2E29  （前一版，偏黑）
+       中性綠灰（現用）：#6E6F66 / #5C5D54 / #494A42  （明顯淡）
+       更淡霧灰：        #8A8B82 / #777870 / #5F605A
+       帶綠苔調：        #6F7568 / #5D6357 / #4A5046
+     ════════════════════════════════════════════════════════════════════════ */
+  --primary:        #6E6F66;
+  --primary2:       #5C5D54;
+  --primary_strong: #494A42;
+  --primary_soft:   rgba(110,111,102,.10);
+  --primary_line:   rgba(110,111,102,.30);
+  --primary_ghost:  rgba(110,111,102,.04);
 
   /* accent — Claude orange, reserved for action highlights */
   --accent:  #c96442;

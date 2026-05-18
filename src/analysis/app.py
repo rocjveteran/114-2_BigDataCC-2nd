@@ -308,63 +308,18 @@ button.primary:hover,
 .gr-check-radio input[type="checkbox"],
 .gr-check-radio input[type="radio"] { accent-color: #c96442; }
 
-/* ── Multiselect 船艦下拉（精準鎖定 elem_id，避免影響 textbox） ── */
-#vessel-select .wrap,
-#vessel-select .wrap-inner,
-#vessel-select .secondary-wrap {
-  background: #f4f2eb !important;            /* 淺灰底，白色 chip 也看得見 */
-  border: 1px solid #d2cec1 !important;
-  border-radius: 7px !important;
-  min-height: 46px !important;
-  padding: 6px 8px !important;
-  flex-wrap: wrap !important;
-  gap: 5px !important;
-}
-#vessel-select * { color: #141413 !important; }   /* 強制深色文字 */
-#vessel-select input,
-#vessel-select input[role="combobox"] {
-  background: transparent !important;
-  font-size: 14px !important;
-  min-height: 28px !important;
-}
-/* 已選 chip — 同時支援可能的多個 Gradio class 名 */
-#vessel-select .token,
-#vessel-select [class*="token"],
-#vessel-select .tag,
-#vessel-select [class*="tag"] {
+/* ── Multiselect 船艦下拉（最簡化，只動 chip 與選單項，不動容器） ── */
+#vessel-select [class*="token"] {
   background: #ffffff !important;
   color: #141413 !important;
   border: 1px solid #c96442 !important;
   border-radius: 999px !important;
-  padding: 3px 10px !important;
+  padding: 2px 10px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  margin: 2px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
 }
-#vessel-select .token-remove,
-#vessel-select [class*="token-remove"] {
-  color: #c96442 !important;
-  cursor: pointer !important;
-}
-/* 下拉選單浮出層 */
-#vessel-select ul,
-#vessel-select [role="listbox"] {
-  background: #ffffff !important;
-  border: 1px solid #d2cec1 !important;
-  color: #141413 !important;
-}
-#vessel-select li,
-#vessel-select [role="option"] {
-  color: #141413 !important;
-  padding: 8px 12px !important;
-}
-#vessel-select li:hover,
-#vessel-select [role="option"]:hover {
-  background: #f4f2eb !important;
-}
+#vessel-select [role="option"] { color: #141413 !important; }
+#vessel-select [role="option"]:hover { background: #f4f2eb !important; }
 
 /* ── 滾動條（編輯感） ── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
