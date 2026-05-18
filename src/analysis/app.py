@@ -308,30 +308,35 @@ button.primary:hover,
 .gr-check-radio input[type="checkbox"],
 .gr-check-radio input[type="radio"] { accent-color: #c96442; }
 
-/* ── Multiselect 船艦下拉（修正高度過低、chip 不易見） ── */
-.filter-panel .wrap,
-.filter-panel .wrap-inner,
-.filter-panel .secondary-wrap {
-  min-height: 46px !important;
-  padding: 7px 10px !important;
+/* ── Multiselect 船艦下拉（精準鎖定 elem_id，避免影響 textbox） ── */
+#vessel-select .wrap,
+#vessel-select .wrap-inner,
+#vessel-select .secondary-wrap {
+  background: #f4f2eb !important;            /* 淺灰底，白色 chip 也看得見 */
+  border: 1px solid #d2cec1 !important;
   border-radius: 7px !important;
-  border: 1px solid #e8e5dc !important;
-  background: #ffffff !important;
+  min-height: 46px !important;
+  padding: 6px 8px !important;
   flex-wrap: wrap !important;
-  gap: 6px !important;
+  gap: 5px !important;
 }
-.filter-panel .wrap-inner input,
-.filter-panel input[role="combobox"] {
+#vessel-select * { color: #141413 !important; }   /* 強制深色文字 */
+#vessel-select input,
+#vessel-select input[role="combobox"] {
+  background: transparent !important;
   font-size: 14px !important;
   min-height: 28px !important;
-  background: transparent !important;
 }
-.filter-panel .token {
-  background: rgba(201, 100, 66, 0.10) !important;
-  color: #c96442 !important;
-  border: 1px solid rgba(201, 100, 66, 0.40) !important;
+/* 已選 chip — 同時支援可能的多個 Gradio class 名 */
+#vessel-select .token,
+#vessel-select [class*="token"],
+#vessel-select .tag,
+#vessel-select [class*="tag"] {
+  background: #ffffff !important;
+  color: #141413 !important;
+  border: 1px solid #c96442 !important;
   border-radius: 999px !important;
-  padding: 4px 10px !important;
+  padding: 3px 10px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
   margin: 2px !important;
@@ -339,16 +344,27 @@ button.primary:hover,
   align-items: center !important;
   gap: 4px !important;
 }
-.filter-panel .token .token-remove,
-.filter-panel .token-remove {
+#vessel-select .token-remove,
+#vessel-select [class*="token-remove"] {
   color: #c96442 !important;
-  opacity: 0.7 !important;
   cursor: pointer !important;
 }
-.filter-panel .token .token-remove:hover { opacity: 1 !important; }
-/* 下拉箭頭與清除鈕區 */
-.filter-panel .icon-wrap,
-.filter-panel .remove-all { opacity: 0.7 !important; }
+/* 下拉選單浮出層 */
+#vessel-select ul,
+#vessel-select [role="listbox"] {
+  background: #ffffff !important;
+  border: 1px solid #d2cec1 !important;
+  color: #141413 !important;
+}
+#vessel-select li,
+#vessel-select [role="option"] {
+  color: #141413 !important;
+  padding: 8px 12px !important;
+}
+#vessel-select li:hover,
+#vessel-select [role="option"]:hover {
+  background: #f4f2eb !important;
+}
 
 /* ── 滾動條（編輯感） ── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -406,6 +422,7 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
                     value=["（全部）"],
                     label="船艦（可多選）",
                     multiselect=True,
+                    elem_id="vessel-select",
                 )
                 run_btn = gr.Button("執行分析", variant="primary", size="lg")
                 status_txt = gr.Textbox(
