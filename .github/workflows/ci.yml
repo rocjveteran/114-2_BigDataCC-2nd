@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate project structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose syntax
+        run: |
+          cd docker
+          cp ../.env.example .env 2>/dev/null || \
+            printf 'DB_ROOT_PASS=ci\nDB_NAME=maritime_duty\nDB_USER=maritime_user\nDB_PASS=ci\nCWA_API_KEY=\n' > .env
+          docker compose config --quiet
+          echo "docker-compose.yml syntax OK"
+
+      - name: Python syntax check
+        run: |
+          python3 -m py_compile src/analysis/analysis.py
+          python3 -m py_compile src/analysis/app.py
+          python3 -m py_compile src/analysis/generate_mock_data.py
+          echo "Python syntax OK"
+
+      - name: PHP syntax check
+        run: |
+          sudo apt-get install -y --quiet php-cli 2>/dev/null | tail -1
+          find src/app -name "*.php" -exec php -l {} \; | grep -v "No syntax errors"
+          echo "PHP syntax OK"
+
+      - name: Check required files exist
+        run: |
+          files=(
+            "docker/docker-compose.yml"
+            "docker/web/Dockerfile"
+            "docker/analysis/Dockerfile"
+            "src/app/schema.sql"
+            "src/app/db.php"
+            "src/analysis/analysis.py"
+            "src/analysis/app.py"
+            "src/analysis/generate_mock_data.py"
+            "notebooks/eda.ipynb"
+            "docs/report.md"
+            "README.md"
+          )
+          for f in "${files[@]}"; do
+            [ -f "$f" ] && echo "  ✔ $f" || { echo "  ✗ MISSING: $f"; exit 1; }
+          done
+          echo "All required files present"
