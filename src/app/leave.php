@@ -57,16 +57,6 @@ $stmt->execute([$uid]);
 $rows = $stmt->fetchAll();
 $count = count($rows);
 
-function type_name($t){
-  if ($t==='personal') return '事假';
-  if ($t==='sick') return '病假';
-  return '其他';
-}
-function st_badge($st){
-  if ($st==='approved') return badge('已核准','ok');
-  if ($st==='rejected') return badge('已拒絕','bad');
-  return badge('待審核','warn');
-}
 ?>
 <!doctype html>
 <html lang="zh-TW">

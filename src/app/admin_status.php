@@ -12,6 +12,7 @@ function can_manage_row($me_role, $target_role){
 }
 
 $d = $_POST['d'] ?? ($_GET['d'] ?? date('Y-m-d'));
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$d)) $d = date('Y-m-d');
 $q = trim($_GET['q'] ?? '');
 $me_role = $_SESSION['role'] ?? 'employee';
 
@@ -56,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->commit();
       } catch (Exception $e) {
         $pdo->rollBack();
+        error_log('[admin_status] attendance update failed: ' . $e->getMessage());
       }
     }
   }

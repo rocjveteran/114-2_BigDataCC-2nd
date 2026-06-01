@@ -52,6 +52,20 @@ function badge($txt, $type){
   return '<span class="badge '.$type.'">'.h($txt).'</span>';
 }
 
+function boss_count($pdo){
+  return (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='boss' AND is_active=1")->fetchColumn();
+}
+function type_name($t){
+  if ($t==='personal') return '事假';
+  if ($t==='sick') return '病假';
+  return '其他';
+}
+function st_badge($st){
+  if ($st==='approved') return badge('已核准','ok');
+  if ($st==='rejected') return badge('已拒絕','bad');
+  return badge('待審核','warn');
+}
+
 function avatar_initial($name, $size = 32, $variant = 'muted'){
   $init = $name ? mb_substr($name, 0, 1) : '·';
   $sz = in_array($size, [32,44,56], true) ? $size : 32;

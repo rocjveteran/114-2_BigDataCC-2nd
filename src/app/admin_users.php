@@ -10,10 +10,6 @@ $my_role = $_SESSION['role'] ?? '';
 $msg = null;
 $err = null;
 
-function boss_count($pdo){
-  return (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='boss' AND is_active=1")->fetchColumn();
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   csrf_require();
   $act = $_POST['act'] ?? '';

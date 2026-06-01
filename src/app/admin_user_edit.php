@@ -18,10 +18,6 @@ if (!$u) { http_response_code(404); echo "user not found"; exit; }
 
 $can = can_manage_user($u['role'], (int)$u['user_id']);
 
-function boss_count($pdo){
-  return (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='boss' AND is_active=1")->fetchColumn();
-}
-
 $msg = null;
 $err = null;
 
