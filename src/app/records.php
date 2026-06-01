@@ -8,7 +8,7 @@ $from = $_GET['from'] ?? date('Y-m-01');
 $to   = $_GET['to'] ?? date('Y-m-d');
 
 $stmt = $pdo->prepare(
-  "SELECT work_date, check_in, check_out, status
+  "SELECT work_date, check_in, check_out, status, duty_zone, sea_state, vessel_id
    FROM attendance
    WHERE user_id=? AND work_date BETWEEN ? AND ?
    ORDER BY work_date DESC"
@@ -58,18 +58,24 @@ $count = count($rows);
         <p class="muted" style="padding:20px 0;">此區間沒有任何值勤紀錄。</p>
       <?php else: ?>
       <table>
-        <tr><th>日期</th><th>開始</th><th>結束</th><th>狀態</th></tr>
+        <tr><th>日期</th><th>開始</th><th>結束</th><th>海域</th><th>海況</th><th>船艦</th><th>狀態</th></tr>
         <?php foreach($rows as $x):
           $st = $x['status'] ?? '';
           $label = $st;
           $type = 'off';
           if ($st === 'open') { $label = '值勤中'; $type = 'warn'; }
           if ($st === 'done') { $label = '已結束'; $type = 'ok'; }
+          $sea_badge = ['平靜'=>'ok','輕浪'=>'info','中浪'=>'warn','大浪'=>'off'];
+          $ss = $x['sea_state'] ?? '';
+          $ss_type = $sea_badge[$ss] ?? 'off';
         ?>
           <tr>
             <td><strong><?= h($x['work_date']) ?></strong></td>
             <td><?= h($x['check_in'] ?? '—') ?></td>
             <td><?= h($x['check_out'] ?? '—') ?></td>
+            <td><?= $x['duty_zone'] ? badge(h($x['duty_zone']), 'info') : '<span class="muted">—</span>' ?></td>
+            <td><?= $ss ? badge(h($ss), $ss_type) : '<span class="muted">—</span>' ?></td>
+            <td><?= h($x['vessel_id'] ?? '—') ?></td>
             <td><?= badge($label ?: '無資料', $type) ?></td>
           </tr>
         <?php endforeach; ?>

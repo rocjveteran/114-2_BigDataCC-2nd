@@ -12,19 +12,42 @@ from analysis import generate_charts, get_connection, get_filter_options
 
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/app/output"))
 
-CHART_LABELS = [
-    "月度值勤人次趨勢",
-    "值勤海域分布",
-    "各海域海況分布",
-    "各船艦值勤次數",
-    "各海況值勤時數分布",
-    "人員月度出勤熱力圖",
-    "每月核准請假件數",
-    "海域×海況平均工時",
-    "異常值勤偵測（Z-score）",
-    "週幾出勤模式",
-    "船艦使用 Pareto 圖",
+CHART_TABS = [
+    {
+        "label": "時序趨勢",
+        "charts": [
+            ("monthly_trend.png",   "月度值勤人次趨勢"),
+            ("leave_trend.png",     "每月核准請假件數"),
+            ("weekday_pattern.png", "週幾出勤模式"),
+        ],
+    },
+    {
+        "label": "海域 × 海況",
+        "charts": [
+            ("zone_bar.png",         "值勤海域分布"),
+            ("zone_sea_stacked.png", "各海域海況分布"),
+            ("hours_boxplot.png",    "各海況值勤時數分布"),
+            ("hours_heatmap.png",    "海域×海況平均工時"),
+        ],
+    },
+    {
+        "label": "資源調度",
+        "charts": [
+            ("vessel_count.png",  "各船艦值勤次數"),
+            ("vessel_pareto.png", "船艦使用 Pareto 圖"),
+            ("person_heatmap.png","人員月度出勤熱力圖"),
+        ],
+    },
+    {
+        "label": "異常診斷",
+        "charts": [
+            ("anomaly_detect.png", "異常值勤偵測（Z-score）"),
+        ],
+    },
 ]
+
+CHART_LABELS = [c[1] for tab in CHART_TABS for c in tab["charts"]]
+CHART_FILES  = [c[0] for tab in CHART_TABS for c in tab["charts"]]
 
 ZONE_OPTIONS = ["港口", "近海", "外海"]
 
@@ -392,17 +415,21 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
         with gr.Column(scale=3):
             gr.HTML('<div class="section-eyebrow">RESULTS · 分析結果</div>')
             charts = []
-            for i in range(0, len(CHART_LABELS), 2):
-                with gr.Row():
-                    charts.append(gr.Image(
-                        label=CHART_LABELS[i], type="filepath",
-                        elem_classes="chart-image",
-                    ))
-                    if i + 1 < len(CHART_LABELS):
-                        charts.append(gr.Image(
-                            label=CHART_LABELS[i + 1], type="filepath",
-                            elem_classes="chart-image",
-                        ))
+            with gr.Tabs():
+                for tab_def in CHART_TABS:
+                    with gr.Tab(label=tab_def["label"]):
+                        tab_files = tab_def["charts"]
+                        for i in range(0, len(tab_files), 2):
+                            with gr.Row():
+                                charts.append(gr.Image(
+                                    label=tab_files[i][1], type="filepath",
+                                    elem_classes="chart-image",
+                                ))
+                                if i + 1 < len(tab_files):
+                                    charts.append(gr.Image(
+                                        label=tab_files[i + 1][1], type="filepath",
+                                        elem_classes="chart-image",
+                                    ))
 
     gr.HTML(FOOTER_HTML)
 
@@ -415,7 +442,10 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
                                     date_to=date_to or None,
                                     zones=z_filter,
                                     vessels=v_filter)
-            return paths + ["✅ 分析完成，圖表已更新"]
+            prefix = "filtered_" if any([date_from, date_to, z_filter, v_filter]) else ""
+            path_map = {Path(p).name: p for p in paths}
+            ordered = [path_map.get(f"{prefix}{f}", None) for f in CHART_FILES]
+            return ordered + ["✅ 分析完成，圖表已更新"]
         except Exception as e:
             return [None] * len(CHART_LABELS) + [f"❌ 錯誤：{e}"]
 

@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // attendance map
-$stmt = $pdo->prepare("SELECT user_id, check_in, check_out, status FROM attendance WHERE work_date=?");
+$stmt = $pdo->prepare("SELECT user_id, check_in, check_out, status, duty_zone, sea_state, vessel_id FROM attendance WHERE work_date=?");
 $stmt->execute([$d]);
 $map = [];
 foreach ($stmt->fetchAll() as $a) {
@@ -151,7 +151,7 @@ $u = $stmt->fetchAll();
 
       <table>
         <tr>
-          <th>ID</th><th>username</th><th>姓名</th><th>啟用</th><th>狀態</th><th>值勤開始</th><th>值勤結束</th><th>快速</th><th>操作</th>
+          <th>ID</th><th>username</th><th>姓名</th><th>啟用</th><th>狀態</th><th>值勤開始</th><th>值勤結束</th><th>海域</th><th>海況</th><th>船艦</th><th>快速</th><th>操作</th>
         </tr>
         <?php $me_role = $_SESSION['role'] ?? 'employee'; ?>
         <?php foreach($u as $x):
@@ -190,6 +190,14 @@ $u = $stmt->fetchAll();
             <td><?= badge($label, $type) ?></td>
             <td><?= h($a['check_in'] ?? '-') ?></td>
             <td><?= h($a['check_out'] ?? '-') ?></td>
+            <?php
+              $sea_badge = ['平靜'=>'ok','輕浪'=>'info','中浪'=>'warn','大浪'=>'off'];
+              $ss = $a['sea_state'] ?? '';
+              $ss_type = $sea_badge[$ss] ?? 'off';
+            ?>
+            <td><?= ($a && $a['duty_zone']) ? badge(h($a['duty_zone']), 'info') : '<span class="muted">—</span>' ?></td>
+            <td><?= ($a && $ss) ? badge(h($ss), $ss_type) : '<span class="muted">—</span>' ?></td>
+            <td><?= h($a['vessel_id'] ?? '—') ?></td>
             <td>
               <form method="post" style="display:flex;gap:6px;flex-wrap:wrap;">
                 <?= csrf_input() ?>

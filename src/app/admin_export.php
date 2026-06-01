@@ -12,7 +12,7 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$d)) $d = date('Y-m-d');
 // Fetch users + attendance of that date
 $users = $pdo->query("SELECT user_id, username, full_name FROM users ORDER BY user_id ASC")->fetchAll();
 
-$stmt = $pdo->prepare("SELECT user_id, work_date, check_in, check_out, status FROM attendance WHERE work_date=?");
+$stmt = $pdo->prepare("SELECT user_id, work_date, check_in, check_out, status, duty_zone, sea_state, vessel_id FROM attendance WHERE work_date=?");
 $stmt->execute([$d]);
 $map = [];
 foreach ($stmt->fetchAll() as $a) {
@@ -32,7 +32,7 @@ $out = fopen('php://output', 'w');
 // UTF-8 BOM for Excel
 fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
 
-fputcsv($out, ['user_id','username','full_name','work_date','check_in','check_out','status','leave']);
+fputcsv($out, ['user_id','username','full_name','work_date','check_in','check_out','status','duty_zone','sea_state','vessel_id','leave']);
 
 foreach ($users as $u) {
   $uid = (int)$u['user_id'];
@@ -44,7 +44,10 @@ foreach ($users as $u) {
   $status    = $a ? ($a['status'] ?? '') : 'none';
   $leave     = $lmap[$uid] ?? '';
 
-  fputcsv($out, [$uid, $u['username'], $u['full_name'], $work_date, $check_in, $check_out, $status, $leave]);
+  $duty_zone = $a['duty_zone'] ?? '';
+  $sea_state = $a['sea_state'] ?? '';
+  $vessel_id = $a['vessel_id'] ?? '';
+  fputcsv($out, [$uid, $u['username'], $u['full_name'], $work_date, $check_in, $check_out, $status, $duty_zone, $sea_state, $vessel_id, $leave]);
 }
 fclose($out);
 exit;
