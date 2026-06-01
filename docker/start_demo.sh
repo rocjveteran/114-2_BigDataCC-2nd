@@ -22,7 +22,18 @@ for i in $(seq 1 12); do
 done
 
 echo "=== [3/4] 植入六個月模擬值勤資料 ==="
-docker compose run --rm analysis python generate_mock_data.py
+DBROOT=$(grep -m1 '^DB_ROOT_PASS=' .env 2>/dev/null | cut -d= -f2-)
+EXISTING=0
+if [ -n "$DBROOT" ]; then
+  EXISTING=$(docker compose exec -T db mysql -uroot -p"$DBROOT" maritime_duty -sN \
+    -e "SELECT COUNT(*) FROM attendance;" 2>/dev/null | grep -E '^[0-9]+$' | head -1 || echo "0")
+fi
+EXISTING=${EXISTING:-0}
+if [ "$EXISTING" -gt 100 ] && [ "${1}" != "--fresh" ]; then
+  echo "  已有 $EXISTING 筆資料，略過（加 --fresh 參數可強制重植）"
+else
+  docker compose run --rm analysis python generate_mock_data.py
+fi
 
 echo "=== [4/4] 產生 11 張統計圖表 ==="
 docker compose run --rm analysis python analysis.py

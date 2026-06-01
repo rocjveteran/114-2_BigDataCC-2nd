@@ -21,7 +21,7 @@
 
 本專題延續上學期完成之 PHP + MySQL 海事勤務值勤管理雛形，將其改造為符合課程要求之 Linux 雲端容器化系統。系統採三容器 Docker Compose 架構，涵蓋 PHP/Apache 前端、MySQL 資料庫與 Python 分析服務，可以單一指令完成部署。
 
-在資料端，以 Python 腳本生成六個月、逾千筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出七張 Matplotlib/Seaborn 視覺化圖表。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
+在資料端，以 Python 腳本生成六個月、1,211 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出 11 張 Matplotlib/Seaborn 視覺化圖表。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
 
 本系統完整覆蓋課程必要技術（Python + Pandas、Matplotlib/Seaborn、Docker、Git/GitHub）及多項選擇性技術（MySQL、Apache + PHP、Jupyter、Gradio），具備海事領域特性，可作為實際部署之管理工具基礎。
 
@@ -62,8 +62,8 @@
 | 資料表 | 筆數 | 說明 |
 |--------|------|------|
 | `users` | 13 筆 | 管理員 3 位、員工 10 位 |
-| `attendance` | 約 1,000 筆 | 六個月值勤記錄（2025-11 至 2026-04） |
-| `leaves` | 約 80 筆 | 請假申請記錄 |
+| `attendance` | 1,211 筆 | 六個月值勤記錄（2025-11 至 2026-04） |
+| `leaves` | 116 筆 | 請假申請記錄 |
 
 ### 2.2 資料欄位說明
 
@@ -151,7 +151,7 @@
 | 技術 | 類型 | 應用位置 |
 |------|------|---------|
 | Python + Pandas | 必要 | `analysis.py` 資料清洗與統計 |
-| Matplotlib / Seaborn | 必要 | `analysis.py` 七張圖表 |
+| Matplotlib / Seaborn | 必要 | `analysis.py` 11 張圖表 |
 | Docker / Docker Compose | 必要 | `docker/` 三容器編排 |
 | Git / GitHub | 必要 | commit 紀錄、PR 管理 |
 | MySQL 8.0 | 選擇性 | 值勤資料持久化 |
@@ -202,7 +202,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 
 ### 4.3 視覺化
 
-共產出七張圖表，輸出至 `analysis_output/` 共用 volume：
+共產出 11 張圖表，輸出至 `analysis_output/` 共用 volume：
 
 | 圖檔 | 圖表類型 | 說明 |
 |------|---------|------|
@@ -213,6 +213,10 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | `hours_boxplot.png` | 箱型圖 | 四種海況下值勤時數分布，驗證大浪縮班假設 |
 | `person_heatmap.png` | 熱力圖 | 人員 × 月份出勤天數矩陣，快速識別出勤不規律者 |
 | `leave_trend.png` | 分組長條圖 | 每月各假別核准件數，供人力規劃參考 |
+| `hours_heatmap.png` | 交互效應熱力圖 | 海域 × 海況平均工時，揭示不同作業條件的工時差異 |
+| `anomaly_detect.png` | Z-score 散點圖 | 值勤時數異常偵測，標示超出 2σ 的異常記錄 |
+| `weekday_pattern.png` | 雙軸圖 | 週幾出勤次數與平均工時，分析輪班週期規律 |
+| `vessel_pareto.png` | 柏拉圖 | 船艦使用 80/20 法則，識別高使用率船艦 |
 
 ### 4.4 統計檢定
 
@@ -328,7 +332,7 @@ docker compose run analysis python analysis.py
 | em1 | （見 schema.sql）| 員工 |
 | chen_wei 等 10 人 | maritime2025 | 員工/管理員 |
 
-### 7.3 分析圖表洞察摘要
+### 7.3 分析圖表洞察摘要（11 張）
 
 - **月度趨勢**：值勤量冬季（11–12月）略低，春季（3–4月）回升，符合海事作業季節性
 - **海域分布**：近海 40% > 港口 35% > 外海 25%，反映近岸巡邏為主要任務

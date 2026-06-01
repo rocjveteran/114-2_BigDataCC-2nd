@@ -54,7 +54,7 @@
 | 必要技術 | 應用位置 |
 |---------|---------|
 | **Python + Pandas** | `src/analysis/analysis.py` 資料清洗與統計 |
-| **Matplotlib / Seaborn** | 七張視覺化圖表 |
+| **Matplotlib / Seaborn** | 11 張視覺化圖表 |
 | **Docker / Docker Compose** | `docker/` 三容器架構 |
 | **Git / GitHub** | 全部開發歷程 |
 
@@ -226,7 +226,7 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 │   │
 │   └── analysis/              ← Python 分析程式
 │       ├── generate_mock_data.py  ← 模擬資料生成
-│       ├── analysis.py            ← 資料清洗 + 7 張圖表
+│       ├── analysis.py            ← 資料清洗 + 11 張圖表
 │       └── app.py                 ← Gradio 互動介面
 │
 ├── notebooks/                 ← Jupyter Notebook（探索分析）
@@ -257,20 +257,24 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 | 值勤總覽 | 全員當日狀態 | 管理員以上 |
 | 請假審核 | 核准 / 拒絕 | 管理員以上 |
 | 帳號管理 | 新增、停用、改密 | 管理員以上 |
-| **分析儀表板** | 顯示 7 張 Python 圖表 | 管理員以上 |
+| **分析儀表板** | 顯示 11 張 Python 圖表 | 管理員以上 |
 | CSV 匯出 | 值勤記錄下載 | 管理員以上 |
 
 ### Python 分析模組
 
-七張分析圖表，輸出至 `analysis_output/` 共用 volume：
+11 張分析圖表，輸出至 `analysis_output/` 共用 volume：
 
-1. `monthly_trend.png` — 月度值勤人次趨勢
-2. `zone_bar.png` — 值勤海域分布
-3. `zone_sea_stacked.png` — 各海域海況分布
-4. `vessel_count.png` — 各船艦值勤次數
-5. `hours_boxplot.png` — 各海況值勤時數箱型圖
+1. `monthly_trend.png` — 月度值勤人次趨勢（折線圖）
+2. `zone_bar.png` — 值勤海域分布（長條圖）
+3. `zone_sea_stacked.png` — 各海域海況分布（堆疊長條圖）
+4. `vessel_count.png` — 各船艦值勤次數（水平長條圖）
+5. `hours_boxplot.png` — 各海況值勤時數分布（箱型圖）
 6. `person_heatmap.png` — 人員月度出勤熱力圖
-7. `leave_trend.png` — 每月核准請假件數
+7. `leave_trend.png` — 每月核准請假件數（分組長條圖）
+8. `hours_heatmap.png` — 海域 × 海況平均工時交互效應（熱力圖）
+9. `anomaly_detect.png` — 異常值勤偵測（Z-score 散點圖）
+10. `weekday_pattern.png` — 週幾出勤模式（雙軸圖）
+11. `vessel_pareto.png` — 船艦使用 Pareto 圖（80/20 法則）
 
 ### Gradio 互動介面 (port 7860)
 
