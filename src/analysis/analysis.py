@@ -59,7 +59,10 @@ else:
     _cjk = [f.name for f in fm.fontManager.ttflist if "Noto" in f.name and "CJK" in f.name]
     _cjk_name = _cjk[0] if _cjk else "DejaVu Sans"
 
-BLUE_PAL = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
+BLUE_PAL    = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
+SEA_STATES  = SEA_STATES
+DUTY_ZONES  = DUTY_ZONES
+LEAVE_TYPES = {"personal": "事假", "sick": "病假", "other": "其他"}
 # set_theme 會重置 rcParams，字型設定必須在它之後
 sns.set_theme(style="whitegrid", palette=BLUE_PAL)
 plt.rcParams["font.family"] = [_cjk_name, "DejaVu Sans"]
@@ -213,8 +216,8 @@ def _chart_zone_bar(att):
 
 
 def _chart_zone_sea_stacked(att):
-    sea_order  = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].values]
-    zone_order = [z for z in ["港口", "近海", "外海"] if z in att["duty_zone"].values]
+    sea_order  = [s for s in SEA_STATES if s in att["sea_state"].values]
+    zone_order = [z for z in DUTY_ZONES if z in att["duty_zone"].values]
     if not sea_order or not zone_order:
         fig, ax = plt.subplots(figsize=(7, 5))
         ax.set_title("各海域海況分布（資料不足）", fontsize=14, fontweight="bold")
@@ -243,7 +246,7 @@ def _chart_vessel_count(att):
 
 
 def _chart_hours_boxplot(att):
-    sea_order = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].values]
+    sea_order = [s for s in SEA_STATES if s in att["sea_state"].values]
     fig, ax = plt.subplots(figsize=(8, 5))
     if att.empty or not sea_order:
         ax.set_title("各海況值勤時數分布（無資料）", fontsize=14, fontweight="bold")
@@ -284,7 +287,7 @@ def _chart_leave_trend(leaves):
     approved["month_str"] = approved["date_from"].dt.strftime("%Y-%m")
     pivot = (approved.groupby(["month_str", "leave_type"]).size()
                      .unstack(fill_value=0)
-                     .rename(columns={"personal": "事假", "sick": "病假", "other": "其他"}))
+                     .rename(columns=LEAVE_TYPES))
     if pivot.empty:
         ax.set_title("每月核准請假件數（資料不足）", fontsize=14, fontweight="bold")
         fig.tight_layout(); return fig
@@ -299,8 +302,8 @@ def _chart_leave_trend(leaves):
 # ── 圖 8：海域 × 海況 平均工時熱力圖 ─────────────────────────────────────────
 def _chart_hours_heatmap(att):
     """揭露兩個維度的交互效應：同樣海況下，不同海域工時差多少？"""
-    sea_order  = [s for s in ["平靜", "輕浪", "中浪", "大浪"] if s in att["sea_state"].values]
-    zone_order = [z for z in ["港口", "近海", "外海"] if z in att["duty_zone"].values]
+    sea_order  = [s for s in SEA_STATES if s in att["sea_state"].values]
+    zone_order = [z for z in DUTY_ZONES if z in att["duty_zone"].values]
     fig, ax = plt.subplots(figsize=(7, 4.5))
     if att.empty or not sea_order or not zone_order:
         ax.set_title("海域×海況平均工時（資料不足）", fontsize=14, fontweight="bold")
@@ -507,13 +510,14 @@ def chart_sea_obs_comparison(output_dir: Path) -> str | None:
             conn,
         )
         conn.close()
-    except Exception:
+    except Exception as e:
+        print(f"[analysis] sea_obs_comparison skipped: {e}")
         return None
 
     if obs.empty:
         return None
 
-    sea_order = ["平靜", "輕浪", "中浪", "大浪"]
+    sea_order = SEA_STATES
 
     obs_pct = obs.set_index("sea_state")["cnt"] / obs["cnt"].sum() * 100
     sim_pct = sim.set_index("sea_state")["cnt"] / sim["cnt"].sum() * 100

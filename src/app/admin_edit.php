@@ -7,6 +7,7 @@ date_default_timezone_set('Asia/Taipei');
 
 $uid = (int)($_GET['uid'] ?? 0);
 $d   = $_GET['d'] ?? date('Y-m-d');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$d)) $d = date('Y-m-d');
 
 if ($uid <= 0) { http_response_code(400); echo "bad uid"; exit; }
 

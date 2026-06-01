@@ -6,6 +6,8 @@ require 'ui.php';
 $userId = (int)$_SESSION['user_id'];
 $from = $_GET['from'] ?? date('Y-m-01');
 $to   = $_GET['to'] ?? date('Y-m-d');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$from)) $from = date('Y-m-01');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$to))   $to   = date('Y-m-d');
 
 $stmt = $pdo->prepare(
   "SELECT work_date, check_in, check_out, status, duty_zone, sea_state, vessel_id

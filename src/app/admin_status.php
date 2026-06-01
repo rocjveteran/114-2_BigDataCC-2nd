@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (can_manage_user($trole3, $uid3)) {
         // avoid disabling last boss
         if ($trole3==='boss' && $tis3===1) {
-          $cnt = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='boss' AND is_active=1")->fetchColumn();
+          $cnt = boss_count($pdo);
           if ($cnt <= 1) {
             // keep at least one boss
           } else {
