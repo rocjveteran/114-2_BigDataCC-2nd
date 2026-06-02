@@ -384,7 +384,7 @@ FOOTER_HTML = """
 # ── 建立介面 ──────────────────────────────────────────────────────────────────
 opts = _load_options()
 
-with gr.Blocks(title="海事勤務分析系統", theme=maritime_theme, css=CUSTOM_CSS) as demo:
+with gr.Blocks(title="海事勤務分析系統") as demo:
     gr.HTML(HERO_HTML)
 
     with gr.Row():
@@ -467,4 +467,9 @@ with gr.Blocks(title="海事勤務分析系統", theme=maritime_theme, css=CUSTO
     vessel_clr_btn.click(lambda: [], outputs=vessel_input)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    # 注意：Gradio 6.0 起 theme / css 由 Blocks 建構子移至 launch()，須在此傳入。
+    # allowed_paths：Gradio 5/6 嚴格檔案存取，OUTPUT_DIR 若不在 cwd/temp 內
+    # （如本機開發或自訂掛載點）會拒絕服務圖檔，需顯式允許。
+    demo.launch(server_name="0.0.0.0", server_port=7860,
+                theme=maritime_theme, css=CUSTOM_CSS,
+                allowed_paths=[str(OUTPUT_DIR)])
