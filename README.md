@@ -134,7 +134,7 @@ docker compose run -p 8888:8888 analysis \
 6. **管理員審核**：點「請假審核」→ 把剛才送出的請假核准
 7. **看勤務總覽**：點「勤務總覽」→ 切換日期查看全員狀態
 8. **產生分析圖表**：點「分析儀表板」右上「開啟互動分析介面」→ 跳到 Gradio (http://localhost:7860) → 點「執行分析」
-9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 7 張圖表
+9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 15 張圖表與推論檢定報告
 10. **下載日報表**：勤務總覽右上「匯出日報表」會下載當日 CSV
 
 ---
