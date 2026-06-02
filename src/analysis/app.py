@@ -375,7 +375,7 @@ FOOTER_HTML = """
 # ── 建立介面 ──────────────────────────────────────────────────────────────────
 opts = _load_options()
 
-with gr.Blocks(title="海事勤務分析系統") as demo:
+with gr.Blocks(title="海事勤務分析系統", theme=maritime_theme, css=CUSTOM_CSS) as demo:
     gr.HTML(HERO_HTML)
 
     with gr.Row():
@@ -458,7 +458,4 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
     vessel_clr_btn.click(lambda: [], outputs=vessel_input)
 
 if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0", server_port=7860,
-        theme=maritime_theme, css=CUSTOM_CSS,
-    )
+    demo.launch(server_name="0.0.0.0", server_port=7860)

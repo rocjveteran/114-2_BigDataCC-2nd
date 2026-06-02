@@ -60,8 +60,9 @@ else:
     _cjk_name = _cjk[0] if _cjk else "DejaVu Sans"
 
 BLUE_PAL    = ["#0D47A1", "#1565C0", "#1976D2", "#1E88E5", "#42A5F5", "#90CAF9"]
-SEA_STATES  = SEA_STATES
-DUTY_ZONES  = DUTY_ZONES
+# 對齊 schema.sql 的 ENUM 定義與由弱到強的自然排序（圖表 x 軸 / 熱力圖列序依此）
+SEA_STATES  = ["平靜", "輕浪", "中浪", "大浪"]
+DUTY_ZONES  = ["港口", "近海", "外海"]
 LEAVE_TYPES = {"personal": "事假", "sick": "病假", "other": "其他"}
 # set_theme 會重置 rcParams，字型設定必須在它之後
 sns.set_theme(style="whitegrid", palette=BLUE_PAL)
@@ -252,7 +253,8 @@ def _chart_hours_boxplot(att):
         ax.set_title("各海況值勤時數分布（無資料）", fontsize=14, fontweight="bold")
         fig.tight_layout(); return fig
     sns.boxplot(data=att, x="sea_state", y="hours", order=sea_order,
-                palette=BLUE_PAL[:4], linewidth=1.2, ax=ax)
+                hue="sea_state", palette=BLUE_PAL[:4], legend=False,
+                linewidth=1.2, ax=ax)
     ax.set_title("各海況值勤時數分布", fontsize=14, fontweight="bold", pad=10)
     ax.set_xlabel("海況"); ax.set_ylabel("值勤時數（小時）")
     fig.tight_layout(); return fig
