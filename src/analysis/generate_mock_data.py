@@ -26,9 +26,22 @@ DB = {
     "use_unicode": True,
 }
 
-# ── 時間範圍（六個月）────────────────────────────────────────────────────────
-START = date(2025, 11, 1)
-END   = date(2026, 4, 30)
+# ── 時間範圍 ──────────────────────────────────────────────────────────────────
+# 預設為「今天往前約六個月」，讓儀表板與時間序列預測永遠有貼近當下的資料；
+# 需對齊報告固定數字時，可用環境變數釘死特定區間：
+#   MOCK_END=2026-06-15  MOCK_START=2025-12-15   或   MOCK_WINDOW_DAYS=183
+def _env_date(name):
+    v = os.getenv(name, "").strip()
+    if v:
+        try:
+            return date.fromisoformat(v)
+        except ValueError:
+            print(f"  [警告] {name}={v!r} 非 YYYY-MM-DD 格式，已忽略")
+    return None
+
+_WINDOW_DAYS = int(os.getenv("MOCK_WINDOW_DAYS", "183"))
+END   = _env_date("MOCK_END")   or date.today()
+START = _env_date("MOCK_START") or (END - timedelta(days=_WINDOW_DAYS))
 
 # ── 模擬人員（schema.sql 已建 boss1/admin1/em1，此處補充） ────────────────────
 # 密碼統一為 maritime2025，可由管理員後台修改
