@@ -33,6 +33,14 @@ Thumbs.db
 # Docker
 *.log
 
+# Generated analysis output (charts + stats JSON are produced at runtime)
+analysis_output/
+src/app/analysis_output/
+
+# Media (keep large demo videos out of git history)
+*.mp4
+*.mov
+
 # Environment variables
 .env
 .env.txt

@@ -22,6 +22,15 @@ CHART_TABS = [
         ],
     },
     {
+        "label": "預測與建模",
+        "charts": [
+            ("forecast_duty.png",      "值勤量時間序列預測"),
+            ("correlation_matrix.png", "特徵相關矩陣（Spearman）"),
+            ("regression_coef.png",    "工時驅動因子（OLS 迴歸）"),
+            ("crew_clusters.png",      "人員值勤模式分群（K-means）"),
+        ],
+    },
+    {
         "label": "海域 × 海況",
         "charts": [
             ("zone_bar.png",         "值勤海域分布"),
@@ -458,7 +467,9 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
     vessel_clr_btn.click(lambda: [], outputs=vessel_input)
 
 if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0", server_port=7860,
-        theme=maritime_theme, css=CUSTOM_CSS,
-    )
+    # 注意：Gradio 6.0 起 theme / css 由 Blocks 建構子移至 launch()，須在此傳入。
+    # allowed_paths：Gradio 5/6 嚴格檔案存取，OUTPUT_DIR 若不在 cwd/temp 內
+    # （如本機開發或自訂掛載點）會拒絕服務圖檔，需顯式允許。
+    demo.launch(server_name="0.0.0.0", server_port=7860,
+                theme=maritime_theme, css=CUSTOM_CSS,
+                allowed_paths=[str(OUTPUT_DIR)])

@@ -21,7 +21,7 @@
 
 本專題延續上學期完成之 PHP + MySQL 海事勤務值勤管理雛形，將其改造為符合課程要求之 Linux 雲端容器化系統。系統採三容器 Docker Compose 架構，涵蓋 PHP/Apache 前端、MySQL 資料庫與 Python 分析服務，可以單一指令完成部署。
 
-在資料端，以 Python 腳本生成六個月、1,211 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出 11 張 Matplotlib/Seaborn 視覺化圖表。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
+在資料端，以 Python 腳本生成六個月、1,211 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出 15 張 Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時間序列預測與多元迴歸建模）。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
 
 本系統完整覆蓋課程必要技術（Python + Pandas、Matplotlib/Seaborn、Docker、Git/GitHub）及多項選擇性技術（MySQL、Apache + PHP、Jupyter、Gradio），具備海事領域特性，可作為實際部署之管理工具基礎。
 
@@ -151,7 +151,7 @@
 | 技術 | 類型 | 應用位置 |
 |------|------|---------|
 | Python + Pandas | 必要 | `analysis.py` 資料清洗與統計 |
-| Matplotlib / Seaborn | 必要 | `analysis.py` 11 張圖表 |
+| Matplotlib / Seaborn | 必要 | `analysis.py` 15 張圖表 |
 | Docker / Docker Compose | 必要 | `docker/` 三容器編排 |
 | Git / GitHub | 必要 | commit 紀錄、PR 管理 |
 | MySQL 8.0 | 選擇性 | 值勤資料持久化 |
@@ -202,7 +202,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 
 ### 4.3 視覺化
 
-共產出 11 張圖表，輸出至 `analysis_output/` 共用 volume：
+共產出 15 張圖表，輸出至 `analysis_output/` 共用 volume：
 
 | 圖檔 | 圖表類型 | 說明 |
 |------|---------|------|
@@ -217,6 +217,10 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | `anomaly_detect.png` | Z-score 散點圖 | 值勤時數異常偵測，標示超出 2σ 的異常記錄 |
 | `weekday_pattern.png` | 雙軸圖 | 週幾出勤次數與平均工時，分析輪班週期規律 |
 | `vessel_pareto.png` | 柏拉圖 | 船艦使用 80/20 法則，識別高使用率船艦 |
+| `forecast_duty.png` | 時間序列折線 + 預測帶 | 週彙整值勤量的線性趨勢外推（未來 4 週，含 95% 預測區間）|
+| `correlation_matrix.png` | Spearman 相關熱力圖 | 工時與海況、海域、星期、上工時刻等特徵的關聯結構 |
+| `regression_coef.png` | 水平係數圖 | 工時驅動因子的標準化多元迴歸係數（R² 見圖標題）|
+| `crew_clusters.png` | 分群散點圖 | 以平均工時 × 外海暴露比例對人員進行 K-means 分群 |
 
 ### 4.4 統計檢定
 
@@ -226,6 +230,27 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 - **單因子 ANOVA**（四種海況下值勤時數）：F 檢定結果顯著，四組間至少存在一對差異
 
 此結果為「海況影響值勤時數」之假設提供統計學上的支持，補強純視覺觀察的不足。
+
+### 4.5 進階分析：預測與建模
+
+在描述統計與假設檢定之上，進一步加入四項推論與預測導向的分析（皆以既有
+`numpy` / `scipy` / `pandas` 實作，無需額外深度學習框架）：
+
+- **時間序列預測**（`forecast_duty.png`）：將值勤量以「週」彙整後，以線性
+  趨勢（`numpy.polyfit`）外推未來 4 週，並以殘差標準差估計 95% 預測區間。
+  程式會自動丟棄尾端尚未結束的當週，避免不完整資料造成趨勢偏誤。
+- **特徵相關分析**（`correlation_matrix.png`）：將海況、海域轉為序位變數後，
+  以 Spearman 等級相關計算工時與各時間／環境特徵的關聯。結果顯示工時與
+  「上工時刻」「海況等級」呈中至強度負相關，與箱型圖觀察一致。
+- **多元線性迴歸建模**（`regression_coef.png`）：以標準化 OLS（`numpy.linalg.lstsq`）
+  量化各因子對單次工時的邊際影響，輸出 R² 與標準化係數。模型可解釋相當比例
+  的工時變異，且「上工時刻」與「海況等級」為主要負向驅動因子。
+- **人員值勤模式分群**（`crew_clusters.png`）：以每人之平均工時與外海值勤比例
+  為特徵，套用 K-means（`scipy.cluster.vq`）分群，辨識不同輪值型態，輔助排班
+  與人力調度決策。
+
+上述結果同步寫入 `stats_summary.json`，由 PHP 分析儀表板的「預測與建模」分區與
+推論洞察卡片呈現。
 
 ---
 
@@ -332,7 +357,7 @@ docker compose run analysis python analysis.py
 | em1 | （見 schema.sql）| 員工 |
 | chen_wei 等 10 人 | maritime2025 | 員工/管理員 |
 
-### 7.3 分析圖表洞察摘要（11 張）
+### 7.3 分析圖表洞察摘要（15 張）
 
 - **月度趨勢**：值勤量冬季（11–12月）略低，春季（3–4月）回升，符合海事作業季節性
 - **海域分布**：近海 40% > 港口 35% > 外海 25%，反映近岸巡邏為主要任務
