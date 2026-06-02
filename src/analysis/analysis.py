@@ -131,6 +131,10 @@ def generate_charts(
         (f"{prefix}anomaly_detect.png",   lambda: _chart_anomaly_detect(att)),
         (f"{prefix}weekday_pattern.png",  lambda: _chart_weekday_pattern(att)),
         (f"{prefix}vessel_pareto.png",    lambda: _chart_vessel_pareto(att)),
+        (f"{prefix}forecast_duty.png",      lambda: _chart_forecast_duty(att)),
+        (f"{prefix}correlation_matrix.png", lambda: _chart_correlation(att)),
+        (f"{prefix}regression_coef.png",    lambda: _chart_regression_coef(att)),
+        (f"{prefix}crew_clusters.png",      lambda: _chart_crew_clusters(att)),
     ]:
         fig = chart_fn()
         path = out / fn
@@ -397,6 +401,161 @@ def _chart_vessel_pareto(att):
     fig.tight_layout(); return fig
 
 
+# ── 進階分析：預測、相關、建模、分群 ─────────────────────────────────────────
+# 序位映射（海況由弱到強、海域由近到遠），供相關 / 迴歸 / 分群之數值化使用。
+SEA_RANK  = {s: i + 1 for i, s in enumerate(SEA_STATES)}   # 平靜=1 … 大浪=4
+ZONE_RANK = {z: i + 1 for i, z in enumerate(DUTY_ZONES)}   # 港口=1 … 外海=3
+
+
+def _chart_forecast_duty(att):
+    """圖 12：值勤量時間序列預測 — 週彙整 + 線性趨勢外推未來 4 週（含 95% 預測區間）。"""
+    fig, ax = plt.subplots(figsize=(10, 4.5))
+    if att.empty or att["work_date"].nunique() < 14:
+        ax.set_title("值勤量時間序列預測（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    weekly = att.set_index("work_date").resample("W")["att_id"].count()
+    weekly = weekly[weekly > 0]
+    # 丟棄尾端「尚未結束的當週」（與今天比對該週結束之週日），避免不完整資料造成斷崖假象與趨勢偏誤
+    today = pd.Timestamp.today().normalize()
+    if len(weekly) >= 2 and weekly.index[-1].normalize() > today:
+        weekly = weekly.iloc[:-1]
+    if len(weekly) < 6:
+        ax.set_title("值勤量時間序列預測（週資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    y = weekly.values.astype(float)
+    x = np.arange(len(y))
+    slope, intercept = np.polyfit(x, y, 1)
+    fit = slope * x + intercept
+    resid_std = np.sqrt(((y - fit) ** 2).sum() / max(len(y) - 2, 1))
+    H = 4
+    xf = np.arange(len(y), len(y) + H)
+    yf = slope * xf + intercept
+    band = 1.96 * resid_std
+    last = weekly.index[-1]
+    future = [last + pd.Timedelta(weeks=i + 1) for i in range(H)]
+    ax.plot(weekly.index, y, marker="o", color=BLUE_PAL[2], lw=2, markersize=5, label="歷史週值勤量")
+    ax.plot(weekly.index, fit, color=BLUE_PAL[4], ls="--", lw=1.4, label=f"線性趨勢（{slope:+.1f}/週）")
+    ax.plot(future, yf, marker="s", color="#c96442", lw=2, markersize=6, label="預測（未來 4 週）")
+    ax.fill_between(future, yf - band, yf + band, color="#c96442", alpha=0.15, label="95% 預測區間")
+    ax.axvline(last, color="#999", ls=":", lw=1)
+    ax.set_title("值勤量時間序列預測（週彙整 + 線性外推）", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("週"); ax.set_ylabel("每週值勤筆數")
+    ax.legend(fontsize=9, loc="best", framealpha=0.9)
+    fig.autofmt_xdate(); fig.tight_layout(); return fig
+
+
+def _chart_correlation(att):
+    """圖 13：特徵相關矩陣（Spearman）— 工時與海況 / 海域 / 時間特徵的關聯強度與方向。"""
+    fig, ax = plt.subplots(figsize=(6.8, 5.6))
+    if att.empty or len(att) < 20:
+        ax.set_title("特徵相關矩陣（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    feat = pd.DataFrame({
+        "值勤時數": att["hours"].values,
+        "海況等級": att["sea_state"].map(SEA_RANK).values,
+        "海域距岸": att["duty_zone"].map(ZONE_RANK).values,
+        "星期":     att["work_date"].dt.weekday.values,
+        "上工時刻": (att["check_in"].dt.hour + att["check_in"].dt.minute / 60.0).values,
+        "月份":     att["work_date"].dt.month.values,
+    }).dropna()
+    corr = feat.corr(method="spearman")
+    sns.heatmap(corr, annot=True, fmt=".2f", cmap="RdBu_r", center=0,
+                vmin=-1, vmax=1, linewidths=0.6, linecolor="#ffffff",
+                square=True, cbar_kws={"label": "Spearman ρ", "shrink": 0.8}, ax=ax)
+    ax.set_title("特徵相關矩陣（Spearman 等級相關）", fontsize=14, fontweight="bold", pad=10)
+    plt.xticks(rotation=30, ha="right"); plt.yticks(rotation=0)
+    fig.tight_layout(); return fig
+
+
+def _fit_hours_ols(att):
+    """以標準化多元線性迴歸（OLS）找出工時驅動因子。回傳 (r2, {因子: 標準化係數}) 或 None。"""
+    if att is None or att.empty or len(att) < 30:
+        return None
+    X = pd.DataFrame({
+        "海況等級": att["sea_state"].map(SEA_RANK),
+        "海域距岸": att["duty_zone"].map(ZONE_RANK),
+        "星期":     att["work_date"].dt.weekday,
+        "上工時刻": att["check_in"].dt.hour + att["check_in"].dt.minute / 60.0,
+    }).astype(float)
+    y = att["hours"].astype(float).values
+    sd = X.std(ddof=0)
+    if (sd == 0).any() or np.std(y) == 0:
+        return None
+    Xs = (X - X.mean()) / sd
+    A = np.column_stack([np.ones(len(Xs)), Xs.values])
+    beta, *_ = np.linalg.lstsq(A, y, rcond=None)
+    yhat = A @ beta
+    ss_res = float(((y - yhat) ** 2).sum())
+    ss_tot = float(((y - y.mean()) ** 2).sum())
+    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    return r2, dict(zip(X.columns, beta[1:]))
+
+
+def _chart_regression_coef(att):
+    """圖 14：工時驅動因子 — 標準化 OLS 迴歸係數（正=拉長工時、負=縮短工時）。"""
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    res = _fit_hours_ols(att)
+    if res is None:
+        ax.set_title("工時驅動因子迴歸（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    r2, coefs = res
+    items = sorted(coefs.items(), key=lambda kv: kv[1])
+    names = [k for k, _ in items]
+    vals  = [v for _, v in items]
+    colors = ["#c0001e" if v < 0 else BLUE_PAL[2] for v in vals]
+    bars = ax.barh(names, vals, color=colors, edgecolor="white")
+    ax.bar_label(bars, fmt="%+.3f", padding=4, fontsize=9)
+    ax.axvline(0, color="#444", lw=1)
+    ax.set_title(f"工時驅動因子（標準化 OLS 迴歸，R² = {r2:.3f}）", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("標準化迴歸係數（對單次工時的邊際影響）")
+    fig.tight_layout(); return fig
+
+
+def _chart_crew_clusters(att):
+    """圖 15：人員值勤模式分群（K-means, k=3）— 平均工時 × 外海暴露比例，辨識輪值型態。"""
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    if att.empty:
+        ax.set_title("人員值勤模式分群（無資料）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    g = att.groupby("full_name")
+    prof = pd.DataFrame({
+        "avg_hours":   g["hours"].mean(),
+        "outer_ratio": g["duty_zone"].apply(lambda s: (s == "外海").mean()),
+        "count":       g.size(),
+    }).dropna()
+    if len(prof) < 4:
+        ax.set_title("人員值勤模式分群（人數不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    feats = prof[["avg_hours", "outer_ratio", "count"]].values.astype(float)
+    mu = feats.mean(axis=0); sd = feats.std(axis=0); sd[sd == 0] = 1.0
+    w = (feats - mu) / sd
+    k = min(3, len(prof))
+    try:
+        from scipy.cluster.vq import kmeans2
+        np.random.seed(42)
+        _, labels = kmeans2(w, k, minit="++")
+    except Exception:
+        labels = np.zeros(len(prof), dtype=int)
+    palette = ["#1565C0", "#c96442", "#3a6b4a", "#8a5a0c"]
+    for cid in range(int(labels.max()) + 1 if len(labels) else 0):
+        m = labels == cid
+        if not m.any():
+            continue
+        ax.scatter(prof["avg_hours"].values[m], prof["outer_ratio"].values[m] * 100,
+                   s=prof["count"].values[m] * 1.4 + 50, color=palette[cid % len(palette)],
+                   edgecolors="white", linewidth=1.2, alpha=0.9, label=f"群 {cid + 1}")
+    for name, row in prof.iterrows():
+        ax.annotate(str(name), (row["avg_hours"], row["outer_ratio"] * 100),
+                    fontsize=8, ha="center", va="bottom",
+                    xytext=(0, 7), textcoords="offset points", color="#444")
+    ax.set_title("人員值勤模式分群（K-means, k=3）", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("平均單次工時（小時）"); ax.set_ylabel("外海值勤比例 (%)")
+    ax.legend(fontsize=9, loc="best", framealpha=0.9, title="型態分群")
+    ax.text(0.01, 0.98, "點大小 = 值勤次數", transform=ax.transAxes,
+            ha="left", va="top", fontsize=8, color="#888")
+    fig.tight_layout(); return fig
+
+
 # ── 統計檢定報告 ─────────────────────────────────────────────────────────────
 def compute_stats(att, leaves) -> dict:
     """
@@ -490,6 +649,39 @@ def compute_stats(att, leaves) -> dict:
             "text": f"共 {len(leaves)} 件請假申請，已核准 {len(approved)} 件、待審 {len(pending)} 件。"
                     f"{'有待審件，建議盡快處理' if len(pending) > 0 else '無待審件'}。"
         })
+
+    # ── 洞察 5：工時驅動因子（多元線性迴歸建模）──
+    ols = _fit_hours_ols(att)
+    if ols is not None:
+        r2, coefs = ols
+        top = max(coefs, key=lambda k: abs(coefs[k]))
+        direction = "拉長" if coefs[top] > 0 else "縮短"
+        out["insights"].append({
+            "title": "工時驅動因子（多元線性迴歸 OLS）",
+            "text": f"以海況、海域、星期、上工時刻四項特徵建模，R² = {r2:.3f}，"
+                    f"可解釋約 {r2 * 100:.0f}% 的單次工時變異。影響最大的因子為「{top}」"
+                    f"（標準化係數 {coefs[top]:+.3f}，{direction}工時）。"
+        })
+        out["model"] = {"r2": round(float(r2), 3),
+                        "coefficients": {k: round(float(v), 3) for k, v in coefs.items()}}
+
+    # ── 洞察 6：未來值勤量預測（週線性外推）──
+    if att["work_date"].nunique() >= 14:
+        weekly = att.set_index("work_date").resample("W")["att_id"].count()
+        weekly = weekly[weekly > 0]
+        _today = pd.Timestamp.today().normalize()
+        if len(weekly) >= 2 and weekly.index[-1].normalize() > _today:
+            weekly = weekly.iloc[:-1]
+        if len(weekly) >= 6:
+            yv = weekly.values.astype(float)
+            slope, intercept = np.polyfit(np.arange(len(yv)), yv, 1)
+            nxt = slope * len(yv) + intercept
+            trend_txt = "上升" if slope > 0.3 else "下降" if slope < -0.3 else "大致持平"
+            out["insights"].append({
+                "title": "未來值勤量預測（線性趨勢外推）",
+                "text": f"近 {len(weekly)} 週的值勤量趨勢{trend_txt}"
+                        f"（每週約 {slope:+.1f} 筆）。依線性外推，下一週預估約 {max(nxt, 0):.0f} 筆。"
+            })
 
     return out
 

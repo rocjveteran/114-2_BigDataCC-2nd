@@ -22,6 +22,15 @@ CHART_TABS = [
         ],
     },
     {
+        "label": "預測與建模",
+        "charts": [
+            ("forecast_duty.png",      "值勤量時間序列預測"),
+            ("correlation_matrix.png", "特徵相關矩陣（Spearman）"),
+            ("regression_coef.png",    "工時驅動因子（OLS 迴歸）"),
+            ("crew_clusters.png",      "人員值勤模式分群（K-means）"),
+        ],
+    },
+    {
         "label": "海域 × 海況",
         "charts": [
             ("zone_bar.png",         "值勤海域分布"),
