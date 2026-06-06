@@ -3,12 +3,13 @@
 Gradio 互動分析介面 — 視覺風格對齊 PHP 系統的編輯感主題。
 """
 
+import json
 import os
 from pathlib import Path
 from datetime import date
 
 import gradio as gr
-from analysis import generate_charts, get_connection, get_filter_options
+from analysis import generate_charts, compute_recommendations, get_connection, get_filter_options
 
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/app/output"))
 
@@ -365,20 +366,100 @@ button.primary:hover,
 
 HERO_HTML = """
 <div class="page-hero">
-  <div class="eyebrow">資料分析 · INTERACTIVE</div>
+  <div class="eyebrow">海象感知智慧排班與勤務決策 · INTERACTIVE</div>
   <h1>海事勤務互動分析介面</h1>
   <p class="lead">
     設定日期範圍、海域、船艦條件後點擊「執行分析」，系統會即時重跑 Pandas/SciPy
-    並輸出 11 張統計圖表。所有圖表也會同步寫入分析儀表板，供管理者於 PHP 系統檢視。
+    並輸出 15 張統計圖表與勤務決策建議。所有圖表同步寫入分析儀表板，供管理者於 PHP 系統檢視。
   </p>
 </div>
 """
 
 FOOTER_HTML = """
 <div class="page-footer">
-  海事勤務值勤管理系統 · 114-2 巨量資料與雲端運算 · 第 2 組
+  海象感知智慧排班與勤務決策平台 · 114-2 巨量資料與雲端運算 · 第 2 組
 </div>
 """
+
+
+def _rec_to_html(rec: dict) -> str:
+    """將 compute_recommendations 結果轉為 Gradio HTML 顯示。"""
+    if not rec:
+        return "<p style='color:#9a948a;padding:24px;'>尚未產生建議，請先點擊「執行分析」。</p>"
+
+    level_style = {
+        "ok":   "background:#e8f5e9;border-left:3px solid #4caf50;color:#1b5e20;",
+        "info": "background:#e3f2fd;border-left:3px solid #2196f3;color:#0d47a1;",
+        "warn": "background:#fff3e0;border-left:3px solid #ff9800;color:#e65100;",
+        "err":  "background:#fce4ec;border-left:3px solid #e91e63;color:#880e4f;",
+    }
+
+    parts = [
+        "<div style='font-family:Inter,system-ui,sans-serif;padding:16px 0;'>",
+        f"<p style='font-size:16px;font-weight:500;color:#141413;margin:0 0 16px;'>{rec.get('headline','')}</p>",
+    ]
+
+    # 警示
+    for al in rec.get("alerts", []):
+        s = level_style.get(al.get("level", "info"), level_style["info"])
+        parts.append(f"<div style='{s}padding:10px 14px;border-radius:6px;margin-bottom:8px;font-size:13.5px;'>{al['text']}</div>")
+
+    # 海域風險表
+    zr = rec.get("zone_risk", [])
+    if zr:
+        parts.append("<h3 style='font-size:14px;font-weight:600;color:#36352f;margin:20px 0 8px;'>各海域近 30 天海況</h3>")
+        parts.append("<table style='width:100%;border-collapse:collapse;font-size:13px;'>")
+        parts.append("<tr style='color:#9a948a;border-bottom:1px solid #e8e5dc;'>"
+                     "<th style='text-align:left;padding:6px 4px;'>海域</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>次數</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>平均工時</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>大浪%</th></tr>")
+        for z in zr:
+            c = "color:#c96442;font-weight:600;" if z["rough_pct"] > 20 else ""
+            parts.append(f"<tr style='border-bottom:1px solid #f0ede5;'>"
+                         f"<td style='padding:8px 4px;font-weight:500;'>{z['zone']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;'>{z['count']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;'>{z['avg_hours']} h</td>"
+                         f"<td style='text-align:right;padding:8px 4px;{c}'>{z['rough_pct']}%</td></tr>")
+        parts.append("</table>")
+
+    # 人員暴露排名（top 8）
+    er = rec.get("exposure_ranking", [])[:8]
+    if er:
+        parts.append("<h3 style='font-size:14px;font-weight:600;color:#36352f;margin:20px 0 8px;'>人員外海暴露排名（近 30 天 Top 8）</h3>")
+        parts.append("<table style='width:100%;border-collapse:collapse;font-size:13px;'>")
+        parts.append("<tr style='color:#9a948a;border-bottom:1px solid #e8e5dc;'>"
+                     "<th style='text-align:left;padding:6px 4px;'>人員 ID</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>次數</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>外海%</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>大浪%</th></tr>")
+        for e in er:
+            oc = "color:#c96442;font-weight:600;" if e["offshore_pct"] > 50 else ""
+            rc = "color:#c96442;font-weight:600;" if e["rough_sea_pct"] > 20 else ""
+            parts.append(f"<tr style='border-bottom:1px solid #f0ede5;'>"
+                         f"<td style='padding:8px 4px;font-family:monospace;font-size:12px;'>{e['user_id']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;'>{e['records']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;{oc}'>{e['offshore_pct']}%</td>"
+                         f"<td style='text-align:right;padding:8px 4px;{rc}'>{e['rough_sea_pct']}%</td></tr>")
+        parts.append("</table>")
+
+    ts = rec.get("generated_at", "")
+    if ts:
+        parts.append(f"<p style='font-size:12px;color:#9a948a;margin-top:16px;'>建議報告生成時間：{ts}</p>")
+
+    parts.append("</div>")
+    return "".join(parts)
+
+
+def _load_rec_html(prefix: str = "") -> str:
+    for fname in [f"{prefix}recommendations.json", "recommendations.json"]:
+        p = OUTPUT_DIR / fname
+        if p.exists():
+            try:
+                return _rec_to_html(json.loads(p.read_text("utf-8")))
+            except Exception:
+                pass
+    return _rec_to_html(None)
 
 
 # ── 建立介面 ──────────────────────────────────────────────────────────────────
@@ -425,6 +506,9 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
             gr.HTML('<div class="section-eyebrow">RESULTS · 分析結果</div>')
             charts = []
             with gr.Tabs():
+                with gr.Tab(label="勤務決策建議"):
+                    rec_html = gr.HTML(value=_load_rec_html())
+
                 for tab_def in CHART_TABS:
                     with gr.Tab(label=tab_def["label"]):
                         tab_files = tab_def["charts"]
@@ -454,14 +538,15 @@ with gr.Blocks(title="海事勤務分析系統") as demo:
             prefix = "filtered_" if any([date_from, date_to, z_filter, v_filter]) else ""
             path_map = {Path(p).name: p for p in paths}
             ordered = [path_map.get(f"{prefix}{f}", None) for f in CHART_FILES]
-            return ordered + ["✅ 分析完成，圖表已更新"]
+            rec = _load_rec_html(prefix)
+            return ordered + [rec, "✅ 分析完成，圖表已更新"]
         except Exception as e:
-            return [None] * len(CHART_LABELS) + [f"❌ 錯誤：{e}"]
+            return [None] * len(CHART_LABELS) + [_rec_to_html(None), f"❌ 錯誤：{e}"]
 
     run_btn.click(
         fn=on_run,
         inputs=[date_from_input, date_to_input, zone_input, vessel_input],
-        outputs=charts + [status_txt],
+        outputs=charts + [rec_html, status_txt],
     )
     vessel_all_btn.click(lambda: opts["vessels"], outputs=vessel_input)
     vessel_clr_btn.click(lambda: [], outputs=vessel_input)
