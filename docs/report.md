@@ -366,12 +366,14 @@ docker compose run analysis python analysis.py
 
 ### 7.2 預設測試帳號
 
-| 帳號 | 密碼（hash 已存入 DB） | 角色 |
-|------|----------------------|------|
-| boss1 | （見 schema.sql）| 老闆 |
-| admin1 | （見 schema.sql）| 管理員 |
-| em1 | （見 schema.sql）| 員工 |
+| 帳號 | Demo 密碼 | 角色 |
+|------|-----------|------|
+| boss1 | demo1234 | 老闆 |
+| admin1 | demo1234 | 管理員 |
+| em1 | demo1234 | 員工 |
 | chen_wei 等 10 人 | maritime2025 | 員工/管理員 |
+
+> 種子帳號密碼由 `scripts/setup_web.sh` 在首次啟動時透過 bcrypt 重設，原始 schema.sql 中的 hash 為佔位值。
 
 ### 7.3 分析圖表洞察摘要（15 張）
 

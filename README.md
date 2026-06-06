@@ -4,6 +4,20 @@
 
 延續上學期 PHP + MySQL 值勤管理雛形，改造為 Linux 雲端容器化系統，並整合 Python 資料分析模組與 Gradio 互動儀表板。一指令 `docker compose up` 完成三容器部署。
 
+> **別人分析海象，我們用海象做人力決策。** 全班唯一把中央氣象署海象資料接進值勤排班決策的營運管理系統。
+
+---
+
+## 系統截圖
+
+| 登入頁 | 個人儀表板 |
+|--------|-----------|
+| ![登入](docs/screenshots/test/01_login.png) | ![儀表板](docs/screenshots/test/02_dashboard.png) |
+
+| 勤務決策建議看板 | 統計分析圖表 |
+|-----------------|-------------|
+| ![決策建議](docs/screenshots/test/09_recommendations.png) | ![圖表](docs/screenshots/test/11_charts_section.png) |
+
 ---
 
 ## 組員
@@ -115,10 +129,12 @@ docker compose run -p 8888:8888 analysis \
 
 | 帳號 | 角色 | 密碼 |
 |------|------|------|
-| boss1 | 老闆 | （見 `src/app/schema.sql` 註解） |
-| admin1 | 管理員 | （見 `src/app/schema.sql` 註解） |
-| em1 | 員工 | （見 `src/app/schema.sql` 註解） |
-| chen_wei, lin_jia, ... | 員工 | `maritime2025` |
+| boss1 | 老闆 | demo1234 |
+| admin1 | 管理員 | demo1234 |
+| em1 | 員工 | demo1234 |
+| chen_wei, lin_jia, ... | 員工 | maritime2025 |
+
+> 密碼由 `scripts/setup_web.sh` 在首次啟動時透過 bcrypt 重設。若跳過此腳本直接用 `docker compose up`，請改以 `docker compose run --rm web php /reset_demo_pw.php` 重設。
 
 ---
 
