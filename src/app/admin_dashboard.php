@@ -97,7 +97,7 @@ foreach (['filtered_stats_summary.json', 'stats_summary.json'] as $sfile) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>分析儀表板 · 海事勤務</title>
+  <title>分析儀表板 · 海象感知智慧排班與勤務決策平台</title>
   <?php style_link(); ?>
 </head>
 <body>
@@ -105,10 +105,10 @@ foreach (['filtered_stats_summary.json', 'stats_summary.json'] as $sfile) {
 <div class="wrap" style="padding:2.5rem 16px 3rem">
 
   <header class="hero">
-    <div class="eyebrow">資料分析 · Analysis</div>
+    <div class="eyebrow">海象感知智慧排班與勤務決策 · Maritime Intelligence</div>
     <h1 class="hero-title">海事勤務分析儀表板</h1>
     <p class="lead">
-      以六個月實際與模擬值勤資料生成 15 張統計圖表與推論檢定報告，涵蓋時序趨勢、時間序列預測、多元迴歸建模、海象交互效應、異常偵測與資源集中度等面向。
+      別人分析海象，我們用海象做人力決策。以六個月值勤資料生成 15 張統計圖表，涵蓋時序趨勢、時間序列預測、多元迴歸工時建模、海象交互效應分析、人員分群與排班決策建議。
       互動式篩選請點右側按鈕進入 Gradio 介面。
     </p>
     <div class="hero-bar">
