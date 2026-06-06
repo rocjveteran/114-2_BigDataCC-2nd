@@ -23,7 +23,7 @@
 
 系統採三容器 Docker Compose 架構，涵蓋 PHP/Apache 前端、MySQL 資料庫與 Python 分析服務，可以單一指令完成部署。
 
-在資料端，以 Python 腳本動態生成相對今天回推 183 天、約 1,200 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出 15 張 Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時間序列預測與多元迴歸建模）。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
+在資料端，以 Python 腳本動態生成相對今天回推 183 天、約 1,200 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出 16 張 Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時間序列預測與多元迴歸建模）。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
 
 本系統完整覆蓋課程必要技術（Python + Pandas、Matplotlib/Seaborn、Docker、Git/GitHub）及多項選擇性技術（MySQL、Apache + PHP、Jupyter、Gradio），具備海事領域特性，可作為實際部署之管理工具基礎。
 
@@ -153,7 +153,7 @@
 | 技術 | 類型 | 應用位置 |
 |------|------|---------|
 | Python + Pandas | 必要 | `analysis.py` 資料清洗與統計 |
-| Matplotlib / Seaborn | 必要 | `analysis.py` 15 張圖表 |
+| Matplotlib / Seaborn | 必要 | `analysis.py` 16 張圖表 |
 | Docker / Docker Compose | 必要 | `docker/` 三容器編排 |
 | Git / GitHub | 必要 | commit 紀錄、PR 管理 |
 | MySQL 8.0 | 選擇性 | 值勤資料持久化 |
@@ -204,7 +204,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 
 ### 4.3 視覺化
 
-共產出 15 張圖表，輸出至 `analysis_output/` 共用 volume：
+共產出 16 張圖表，輸出至 `analysis_output/` 共用 volume：
 
 | 圖檔 | 圖表類型 | 說明 |
 |------|---------|------|
@@ -223,6 +223,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | `correlation_matrix.png` | Spearman 相關熱力圖 | 工時與海況、海域、星期、上工時刻等特徵的關聯結構 |
 | `regression_coef.png` | 水平係數圖 | 工時驅動因子的標準化多元迴歸係數（R² 見圖標題）|
 | `crew_clusters.png` | 分群散點圖 | 以平均工時 × 外海暴露比例對人員進行 K-means 分群 |
+| `markov_heatmap.png` | 雙熱力圖 | 海況 Markov 轉移機率矩陣（左）＋ 未來 7 天海況預測機率（右）|
 
 ### 4.4 統計檢定
 
@@ -250,9 +251,16 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 - **人員值勤模式分群**（`crew_clusters.png`）：以每人之平均工時與外海值勤比例
   為特徵，套用 K-means（`scipy.cluster.vq`）分群，辨識不同輪值型態，輔助排班
   與人力調度決策。
+- **Markov 海況轉移預測**（`markov_heatmap.png`）：以歷史值勤資料中連續兩日的
+  海況轉移次數估計 4×4 Markov 轉移機率矩陣（純 `numpy` 矩陣運算），再以矩陣連乘
+  外推未來 7 天各海況之發生機率分布，呈現為雙熱力圖。7 天內大浪期望機率超過 15%
+  時，系統自動觸發排班預警寫入 `recommendations.json`，直接驅動下週勤務調度建議。
+- **人員輪換最佳化**：`compute_recommendations()` 以外海暴露率（60% 加權）+ 大浪
+  頻率（40% 加權）計算每人風險積分，依優先級輸出具名輪換指令（如「王大明建議下
+  週調至港口值勤」），並列出可接替外海任務之低暴露人員。
 
-上述結果同步寫入 `stats_summary.json`，由 PHP 分析儀表板的「預測與建模」分區與
-推論洞察卡片呈現。
+上述結果同步寫入 `stats_summary.json` 與 `recommendations.json`，由 PHP 分析儀表板的
+「預測與建模」、「勤務決策建議」兩分區呈現。
 
 ---
 
@@ -280,7 +288,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | 資源調度 | 船艦次數、Pareto 圖、人員月度熱力圖（3 張）|
 | 異常診斷 | Z-score 異常偵測（1 張）|
 
-點擊「執行分析」後，`generate_charts()` 依篩選條件動態查詢 MySQL，重新產生 15 張圖表與 `recommendations.json`，Gradio 介面自動更新所有 tab。
+點擊「執行分析」後，`generate_charts()` 依篩選條件動態查詢 MySQL，重新產生 16 張圖表與 `recommendations.json`，Gradio 介面自動更新所有 tab。
 
 ### 5.2 技術設計重點
 
@@ -375,7 +383,7 @@ docker compose run analysis python analysis.py
 
 > 種子帳號密碼由 `scripts/setup_web.sh` 在首次啟動時透過 bcrypt 重設，原始 schema.sql 中的 hash 為佔位值。
 
-### 7.3 分析圖表洞察摘要（15 張）
+### 7.3 分析圖表洞察摘要（16 張）
 
 **時序趨勢（3 張）**
 
@@ -389,6 +397,7 @@ docker compose run analysis python analysis.py
 - `correlation_matrix.png`：Spearman 相關矩陣顯示「上工時刻」與「海況等級」對工時的負向關聯最強（r ≈ −0.4 ∼ −0.5）
 - `regression_coef.png`：標準化 OLS 迴歸係數確認「上工時刻越晚、工時越短」與「大浪天工時縮減」兩項效應；模型 R² 約 0.30–0.40
 - `crew_clusters.png`：K-means 將人員分為「高外海輪值型」「港口值守型」「均衡型」三群，輔助調度決策
+- `markov_heatmap.png`：以連續兩日海況轉移次數估計 4×4 Markov 轉移機率矩陣；右子圖以矩陣連乘外推未來 7 天各海況之發生機率分布，並將大浪期望機率寫入 `recommendations.json` 供排班警示使用
 
 **海域 × 海況（5 張）**
 

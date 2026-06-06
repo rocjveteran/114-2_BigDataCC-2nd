@@ -114,7 +114,7 @@ def test_fit_hours_ols_insufficient_data_returns_none():
     "_chart_hours_boxplot", "_chart_person_heatmap", "_chart_hours_heatmap",
     "_chart_anomaly_detect", "_chart_weekday_pattern", "_chart_vessel_pareto",
     "_chart_vessel_count", "_chart_forecast_duty", "_chart_correlation",
-    "_chart_regression_coef", "_chart_crew_clusters",
+    "_chart_regression_coef", "_chart_crew_clusters", "_chart_markov_heatmap",
 ])
 def test_chart_functions_return_figure(fn):
     from matplotlib.figure import Figure
@@ -136,7 +136,7 @@ def test_generate_charts_writes_all_outputs(tmp_path, monkeypatch):
     monkeypatch.setattr(analysis, "_clean", lambda a, l: (a, l))
 
     paths = analysis.generate_charts(tmp_path)
-    assert len(paths) == 15
+    assert len(paths) == 16
     for p in paths:
         assert Path(p).exists()
     assert (tmp_path / "stats_summary.json").exists()
@@ -151,11 +151,15 @@ def test_compute_recommendations_structure():
     assert "alerts" in rec and isinstance(rec["alerts"], list) and len(rec["alerts"]) > 0
     assert "zone_risk" in rec and isinstance(rec["zone_risk"], list)
     assert "exposure_ranking" in rec and isinstance(rec["exposure_ranking"], list)
+    assert "rotation_suggestions" in rec and isinstance(rec["rotation_suggestions"], list)
+    assert "markov_rough_7day" in rec
     for alert in rec["alerts"]:
         assert "level" in alert and alert["level"] in ("ok", "info", "warn", "err")
         assert "text" in alert and len(alert["text"]) > 0
     for zr in rec["zone_risk"]:
         assert "zone" in zr and "rough_pct" in zr and "avg_hours" in zr
+    for rs in rec["rotation_suggestions"]:
+        assert "name" in rs and "action" in rs and "priority" in rs
 
 
 def test_compute_recommendations_empty():

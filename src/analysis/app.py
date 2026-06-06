@@ -29,6 +29,7 @@ CHART_TABS = [
             ("correlation_matrix.png", "特徵相關矩陣（Spearman）"),
             ("regression_coef.png",    "工時驅動因子（OLS 迴歸）"),
             ("crew_clusters.png",      "人員值勤模式分群（K-means）"),
+            ("markov_heatmap.png",     "海況 Markov 轉移矩陣 + 7 天預測"),
         ],
     },
     {
@@ -442,6 +443,33 @@ def _rec_to_html(rec: dict) -> str:
                          f"<td style='text-align:right;padding:8px 4px;{oc}'>{e['offshore_pct']}%</td>"
                          f"<td style='text-align:right;padding:8px 4px;{rc}'>{e['rough_sea_pct']}%</td></tr>")
         parts.append("</table>")
+
+    # 人員輪換建議
+    rs = rec.get("rotation_suggestions", [])
+    if rs:
+        parts.append("<h3 style='font-size:14px;font-weight:600;color:#36352f;margin:20px 0 8px;'>人員輪換建議</h3>")
+        parts.append("<table style='width:100%;border-collapse:collapse;font-size:13px;'>")
+        parts.append("<tr style='color:#9a948a;border-bottom:1px solid #e8e5dc;'>"
+                     "<th style='text-align:left;padding:6px 4px;'>姓名</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>外海%</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>大浪%</th>"
+                     "<th style='text-align:left;padding:6px 12px;'>建議行動</th></tr>")
+        for r in rs:
+            nc = "color:#c96442;font-weight:600;" if r["priority"] == "high" else ""
+            ac = "color:#c96442;" if r["priority"] == "high" else "color:#1565c0;"
+            parts.append(f"<tr style='border-bottom:1px solid #f0ede5;'>"
+                         f"<td style='padding:8px 4px;font-weight:500;'>{r['name']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;{nc}'>{r['offshore_pct']}%</td>"
+                         f"<td style='text-align:right;padding:8px 4px;'>{r['rough_sea_pct']}%</td>"
+                         f"<td style='padding:8px 12px;{ac}'>{r['action']}</td></tr>")
+        parts.append("</table>")
+
+    # Markov 預測摘要
+    m7 = rec.get("markov_rough_7day")
+    if m7 is not None:
+        mc = "background:#fff3e0;border-left:3px solid #ff9800;color:#e65100;" if m7 > 15 else "background:#e3f2fd;border-left:3px solid #2196f3;color:#0d47a1;"
+        parts.append(f"<div style='{mc}padding:10px 14px;border-radius:6px;margin-top:16px;font-size:13.5px;'>"
+                     f"Markov 模型預測：未來 7 天大浪期望機率 <strong>{m7}%</strong></div>")
 
     ts = rec.get("generated_at", "")
     if ts:

@@ -280,6 +280,34 @@ foreach (['filtered_recommendations.json', 'recommendations.json'] as $rfile) {
         <?php endif; ?>
       </div>
 
+      <?php if (!empty($rec['rotation_suggestions'])): ?>
+      <div class="card" style="padding:18px 20px;margin-top:20px;">
+        <div class="card-head"><h3>人員輪換建議</h3></div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr style="color:var(--muted);font-size:12px;">
+            <th style="text-align:left;padding:4px 0;">姓名</th>
+            <th style="text-align:right;">外海%</th>
+            <th style="text-align:right;">大浪%</th>
+            <th style="text-align:left;padding-left:12px;">建議行動</th>
+          </tr>
+          <?php foreach ($rec['rotation_suggestions'] as $rs): ?>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:6px 0;font-weight:500;"><?= h($rs['name']) ?></td>
+            <td style="text-align:right;<?= $rs['priority']==='high' ? 'color:var(--err);font-weight:600;' : '' ?>"><?= h($rs['offshore_pct']) ?>%</td>
+            <td style="text-align:right;"><?= h($rs['rough_sea_pct']) ?>%</td>
+            <td style="padding-left:12px;color:<?= $rs['priority']==='high' ? 'var(--err)' : 'var(--primary)' ?>;"><?= h($rs['action']) ?></td>
+          </tr>
+          <?php endforeach; ?>
+        </table>
+      </div>
+      <?php endif; ?>
+
+      <?php if (!empty($rec['markov_rough_7day'])): ?>
+      <div class="msg info" style="margin-top:16px;">
+        Markov 模型預測：未來 7 天大浪期望機率 <strong><?= h($rec['markov_rough_7day']) ?>%</strong>
+      </div>
+      <?php endif; ?>
+
       <?php if (!empty($rec['generated_at'])): ?>
         <div class="muted" style="font-size:12.5px;margin-top:14px;">建議報告生成時間：<?= h($rec['generated_at']) ?></div>
       <?php endif; ?>

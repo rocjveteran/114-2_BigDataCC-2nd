@@ -135,6 +135,7 @@ def generate_charts(
         (f"{prefix}correlation_matrix.png", lambda: _chart_correlation(att)),
         (f"{prefix}regression_coef.png",    lambda: _chart_regression_coef(att)),
         (f"{prefix}crew_clusters.png",      lambda: _chart_crew_clusters(att)),
+        (f"{prefix}markov_heatmap.png",     lambda: _chart_markov_heatmap(att)),
     ]:
         fig = chart_fn()
         path = out / fn
@@ -563,6 +564,62 @@ def _chart_crew_clusters(att):
     fig.tight_layout(); return fig
 
 
+# ── 圖 16：Markov 海況轉移矩陣 + 未來 7 天預測 ───────────────────────────────
+
+def _compute_markov_transition(att: pd.DataFrame) -> np.ndarray:
+    """以 (今日海況 → 明日海況) 轉移次數計算 4×4 機率矩陣。"""
+    n = len(SEA_STATES)
+    idx = {s: i for i, s in enumerate(SEA_STATES)}
+    seq = att.sort_values("work_date")["sea_state"].dropna().tolist()
+    counts = np.zeros((n, n))
+    for a, b in zip(seq[:-1], seq[1:]):
+        if a in idx and b in idx:
+            counts[idx[a]][idx[b]] += 1
+    row_sums = counts.sum(axis=1, keepdims=True)
+    row_sums[row_sums == 0] = 1
+    return counts / row_sums
+
+
+def _chart_markov_heatmap(att: pd.DataFrame):
+    """圖 16：Markov 轉移機率矩陣（左）＋ 未來 7 天海況預測機率熱力圖（右）。"""
+    trans = _compute_markov_transition(att)
+    states = SEA_STATES
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    sns.heatmap(trans, annot=True, fmt=".2f", cmap="Blues",
+                xticklabels=states, yticklabels=states,
+                ax=ax1, vmin=0, vmax=1,
+                cbar_kws={"label": "轉移機率"})
+    ax1.set_title("海況 Markov 轉移機率矩陣")
+    ax1.set_xlabel("下一日海況")
+    ax1.set_ylabel("當日海況")
+
+    last_valid = att.sort_values("work_date")["sea_state"].dropna()
+    if last_valid.empty:
+        ax2.set_title("（無資料）")
+        fig.tight_layout()
+        return fig
+
+    last_idx = SEA_STATES.index(last_valid.iloc[-1])
+    probs = np.zeros((8, len(states)))
+    probs[0, last_idx] = 1.0
+    for d in range(1, 8):
+        probs[d] = probs[d - 1] @ trans
+
+    prob_df = pd.DataFrame(probs[1:], columns=states,
+                           index=[f"D+{i + 1}" for i in range(7)])
+    sns.heatmap(prob_df.T, annot=True, fmt=".2f", cmap="YlOrRd",
+                ax=ax2, vmin=0, vmax=1,
+                cbar_kws={"label": "機率"})
+    ax2.set_title("未來 7 天海況預測機率（Markov）")
+    ax2.set_xlabel("預測天數")
+    ax2.set_ylabel("海況")
+
+    fig.tight_layout()
+    return fig
+
+
 # ── 統計檢定報告 ─────────────────────────────────────────────────────────────
 def compute_stats(att, leaves) -> dict:
     """
@@ -705,6 +762,8 @@ def compute_recommendations(att) -> dict:
         "zone_risk": [],
         "exposure_ranking": [],
         "alerts": [],
+        "rotation_suggestions": [],
+        "markov_rough_7day": None,
     }
 
     if att.empty:
@@ -765,12 +824,61 @@ def compute_recommendations(att) -> dict:
             "level": "info",
             "text": f"近期有 {len(long_duty)} 筆值勤超過 12 小時，請確認人員是否充分休息。",
         })
+    # Markov 7 天大浪期望機率預警
+    if len(att) >= 10:
+        trans = _compute_markov_transition(att)
+        last_valid = att.sort_values("work_date")["sea_state"].dropna()
+        if not last_valid.empty:
+            last_idx = SEA_STATES.index(last_valid.iloc[-1])
+            probs = np.zeros((8, len(SEA_STATES)))
+            probs[0, last_idx] = 1.0
+            for _d in range(1, 8):
+                probs[_d] = probs[_d - 1] @ trans
+            rough_7day = float(probs[1:, SEA_STATES.index("大浪")].mean())
+            out["markov_rough_7day"] = round(rough_7day * 100, 1)
+            if rough_7day > 0.15:
+                alerts.append({
+                    "level": "warn",
+                    "text": (
+                        f"Markov 預測：未來 7 天大浪期望機率 {rough_7day*100:.0f}%，"
+                        "建議提前評估外海任務是否需調整排班。"
+                    ),
+                })
+
     if not alerts:
         alerts.append({
             "level": "ok",
             "text": "近期海況與值勤負荷均在正常範圍內，目前無異常警示。",
         })
     out["alerts"] = alerts
+
+    # 輪換建議：依風險積分排序，對高暴露人員給出具體調度指令
+    suggestions = []
+    for p in sorted(
+        out["exposure_ranking"],
+        key=lambda x: x["offshore_pct"] * 0.6 + x["rough_sea_pct"] * 0.4,
+        reverse=True,
+    )[:len(out["exposure_ranking"])]:
+        uid = p["user_id"]
+        name_col = recent[recent["user_id"] == uid]["full_name"]
+        name = name_col.iloc[0] if len(name_col) > 0 else f"UID {uid}"
+        if p["offshore_pct"] >= 60:
+            suggestions.append({
+                "name": name,
+                "offshore_pct": p["offshore_pct"],
+                "rough_sea_pct": p["rough_sea_pct"],
+                "action": "建議下週調至港口值勤（外海暴露率超閾值）",
+                "priority": "high",
+            })
+        elif p["offshore_pct"] <= 15 and suggestions:
+            suggestions.append({
+                "name": name,
+                "offshore_pct": p["offshore_pct"],
+                "rough_sea_pct": p["rough_sea_pct"],
+                "action": "外海暴露率低，可接替外海勤務",
+                "priority": "normal",
+            })
+    out["rotation_suggestions"] = suggestions
 
     # 標題
     worst_zone = max(zone_stats, key=lambda x: x["rough_pct"]) if zone_stats else None

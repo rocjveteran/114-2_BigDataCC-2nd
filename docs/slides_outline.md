@@ -35,7 +35,7 @@
 | 問題 | 本學期解法 |
 |------|-----------|
 | 只能在 Windows XAMPP 執行 | Docker 三容器，一指令啟動 |
-| 只記錄、不分析 | Pandas + Seaborn 15 張圖 |
+| 只記錄、不分析 | Pandas + Seaborn 16 張圖 |
 | 通用打卡，無海事特性 | duty_zone / sea_state / vessel_id |
 
 ---
@@ -63,7 +63,7 @@ php:8.2-apache          python:3.11
 | 必要技術 | ✅ |
 |---------|---|
 | Python + Pandas | 資料清洗 / 統計分析 |
-| Matplotlib / Seaborn | 15 張視覺化圖表 |
+| Matplotlib / Seaborn | 16 張視覺化圖表 |
 | Docker 容器化 | docker-compose 三容器 |
 | Git / GitHub | Commit 紀錄 / PR |
 
@@ -118,6 +118,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 | `forecast_duty.png` | 線性外推未來 4 週，含 95% 預測區間 |
 | `regression_coef.png` | OLS 建模：R² ≈ 0.35，上工時刻為最大負向因子 |
 | `crew_clusters.png` | K-means 三群：高外海型 / 港口值守型 / 均衡型 |
+| `markov_heatmap.png` | Markov 矩陣：外海大浪天後，次日仍大浪機率 × %；7 天預測 |
 
 ---
 
@@ -129,9 +130,11 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 | 輸出 | 說明 |
 |------|------|
-| 警示訊息 | 大浪比例超閾值 / 外海×大浪組合 / 超時值勤（分 ok/info/warn/err）|
+| 警示訊息 | 大浪比例超閾值 / 外海×大浪組合 / 超時值勤 / Markov 7 天預警 |
 | 海域風險表 | 各海域次數、平均工時、大浪%，超過 20% 標紅 |
 | 人員暴露排名 | 依外海值勤比例排序，輔助輪換安排（Top 8）|
+| **人員輪換建議** | 外海暴露率 ≥ 60% → 具名建議調至港口；低暴露者列為接替候選 |
+| Markov 7 天預測 | 未來 7 天大浪期望機率；> 15% 自動觸發排班預警 |
 | 標題摘要 | 一句話自動產生的決策建議語 |
 
 `compute_recommendations()` → `recommendations.json` → PHP + Gradio 雙管道呈現
@@ -156,7 +159,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 - 登入（粒子波動畫） / 值勤打卡 / 請假申請
 - 管理員：值勤總覽、請假審核、帳號管理
-- 管理員：**分析儀表板** → 勤務決策建議 + 15 張圖表
+- 管理員：**分析儀表板** → 勤務決策建議 + 16 張圖表
 
 ---
 
@@ -185,7 +188,7 @@ Commit 紀錄（依前綴分類）：
 [docker]    建立三容器 docker-compose 配置
 [app]       置入 PHP 系統並完成 Linux 化改造
 [data]      新增模擬值勤資料生成腳本
-[analysis]  新增資料清洗、統計分析與 15 張視覺化圖表
+[analysis]  新增資料清洗、統計分析與 16 張視覺化圖表
 [app]       整合 Gradio 互動介面與 PHP 分析儀表板
 [docs]      期末報告與投影片大綱
 ```
@@ -199,11 +202,13 @@ PR 流程：feature branch → main
 **本學期達成**
 - 跨平台容器化部署 ✅
 - 海事 schema 擴充（duty_zone / sea_state / vessel_id）✅
-- 15 張分析圖表（含預測、迴歸、分群）✅
+- 16 張分析圖表（含預測、迴歸、分群、Markov）✅
 - 工時迴歸建模 + 時序預測 ✅
-- 勤務決策建議模組（全班唯一）✅
+- **Markov 海況轉移預測**（全班唯一）✅
+- **人員輪換最佳化建議**（全班唯一）✅
+- 勤務決策建議模組 ✅
 - Gradio 互動儀表板 ✅
-- GitHub Actions CI（21 tests）✅
+- GitHub Actions CI（22 tests）✅
 
 **未來可延伸**
 - 接入中央氣象署即時海象 API

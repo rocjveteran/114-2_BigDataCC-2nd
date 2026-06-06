@@ -68,7 +68,7 @@
 | 必要技術 | 應用位置 |
 |---------|---------|
 | **Python + Pandas** | `src/analysis/analysis.py` 資料清洗與統計 |
-| **Matplotlib / Seaborn** | 15 張視覺化圖表（含預測與建模）|
+| **Matplotlib / Seaborn** | 16 張視覺化圖表（含預測與建模）|
 | **Docker / Docker Compose** | `docker/` 三容器架構 |
 | **Git / GitHub** | 全部開發歷程 |
 
@@ -150,7 +150,7 @@ docker compose run -p 8888:8888 analysis \
 6. **管理員審核**：點「請假審核」→ 把剛才送出的請假核准
 7. **看勤務總覽**：點「勤務總覽」→ 切換日期查看全員狀態
 8. **產生分析圖表**：點「分析儀表板」右上「開啟互動分析介面」→ 跳到 Gradio (http://localhost:7860) → 點「執行分析」
-9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 15 張圖表與推論檢定報告
+9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 16 張圖表與推論檢定報告
 10. **下載日報表**：勤務總覽右上「匯出日報表」會下載當日 CSV
 
 ---
@@ -242,7 +242,7 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 │   │
 │   └── analysis/              ← Python 分析程式
 │       ├── generate_mock_data.py  ← 模擬資料生成
-│       ├── analysis.py            ← 資料清洗 + 15 張圖表
+│       ├── analysis.py            ← 資料清洗 + 16 張圖表
 │       └── app.py                 ← Gradio 互動介面
 │
 ├── notebooks/                 ← Jupyter Notebook（探索分析）
@@ -273,12 +273,12 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 | 值勤總覽 | 全員當日狀態 | 管理員以上 |
 | 請假審核 | 核准 / 拒絕 | 管理員以上 |
 | 帳號管理 | 新增、停用、改密 | 管理員以上 |
-| **分析儀表板** | 顯示 15 張 Python 圖表 | 管理員以上 |
+| **分析儀表板** | 顯示 16 張 Python 圖表 | 管理員以上 |
 | CSV 匯出 | 值勤記錄下載 | 管理員以上 |
 
 ### Python 分析模組
 
-15 張分析圖表，輸出至 `analysis_output/` 共用 volume：
+16 張分析圖表，輸出至 `analysis_output/` 共用 volume：
 
 1. `monthly_trend.png` — 月度值勤人次趨勢（折線圖）
 2. `zone_bar.png` — 值勤海域分布（長條圖）
@@ -295,13 +295,14 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 13. `correlation_matrix.png` — 特徵相關矩陣（Spearman 等級相關熱力圖）
 14. `regression_coef.png` — 工時驅動因子（標準化多元 OLS 迴歸係數）
 15. `crew_clusters.png` — 人員值勤模式分群（K-means）
+16. `markov_heatmap.png` — 海況 Markov 轉移機率矩陣 ＋ 未來 7 天海況預測機率
 
 ### Gradio 互動介面 (port 7860)
 
 - 日期區間篩選
 - 海域勾選（港口 / 近海 / 外海，可多選）
 - 船艦下拉（從 DB 動態載入，可多選）
-- 即時執行分析，依分頁（時序趨勢 / 預測與建模 / 海域 × 海況 / 資源調度 / 異常診斷）顯示 15 張圖
+- 即時執行分析，依分頁（時序趨勢 / 預測與建模 / 海域 × 海況 / 資源調度 / 異常診斷）顯示 16 張圖
 
 ---
 
