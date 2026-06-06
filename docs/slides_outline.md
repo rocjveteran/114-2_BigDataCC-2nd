@@ -109,37 +109,58 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 ## Slide 8｜分析洞察（圖表展示）
 
-**放入圖表截圖**
+**以下三張為 Demo 重點截圖**
 
-- `zone_sea_stacked.png`：外海大浪佔比 20%，遠高於港口
-- `hours_boxplot.png`：大浪天值勤時數中位數低 ~1.5h
-- `person_heatmap.png`：人員出勤熱力圖，快速識別異常
-
----
-
-## Slide 9｜Gradio 互動介面
-
-**Demo 截圖**
-
-篩選條件 → 執行分析 → 即時圖表更新
-
-- 日期區間篩選
-- 海域多選
-- 船艦多選（從 DB 動態載入）
+| 圖表 | 關鍵發現 |
+|------|---------|
+| `zone_sea_stacked.png` | 外海大浪比例 20%，是港口的 20 倍 |
+| `hours_boxplot.png` | 大浪天工時中位數低 1.5 h（ANOVA p < 0.05）|
+| `forecast_duty.png` | 線性外推未來 4 週，含 95% 預測區間 |
+| `regression_coef.png` | OLS 建模：R² ≈ 0.35，上工時刻為最大負向因子 |
+| `crew_clusters.png` | K-means 三群：高外海型 / 港口值守型 / 均衡型 |
 
 ---
 
-## Slide 10｜PHP 系統功能
+## Slide 9｜勤務決策建議（核心差異化功能）
+
+**Demo 截圖：PHP 儀表板「勤務決策建議」看板 + Gradio 決策建議 tab**
+
+系統以近 30 天資料自動計算：
+
+| 輸出 | 說明 |
+|------|------|
+| 警示訊息 | 大浪比例超閾值 / 外海×大浪組合 / 超時值勤（分 ok/info/warn/err）|
+| 海域風險表 | 各海域次數、平均工時、大浪%，超過 20% 標紅 |
+| 人員暴露排名 | 依外海值勤比例排序，輔助輪換安排（Top 8）|
+| 標題摘要 | 一句話自動產生的決策建議語 |
+
+`compute_recommendations()` → `recommendations.json` → PHP + Gradio 雙管道呈現
+
+---
+
+## Slide 10｜Gradio 互動介面
 
 **Demo 截圖**
 
-- 登入 / 打卡 / 請假申請
+篩選條件 → 執行分析 → 即時更新所有輸出
+
+- 「勤務決策建議」tab（首位）：警示 + 風險表 + 暴露排名
+- 「時序趨勢」「預測與建模」「海域×海況」「資源調度」「異常診斷」共 5 個圖表 tab
+- 日期 / 海域 / 船艦三維篩選，篩選結果存 `filtered_*.png` 不蓋掉全覽
+
+---
+
+## Slide 11｜PHP 系統功能
+
+**Demo 截圖**
+
+- 登入（粒子波動畫） / 值勤打卡 / 請假申請
 - 管理員：值勤總覽、請假審核、帳號管理
-- 管理員：**分析儀表板**（嵌入 Python 圖表）
+- 管理員：**分析儀表板** → 勤務決策建議 + 15 張圖表
 
 ---
 
-## Slide 11｜Docker 部署 Demo
+## Slide 12｜Docker 部署 Demo
 
 ```bash
 cp .env.example .env
@@ -156,7 +177,7 @@ docker compose up --build
 
 ---
 
-## Slide 12｜GitHub 管理
+## Slide 13｜GitHub 管理
 
 Commit 紀錄（依前綴分類）：
 
@@ -173,14 +194,16 @@ PR 流程：feature branch → main
 
 ---
 
-## Slide 13｜結語與未來展望
+## Slide 14｜結語與未來展望
 
 **本學期達成**
 - 跨平台容器化部署 ✅
-- 海事 schema 擴充 ✅
-- 15 張分析圖表 ✅
+- 海事 schema 擴充（duty_zone / sea_state / vessel_id）✅
+- 15 張分析圖表（含預測、迴歸、分群）✅
 - 工時迴歸建模 + 時序預測 ✅
+- 勤務決策建議模組（全班唯一）✅
 - Gradio 互動儀表板 ✅
+- GitHub Actions CI（21 tests）✅
 
 **未來可延伸**
 - 接入中央氣象署即時海象 API
