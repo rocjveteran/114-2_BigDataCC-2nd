@@ -852,25 +852,32 @@ def compute_recommendations(att) -> dict:
         })
     out["alerts"] = alerts
 
-    # 輪換建議：依風險積分排序，對高暴露人員給出具體調度指令
-    suggestions = []
-    for p in sorted(
+    # 輪換建議：以相對排名產生具名調度指令
+    # 將風險積分 (外海比例×0.6 + 大浪比例×0.4) 排序，取前 3 高暴露者建議輪換
+    ranked = sorted(
         out["exposure_ranking"],
         key=lambda x: x["offshore_pct"] * 0.6 + x["rough_sea_pct"] * 0.4,
         reverse=True,
-    )[:len(out["exposure_ranking"])]:
+    )
+    avg_offshore = float(np.mean([p["offshore_pct"] for p in ranked])) if ranked else 0
+    suggestions = []
+    for p in ranked:
         uid = p["user_id"]
         name_col = recent[recent["user_id"] == uid]["full_name"]
         name = name_col.iloc[0] if len(name_col) > 0 else f"UID {uid}"
-        if p["offshore_pct"] >= 60:
+        score = p["offshore_pct"] * 0.6 + p["rough_sea_pct"] * 0.4
+        avg_score = avg_offshore * 0.6
+        # 高暴露：絕對超過 50%，或相對高於平均 1.5 倍且排前 3
+        if p["offshore_pct"] >= 50 or (score > avg_score * 1.5 and len(suggestions) < 3):
             suggestions.append({
                 "name": name,
                 "offshore_pct": p["offshore_pct"],
                 "rough_sea_pct": p["rough_sea_pct"],
-                "action": "建議下週調至港口值勤（外海暴露率超閾值）",
+                "action": "建議下週調至港口值勤（外海暴露偏高）",
                 "priority": "high",
             })
-        elif p["offshore_pct"] <= 15 and suggestions:
+        # 低暴露：排名後段、外海比例低於平均一半，最多列 2 人作為接替候選
+        elif p["offshore_pct"] < avg_offshore * 0.5 and len([s for s in suggestions if s["priority"] == "normal"]) < 2:
             suggestions.append({
                 "name": name,
                 "offshore_pct": p["offshore_pct"],
