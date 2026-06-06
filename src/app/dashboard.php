@@ -121,7 +121,7 @@ $area = "M ".round($pts[0][0],1)." ".round($padT+$inner_h,1)." L ".implode(' L '
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>儀表板 · 海事勤務</title>
+  <title>儀表板 · 海象感知智慧排班與勤務決策平台</title>
   <?php style_link(); ?>
 </head>
 <body>
@@ -131,7 +131,7 @@ $area = "M ".round($pts[0][0],1)." ".round($padT+$inner_h,1)." L ".implode(' L '
     $hello = $_SESSION['full_name'] ?? '';
     page_header(
       '歡迎回來，'.$hello,
-      $today.' · 星期'.$wd.'。一目了然今日值勤、本週時數、艦上人員配置。',
+      $today.' · 星期'.$wd.'。一目了然今日值勤、本週時數、艦上人員配置與即時海象。',
       'DASHBOARD · 儀表板'
     );
     ?>

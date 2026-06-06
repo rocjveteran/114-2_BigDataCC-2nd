@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>登入 · 海事勤務</title>
+  <title>登入 · 海象感知智慧排班與勤務決策平台</title>
   <?php style_link(); ?>
 </head>
 <body class="login-page">
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </svg>
 
   <div class="wrap narrow" style="padding-top:24px;">
-    <?php page_header('登入系統', '請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
+    <?php page_header('登入系統', '海象感知智慧排班與勤務決策平台 · 請以您的帳號與密碼進入。如忘記密碼，請聯絡管理者。', 'ACCESS · 存取'); ?>
 
     <div class="card">
       <?php if ($error): ?>
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="login-scope">
         <span class="scope-dot"></span>
-        勤務打卡 · 請假審核 · 艦上人員配置 · 海象連動 · 統計分析
+        勤務打卡 · 請假審核 · 艦上人員配置 · 海象感知排班決策 · 統計分析
       </div>
     </div>
   </div>

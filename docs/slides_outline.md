@@ -1,30 +1,46 @@
 # 投影片大綱
-# 海事勤務值勤雲端管理系統
+# 海象感知智慧排班與勤務決策平台
 # 114-2 巨量資料與雲端運算 第 2 組
 
 ---
 
 ## Slide 1｜封面
 
-**海事勤務值勤雲端管理系統**
+**海象感知智慧排班與勤務決策平台**
+*海事勤務值勤雲端管理系統*
 114-2 巨量資料與雲端運算 ── 第 2 組
 黃宇平 · 傅瀚鋌 · 曾紹喆 · 劉家样 · 李翊丞 · 林秉賢
 
+> 別人分析海象，我們用海象做人力決策。
+
 ---
 
-## Slide 2｜問題與動機
+## Slide 2｜我們與第 5 組不同在哪
+
+| | 第 5 組 | 第 2 組（我們） |
+|--|---------|--------------|
+| 核心問題 | 海象資料怎麼分析？ | 海象怎麼影響人力決策？ |
+| 資料主角 | 氣象觀測值 | 值勤紀錄 × 海象欄位 |
+| 輸出 | 海象趨勢圖表 | 排班建議 + 工時迴歸模型 |
+| 系統 | 分析平台 | 含打卡 / 請假 / 管理的完整業務系統 |
+
+**全班唯一把海象資料接進值勤排班決策的管理系統。**
+
+---
+
+## Slide 3｜問題與動機
 
 上學期成果 → 三項不足
 
 | 問題 | 本學期解法 |
 |------|-----------|
 | 只能在 Windows XAMPP 執行 | Docker 三容器，一指令啟動 |
-| 只記錄、不分析 | Pandas + Seaborn 七張圖 |
+| 只記錄、不分析 | Pandas + Seaborn 15 張圖 |
 | 通用打卡，無海事特性 | duty_zone / sea_state / vessel_id |
 
 ---
 
-## Slide 3｜系統架構
+## Slide 4｜系統架構
 
 ```
 瀏覽器 :8080          瀏覽器 :7860
@@ -42,12 +58,12 @@ php:8.2-apache          python:3.11
 
 ---
 
-## Slide 4｜技術清單
+## Slide 5｜技術清單
 
 | 必要技術 | ✅ |
 |---------|---|
 | Python + Pandas | 資料清洗 / 統計分析 |
-| Matplotlib / Seaborn | 七張視覺化圖表 |
+| Matplotlib / Seaborn | 15 張視覺化圖表 |
 | Docker 容器化 | docker-compose 三容器 |
 | Git / GitHub | Commit 紀錄 / PR |
 
@@ -59,7 +75,7 @@ php:8.2-apache          python:3.11
 
 ---
 
-## Slide 5｜資料設計
+## Slide 6｜資料設計
 
 **attendance 表擴充欄位**
 
@@ -76,7 +92,7 @@ vessel_id  VARCHAR(20)   -- MAR-001 ~ MAR-008
 
 ---
 
-## Slide 6｜資料清洗
+## Slide 7｜資料清洗
 
 ```python
 # 移除 null 欄位
@@ -91,7 +107,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 ---
 
-## Slide 7｜分析洞察（圖表展示）
+## Slide 8｜分析洞察（圖表展示）
 
 **放入圖表截圖**
 
@@ -101,7 +117,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 ---
 
-## Slide 8｜Gradio 互動介面
+## Slide 9｜Gradio 互動介面
 
 **Demo 截圖**
 
@@ -113,7 +129,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 ---
 
-## Slide 9｜PHP 系統功能
+## Slide 10｜PHP 系統功能
 
 **Demo 截圖**
 
@@ -123,7 +139,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 ---
 
-## Slide 10｜Docker 部署 Demo
+## Slide 11｜Docker 部署 Demo
 
 ```bash
 cp .env.example .env
@@ -140,7 +156,7 @@ docker compose up --build
 
 ---
 
-## Slide 11｜GitHub 管理
+## Slide 12｜GitHub 管理
 
 Commit 紀錄（依前綴分類）：
 
@@ -148,7 +164,7 @@ Commit 紀錄（依前綴分類）：
 [docker]    建立三容器 docker-compose 配置
 [app]       置入 PHP 系統並完成 Linux 化改造
 [data]      新增模擬值勤資料生成腳本
-[analysis]  新增資料清洗、統計分析與七張視覺化圖表
+[analysis]  新增資料清洗、統計分析與 15 張視覺化圖表
 [app]       整合 Gradio 互動介面與 PHP 分析儀表板
 [docs]      期末報告與投影片大綱
 ```
@@ -157,12 +173,13 @@ PR 流程：feature branch → main
 
 ---
 
-## Slide 12｜結語與未來展望
+## Slide 13｜結語與未來展望
 
 **本學期達成**
 - 跨平台容器化部署 ✅
 - 海事 schema 擴充 ✅
-- 7 張分析圖表 ✅
+- 15 張分析圖表 ✅
+- 工時迴歸建模 + 時序預測 ✅
 - Gradio 互動儀表板 ✅
 
 **未來可延伸**
