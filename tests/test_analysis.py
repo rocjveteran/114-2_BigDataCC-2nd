@@ -140,3 +140,27 @@ def test_generate_charts_writes_all_outputs(tmp_path, monkeypatch):
     for p in paths:
         assert Path(p).exists()
     assert (tmp_path / "stats_summary.json").exists()
+    assert (tmp_path / "recommendations.json").exists()
+
+
+def test_compute_recommendations_structure():
+    """compute_recommendations 回傳結構完整，關鍵欄位皆存在。"""
+    att = _synthetic_att()
+    rec = analysis.compute_recommendations(att)
+    assert "headline" in rec and isinstance(rec["headline"], str) and len(rec["headline"]) > 0
+    assert "alerts" in rec and isinstance(rec["alerts"], list) and len(rec["alerts"]) > 0
+    assert "zone_risk" in rec and isinstance(rec["zone_risk"], list)
+    assert "exposure_ranking" in rec and isinstance(rec["exposure_ranking"], list)
+    for alert in rec["alerts"]:
+        assert "level" in alert and alert["level"] in ("ok", "info", "warn", "err")
+        assert "text" in alert and len(alert["text"]) > 0
+    for zr in rec["zone_risk"]:
+        assert "zone" in zr and "rough_pct" in zr and "avg_hours" in zr
+
+
+def test_compute_recommendations_empty():
+    """空 DataFrame 不應崩潰，headline 說明無資料。"""
+    empty = pd.DataFrame(columns=_synthetic_att().columns)
+    rec = analysis.compute_recommendations(empty)
+    assert "headline" in rec
+    assert "無" in rec["headline"] or len(rec["headline"]) > 0

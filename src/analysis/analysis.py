@@ -150,6 +150,13 @@ def generate_charts(
         json.dump(stats_data, f, ensure_ascii=False, indent=2)
     print(f"  ✔ {stats_path.name}")
 
+    # 寫勤務決策建議（PHP 儀表板讀 recommendations.json）
+    rec_data = compute_recommendations(att)
+    rec_path = out / f"{prefix}recommendations.json"
+    with open(rec_path, "w", encoding="utf-8") as f:
+        json.dump(rec_data, f, ensure_ascii=False, indent=2)
+    print(f"  ✔ {rec_path.name}")
+
     return paths
 
 
@@ -682,6 +689,100 @@ def compute_stats(att, leaves) -> dict:
                 "text": f"近 {len(weekly)} 週的值勤量趨勢{trend_txt}"
                         f"（每週約 {slope:+.1f} 筆）。依線性外推，下一週預估約 {max(nxt, 0):.0f} 筆。"
             })
+
+    return out
+
+
+# ── 勤務決策建議 ──────────────────────────────────────────────────────────────
+def compute_recommendations(att) -> dict:
+    """
+    以近 30 天值勤資料計算海象感知排班決策建議。
+    回傳 dict 供 PHP 儀表板呈現（存成 recommendations.json）。
+    """
+    out = {
+        "generated_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+        "headline": "",
+        "zone_risk": [],
+        "exposure_ranking": [],
+        "alerts": [],
+    }
+
+    if att.empty:
+        out["headline"] = "目前無有效值勤資料，無法產生建議"
+        return out
+
+    cutoff = pd.Timestamp.today().normalize() - pd.Timedelta(days=30)
+    recent = att[att["work_date"] >= cutoff]
+    if len(recent) < 5:
+        recent = att
+
+    # 各海域近況
+    zone_stats = []
+    for zone in DUTY_ZONES:
+        zd = recent[recent["duty_zone"] == zone]
+        if len(zd) == 0:
+            continue
+        rough_pct = float((zd["sea_state"] == "大浪").mean() * 100)
+        zone_stats.append({
+            "zone": zone,
+            "count": int(len(zd)),
+            "avg_sea_rank": round(float(zd["sea_state"].map(SEA_RANK).mean()), 2),
+            "avg_hours": round(float(zd["hours"].mean()), 2),
+            "rough_pct": round(rough_pct, 1),
+        })
+    out["zone_risk"] = sorted(zone_stats, key=lambda x: x["avg_sea_rank"], reverse=True)
+
+    # 人員外海暴露排名
+    per_person = []
+    for uid, g in recent.groupby("user_id"):
+        per_person.append({
+            "user_id": int(uid),
+            "records": int(len(g)),
+            "offshore_pct": round(float((g["duty_zone"] == "外海").mean() * 100), 1),
+            "rough_sea_pct": round(float((g["sea_state"] == "大浪").mean() * 100), 1),
+            "avg_hours": round(float(g["hours"].mean()), 2),
+        })
+    out["exposure_ranking"] = sorted(per_person, key=lambda x: x["offshore_pct"], reverse=True)
+
+    # 警示
+    alerts = []
+    rough_overall = float((recent["sea_state"] == "大浪").mean())
+    if rough_overall > 0.2:
+        alerts.append({
+            "level": "warn",
+            "text": f"近 30 天大浪比例 {rough_overall*100:.0f}%，超過安全閾值 20%，建議縮減外海任務。",
+        })
+    danger = recent[(recent["duty_zone"] == "外海") & (recent["sea_state"] == "大浪")]
+    if len(danger) > 0:
+        pct = len(danger) / len(recent) * 100
+        alerts.append({
+            "level": "err" if pct >= 10 else "warn",
+            "text": f"外海 × 大浪值勤共 {len(danger)} 筆（占 {pct:.1f}%），請評估人員安全風險。",
+        })
+    long_duty = recent[recent["hours"] > 12]
+    if len(long_duty) > 0:
+        alerts.append({
+            "level": "info",
+            "text": f"近期有 {len(long_duty)} 筆值勤超過 12 小時，請確認人員是否充分休息。",
+        })
+    if not alerts:
+        alerts.append({
+            "level": "ok",
+            "text": "近期海況與值勤負荷均在正常範圍內，目前無異常警示。",
+        })
+    out["alerts"] = alerts
+
+    # 標題
+    worst_zone = max(zone_stats, key=lambda x: x["rough_pct"]) if zone_stats else None
+    if worst_zone and worst_zone["rough_pct"] > 15:
+        out["headline"] = (
+            f"近 30 天「{worst_zone['zone']}」大浪比例最高（{worst_zone['rough_pct']}%），"
+            "建議優先評估值勤調度。"
+        )
+    elif len(alerts) > 1 or (alerts and alerts[0]["level"] in ("warn", "err")):
+        out["headline"] = "系統偵測到近期值勤風險，請參閱下方警示。"
+    else:
+        out["headline"] = "近期海況平穩，各海域值勤運作正常。"
 
     return out
 

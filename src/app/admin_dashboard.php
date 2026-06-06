@@ -91,6 +91,16 @@ foreach (['filtered_stats_summary.json', 'stats_summary.json'] as $sfile) {
         break;
     }
 }
+
+// 載入勤務決策建議
+$rec = null;
+foreach (['filtered_recommendations.json', 'recommendations.json'] as $rfile) {
+    $rp = $chart_dir . $rfile;
+    if (file_exists($rp)) {
+        $rec = json_decode(file_get_contents($rp), true);
+        break;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh-TW">
@@ -203,6 +213,77 @@ foreach (['filtered_stats_summary.json', 'stats_summary.json'] as $sfile) {
           <div class="muted" style="font-size:12.5px;margin-top:14px;">統計報告生成時間：<?= h($stats['generated_at']) ?></div>
         <?php endif; ?>
       </section>
+    <?php endif; ?>
+
+    <!-- 勤務決策建議 -->
+    <?php if ($rec): ?>
+    <section class="dash-section" style="border-left:3px solid var(--primary);padding-left:1.5rem;">
+      <div class="section-head">
+        <div class="eyebrow">海象感知 · Decision Support</div>
+        <h2 class="section-title">勤務決策建議</h2>
+        <p class="section-desc"><?= h($rec['headline'] ?? '') ?></p>
+      </div>
+
+      <?php if (!empty($rec['alerts'])): ?>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
+        <?php foreach ($rec['alerts'] as $al):
+          $cls = match($al['level']) { 'err'=>'err','warn'=>'warn','ok'=>'ok', default=>'info' };
+        ?>
+          <div class="msg <?= $cls ?>" style="margin:0;"><?= h($al['text']) ?></div>
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
+
+      <div class="grid2">
+        <?php if (!empty($rec['zone_risk'])): ?>
+        <div class="card" style="padding:18px 20px;">
+          <div class="card-head"><h3>各海域近 30 天海況</h3></div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tr style="color:var(--muted);font-size:12px;">
+              <th style="text-align:left;padding:4px 0;">海域</th>
+              <th style="text-align:right;">次數</th>
+              <th style="text-align:right;">平均工時</th>
+              <th style="text-align:right;">大浪 %</th>
+            </tr>
+            <?php foreach ($rec['zone_risk'] as $zr): ?>
+            <tr style="border-top:1px solid var(--border);">
+              <td style="padding:6px 0;font-weight:500;"><?= h($zr['zone']) ?></td>
+              <td style="text-align:right;"><?= h($zr['count']) ?></td>
+              <td style="text-align:right;"><?= h($zr['avg_hours']) ?> h</td>
+              <td style="text-align:right;<?= $zr['rough_pct'] > 20 ? 'color:var(--err);font-weight:600;' : '' ?>"><?= h($zr['rough_pct']) ?>%</td>
+            </tr>
+            <?php endforeach; ?>
+          </table>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!empty($rec['exposure_ranking'])): ?>
+        <div class="card" style="padding:18px 20px;">
+          <div class="card-head"><h3>人員外海暴露排名（近 30 天）</h3></div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tr style="color:var(--muted);font-size:12px;">
+              <th style="text-align:left;padding:4px 0;">人員 ID</th>
+              <th style="text-align:right;">次數</th>
+              <th style="text-align:right;">外海 %</th>
+              <th style="text-align:right;">大浪 %</th>
+            </tr>
+            <?php foreach (array_slice($rec['exposure_ranking'], 0, 8) as $er): ?>
+            <tr style="border-top:1px solid var(--border);">
+              <td style="padding:6px 0;font-family:var(--font-mono);font-size:12px;"><?= h($er['user_id']) ?></td>
+              <td style="text-align:right;"><?= h($er['records']) ?></td>
+              <td style="text-align:right;<?= $er['offshore_pct'] > 50 ? 'color:var(--primary);font-weight:600;' : '' ?>"><?= h($er['offshore_pct']) ?>%</td>
+              <td style="text-align:right;<?= $er['rough_sea_pct'] > 20 ? 'color:var(--err);font-weight:600;' : '' ?>"><?= h($er['rough_sea_pct']) ?>%</td>
+            </tr>
+            <?php endforeach; ?>
+          </table>
+        </div>
+        <?php endif; ?>
+      </div>
+
+      <?php if (!empty($rec['generated_at'])): ?>
+        <div class="muted" style="font-size:12.5px;margin-top:14px;">建議報告生成時間：<?= h($rec['generated_at']) ?></div>
+      <?php endif; ?>
+    </section>
     <?php endif; ?>
 
     <!-- 圖表分區 -->
