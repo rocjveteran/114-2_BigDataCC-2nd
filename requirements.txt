@@ -6,5 +6,8 @@ jupyter
 gradio
 mysql-connector-python
 scipy
+scikit-learn
+folium
+joblib
 bcrypt
 requests
