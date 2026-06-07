@@ -96,6 +96,22 @@ $risk_cls   = $rough_prob >= 50 ? 'err' : ($rough_prob >= 25 ? 'warn' : 'ok');
       <p class="section-desc">員額已依海況風險調整：港口 <?= h($sched['zone_slots']['港口'] ?? 0) ?> · 近海 <?= h($sched['zone_slots']['近海'] ?? 0) ?> · 外海 <?= h($sched['zone_slots']['外海'] ?? 0) ?> 人。</p>
     </div>
 
+    <div class="decision-rules">
+      <span class="dr-title">排班決策邏輯</span>
+      <span class="dr-item">① 惡劣海況機率越高 → 外海員額越少</span>
+      <span class="dr-item">② 外海優先派「低疲勞 + 低外海暴露」者</span>
+      <span class="dr-item">③ 過勞者配置港口輕負荷</span>
+      <span class="dr-item">④ 維護中船艦自動排除、每艦僅一組人員</span>
+    </div>
+
+    <?php if (!empty($sched['vessel_limited'])): ?>
+    <div class="msg warn" style="margin:0 0 16px;">
+      <?php foreach ($sched['vessel_limited'] as $vl): ?>
+        ⚠ <?= h($vl['zone']) ?>海域可用船艦不足（需 <?= h($vl['slots']) ?> 組、僅 <?= h($vl['available_vessels']) ?> 艘可用），實際僅排 <?= h($vl['filled']) ?> 組。建議加速維護或調度其他海域船艦。
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
     <div class="roster-grid">
       <?php foreach (['港口', '近海', '外海'] as $zone):
         $list = $by_zone[$zone]; ?>

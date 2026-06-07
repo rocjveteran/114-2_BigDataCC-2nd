@@ -375,19 +375,20 @@ $ops_msg       = [
       <div class="card">
         <div class="card-head">
           <h2>今日艦上配置</h2>
+          <span class="live-badge"><span class="live-dot"></span>即時 · <span id="js-ts"><?= h(date('H:i:s')) ?></span></span>
         </div>
         <div style="display:flex;align-items:center;gap:18px;padding:8px 0;">
           <div style="flex:1;">
-            <div style="font-family:var(--font-serif);font-size:40px;color:var(--text);line-height:1;letter-spacing:-0.6px;"><?= h($cnt_on + $cnt_done) ?>
+            <div style="font-family:var(--font-serif);font-size:40px;color:var(--text);line-height:1;letter-spacing:-0.6px;"><span id="js-onduty"><?= h($cnt_on + $cnt_done) ?></span>
               <span style="font-size:18px;color:var(--muted);font-family:var(--font-sans);">/ <?= h($crew_total) ?></span>
             </div>
             <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">人員出勤（含已下勤）</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">
-            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot on"></span>值勤中 <strong><?= h($cnt_on) ?></strong></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot done"></span>已結束 <strong><?= h($cnt_done) ?></strong></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot leave"></span>請假 <strong><?= h($cnt_leave) ?></strong></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot off"></span>未值勤 <strong><?= h($cnt_off) ?></strong></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot on"></span>值勤中 <strong id="js-on"><?= h($cnt_on) ?></strong></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot done"></span>已結束 <strong id="js-done"><?= h($cnt_done) ?></strong></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot leave"></span>請假 <strong id="js-leave"><?= h($cnt_leave) ?></strong></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span class="ship-legend-dot off"></span>未值勤 <strong id="js-off"><?= h($cnt_off) ?></strong></div>
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;">
@@ -420,5 +421,23 @@ $ops_msg       = [
     </div>
   </div>
   <?php page_footer(); ?>
+  <script>
+  // 即時艦上狀態：每 60 秒輪詢 api_status.php 自動刷新「今日艦上配置」
+  (function () {
+    var set = function (id, v) { var el = document.getElementById(id); if (el && v != null) el.textContent = v; };
+    function refresh() {
+      fetch('api_status.php', { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || !d.crew) return;
+          set('js-on', d.crew.on); set('js-done', d.crew.done);
+          set('js-leave', d.crew.leave); set('js-off', d.crew.off);
+          set('js-onduty', d.on_duty); set('js-ts', d.ts);
+        })
+        .catch(function () { /* 靜默失敗，下次再試 */ });
+    }
+    setInterval(refresh, 60000);
+  })();
+  </script>
 </body>
 </html>

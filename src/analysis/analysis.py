@@ -1124,6 +1124,7 @@ def build_schedule(att, fatigue, vessel_status, exposure_ranking,
 
     schedule = []
     assigned = set()
+    vessel_limited = []   # 因可用船艦不足而無法排滿員額的海域
     # 由外海→近海→港口指派；外海優先給「低疲勞 + 低外海暴露」者（安全 + 公平輪換）
     for zone in ["外海", "近海", "港口"]:
         n = zone_slots.get(zone, 0)
@@ -1133,14 +1134,19 @@ def build_schedule(att, fatigue, vessel_status, exposure_ranking,
             ranked = sorted(pool, key=lambda c: c["fatigue_score"])
         else:  # 港口：留給疲勞較高者（輕負荷）
             ranked = sorted(pool, key=lambda c: -c["fatigue_score"])
-        vessels = avail_by_zone.get(zone, []) or [f"（{zone}無可用艦）"]
+        # 每艘可用船艦僅配一組人員（避免同艦重複指派）；員額受可用艦數上限約束
+        vessels = list(avail_by_zone.get(zone, []))
+        effective_n = min(n, len(vessels)) if vessels else 0
+        if effective_n < n:
+            vessel_limited.append({"zone": zone, "slots": n, "filled": effective_n,
+                                   "available_vessels": len(vessels)})
         vi = 0
         for c in ranked:
-            if len([s for s in schedule if s["zone"] == zone]) >= n:
+            if vi >= effective_n:
                 break
             if c["user_id"] in assigned:
                 continue
-            vessel = vessels[vi % len(vessels)]; vi += 1
+            vessel = vessels[vi]; vi += 1
             if zone == "外海":
                 reason = "低疲勞且外海暴露低，適合輪派外海"
             elif zone == "近海":
@@ -1162,6 +1168,7 @@ def build_schedule(att, fatigue, vessel_status, exposure_ranking,
         "assignments": schedule,
         "rest_recommended": [{"name": c["name"], "fatigue_score": c["fatigue_score"]} for c in rest],
         "maintenance_vessels": maint_vessels,
+        "vessel_limited": vessel_limited,
     }
 
 
