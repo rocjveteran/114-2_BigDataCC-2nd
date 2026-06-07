@@ -57,10 +57,10 @@ CREATE TABLE IF NOT EXISTS leaves (
 --
 -- ⚠️ Production: rotate all seed passwords immediately after first deployment.
 INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
-('boss1', '$2y$10$74/Dh9n/MLxTKopstTwvvuyb/XR0lY6.QK/oNrIgYp6IgdnTacovW', 'Boss', 'boss', '艦橋', 1);
+('boss1', '$2y$12$1O94rWQGHCKMbwTYiakfLOYqHKm1dHW13NQde0PSo3ErLyWbq.XtO', 'Boss', 'boss', '艦橋', 1);
 
 INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
-('admin1', '$2y$10$KRC4JX.5wL3WQdt5Wy/Wv.4Jweva.Wm9C1MYOIHbgtYeQGCau3JvC', 'Admin', 'admin', '通訊室', 1);
+('admin1', '$2y$12$1O94rWQGHCKMbwTYiakfLOYqHKm1dHW13NQde0PSo3ErLyWbq.XtO', 'Admin', 'admin', '通訊室', 1);
 
 INSERT INTO users(username, password_hash, full_name, role, duty_position, is_active) VALUES
-('em1', '$2y$10$XjWHhrwlPp3VRcD41gApOu/YTs0MQD.7Gfrtl9KVsqlMasoyvIbGG', 'Employee', 'employee', '前甲板', 1);
+('em1', '$2y$12$1O94rWQGHCKMbwTYiakfLOYqHKm1dHW13NQde0PSo3ErLyWbq.XtO', 'Employee', 'employee', '前甲板', 1);

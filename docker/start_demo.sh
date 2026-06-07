@@ -35,16 +35,25 @@ else
   docker compose run --rm analysis python generate_mock_data.py
 fi
 
-echo "=== [4/4] 產生 11 張統計圖表 ==="
+echo "=== [4/5] 植入海象觀測資料（CWA 浮標，無金鑰自動季節性模擬備援）==="
+docker compose run --rm analysis python fetch_sea_data.py
+
+echo "=== [5/5] 產生 21 張統計圖表 + 排班引擎 + Folium 地圖 + ML 模型 ==="
 docker compose run --rm analysis python analysis.py
+
+# 確保種子帳號密碼為 demo1234（schema.sql 已內建，此步為保險）
+docker compose run --rm web php /var/www/html/reset_demo_pw.php >/dev/null 2>&1 || true
 
 echo ""
 echo "=================================="
 echo "  完成！開啟以下網址："
-echo "  PHP 系統：  http://localhost:8080"
-echo "  Gradio：    http://localhost:7860"
-echo "  預設帳號："
-echo "    admin1 / maritime2025（管理員）"
-echo "    boss1  / maritime2025（老闆）"
-echo "    em1    / maritime2025（員工）"
+echo "  PHP 系統：    http://localhost:8080/login.php"
+echo "  明日排班：    http://localhost:8080/scheduler.php"
+echo "  分析儀表板：  http://localhost:8080/admin_dashboard.php"
+echo "  Gradio：      http://localhost:7860"
+echo "  預設帳號（密碼 demo1234）："
+echo "    boss1  / demo1234（老闆）"
+echo "    admin1 / demo1234（管理員）"
+echo "    em1    / demo1234（員工）"
+echo "    其餘模擬人員 / maritime2025"
 echo "=================================="
