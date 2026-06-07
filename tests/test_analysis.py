@@ -114,7 +114,9 @@ def test_fit_hours_ols_insufficient_data_returns_none():
     "_chart_hours_boxplot", "_chart_person_heatmap", "_chart_hours_heatmap",
     "_chart_anomaly_detect", "_chart_weekday_pattern", "_chart_vessel_pareto",
     "_chart_vessel_count", "_chart_forecast_duty", "_chart_correlation",
-    "_chart_regression_coef", "_chart_crew_clusters",
+    "_chart_regression_coef", "_chart_crew_clusters", "_chart_markov_heatmap",
+    "_chart_zone_map_static", "_chart_feature_importance", "_chart_fatigue",
+    "_chart_fairness_lorenz", "_chart_vessel_availability",
 ])
 def test_chart_functions_return_figure(fn):
     from matplotlib.figure import Figure
@@ -136,7 +138,7 @@ def test_generate_charts_writes_all_outputs(tmp_path, monkeypatch):
     monkeypatch.setattr(analysis, "_clean", lambda a, l: (a, l))
 
     paths = analysis.generate_charts(tmp_path)
-    assert len(paths) == 15
+    assert len(paths) == 21
     for p in paths:
         assert Path(p).exists()
     assert (tmp_path / "stats_summary.json").exists()
@@ -151,11 +153,15 @@ def test_compute_recommendations_structure():
     assert "alerts" in rec and isinstance(rec["alerts"], list) and len(rec["alerts"]) > 0
     assert "zone_risk" in rec and isinstance(rec["zone_risk"], list)
     assert "exposure_ranking" in rec and isinstance(rec["exposure_ranking"], list)
+    assert "rotation_suggestions" in rec and isinstance(rec["rotation_suggestions"], list)
+    assert "markov_rough_7day" in rec
     for alert in rec["alerts"]:
         assert "level" in alert and alert["level"] in ("ok", "info", "warn", "err")
         assert "text" in alert and len(alert["text"]) > 0
     for zr in rec["zone_risk"]:
         assert "zone" in zr and "rough_pct" in zr and "avg_hours" in zr
+    for rs in rec["rotation_suggestions"]:
+        assert "name" in rs and "action" in rs and "priority" in rs
 
 
 def test_compute_recommendations_empty():
@@ -164,3 +170,65 @@ def test_compute_recommendations_empty():
     rec = analysis.compute_recommendations(empty)
     assert "headline" in rec
     assert "無" in rec["headline"] or len(rec["headline"]) > 0
+
+
+# ── 人力資源與排班決策引擎測試（核心差異化）─────────────────────────────────
+def test_compute_fatigue():
+    fat = analysis.compute_fatigue(_synthetic_att())
+    assert isinstance(fat, list) and len(fat) > 0
+    for f in fat:
+        assert {"user_id", "name", "fatigue_score", "level", "consecutive_days"} <= set(f)
+        assert 0 <= f["fatigue_score"] <= 100
+        assert f["level"] in ("low", "mid", "high")
+    # 依疲勞分數遞減排序
+    scores = [f["fatigue_score"] for f in fat]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_compute_fairness():
+    fr = analysis.compute_fairness(_synthetic_att())
+    assert "gini" in fr and 0.0 <= fr["gini"] <= 1.0
+    assert fr["label"] in ("均勻", "尚可", "失衡")
+    assert "lorenz" in fr and len(fr["lorenz"]["x"]) == len(fr["lorenz"]["y"])
+
+
+def test_compute_vessel_status():
+    vs = analysis.compute_vessel_status(_synthetic_att())
+    assert isinstance(vs, list) and len(vs) > 0
+    for v in vs:
+        assert {"vessel", "status", "availability_pct", "total_duties"} <= set(v)
+        assert v["status"] in ("可用", "需維護")
+        assert 0 <= v["availability_pct"] <= 100
+
+
+def test_build_schedule_fills_slots():
+    att = _synthetic_att()
+    fat = analysis.compute_fatigue(att)
+    vs = analysis.compute_vessel_status(att)
+    rec = analysis.compute_recommendations(att)
+    sched = analysis.build_schedule(att, fat, vs, rec["exposure_ranking"], rough_prob=20.0)
+    assert "assignments" in sched and len(sched["assignments"]) > 0
+    assert "date" in sched and "zone_slots" in sched
+    for a in sched["assignments"]:
+        assert {"name", "zone", "vessel", "reason"} <= set(a)
+        assert a["zone"] in analysis.DUTY_ZONES
+
+
+def test_build_schedule_reduces_offshore_when_rough():
+    """惡劣海況機率高時，外海員額應被縮減。"""
+    att = _synthetic_att()
+    fat = analysis.compute_fatigue(att)
+    vs = analysis.compute_vessel_status(att)
+    rec = analysis.compute_recommendations(att)
+    calm = analysis.build_schedule(att, fat, vs, rec["exposure_ranking"], rough_prob=5.0)
+    rough = analysis.build_schedule(att, fat, vs, rec["exposure_ranking"], rough_prob=80.0)
+    assert rough["zone_slots"]["外海"] < calm["zone_slots"]["外海"]
+
+
+def test_recommendations_includes_workforce_engine():
+    rec = analysis.compute_recommendations(_synthetic_att())
+    assert isinstance(rec["fatigue"], list) and len(rec["fatigue"]) > 0
+    assert isinstance(rec["vessel_status"], list) and len(rec["vessel_status"]) > 0
+    assert "schedule" in rec and "assignments" in rec["schedule"]
+    assert "fairness" in rec and "gini" in rec["fairness"]
+    assert "sea_now" in rec  # 即時海況欄位存在（可為 None）

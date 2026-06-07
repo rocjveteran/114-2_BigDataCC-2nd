@@ -196,11 +196,15 @@ function nav_top($title = ''){
 
   if (is_admin()) {
     echo '<div class="sb-group">';
+    echo '<div class="sb-group-label">決策</div>';
+    echo sb_item('scheduler.php',       'compass',   '明日排班', $cur==='scheduler.php');
+    echo sb_item('admin_dashboard.php', 'chart',     '分析儀表板', $cur==='admin_dashboard.php');
+    echo '</div>';
+    echo '<div class="sb-group">';
     echo '<div class="sb-group-label">管理</div>';
     echo sb_item('admin_status.php',    'shield',    '勤務總覽', in_array($cur, ['admin_status.php','admin_edit.php'], true));
     echo sb_item('admin_leave.php',     'briefcase', '請假審核', $cur==='admin_leave.php');
     echo sb_item('admin_users.php',     'users',     '帳號管理', in_array($cur, ['admin_users.php','admin_create_user.php','admin_user_edit.php'], true));
-    echo sb_item('admin_dashboard.php', 'chart',     '分析儀表板', $cur==='admin_dashboard.php');
     echo '</div>';
   }
 

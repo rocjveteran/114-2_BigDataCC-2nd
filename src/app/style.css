@@ -47,11 +47,15 @@
   --off:  #6b6b6b;
   --bad:  #a8341a;
   --info: #2a5a99;
+  /* compatibility aliases（決策頁 / 分析儀表板使用） */
+  --err:    #a8341a;
+  --border: #e8e5dc;
 
   /* type stacks — all sans (Anthropic-style) */
   --font-sans:    "Inter", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "PingFang TC", Roboto, Arial, sans-serif;
   --font-display: "Inter", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "PingFang TC", Roboto, Arial, sans-serif;
   --font-serif:   var(--font-display); /* legacy alias — used by .serif & display headings, now sans */
+  --font-mono:    ui-monospace, "SFMono-Regular", "JetBrains Mono", "Menlo", "Consolas", monospace;
 
   --radius: 10px;
   --radius-sm: 6px;
@@ -1526,4 +1530,159 @@ td .btn{ vertical-align: middle; }
   background: var(--accent);
   flex-shrink: 0;
   opacity: 0.75;
+}
+
+/* ── 海況狀態橫幅 ─────────────────────────────────────────────────────────── */
+.sea-banner{
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-left: 4px solid transparent;
+}
+.sea-banner.calm  { background: rgba(58,107,74,.07);  border-color: var(--ok);    color: #2a5c3a; }
+.sea-banner.light { background: rgba(42,90,153,.07);  border-color: var(--info);  color: #1a4a8a; }
+.sea-banner.med   { background: rgba(138,90,12,.09);  border-color: var(--warn);  color: #7a4e00; }
+.sea-banner.rough { background: rgba(201,100,66,.10); border-color: var(--accent); color: #9e3a1a; }
+.sea-banner .sb-ico{ flex-shrink:0; opacity:.75; }
+.sea-banner .sb-body{ flex:1; }
+.sea-banner .sb-title{
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1px;
+  margin-bottom: 2px;
+}
+.sea-banner .sb-detail{ font-size: 12.5px; opacity: .8; }
+.sea-banner .sb-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.sea-banner .sb-badge{
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: rgba(255,255,255,.55);
+  border: 1px solid currentColor;
+  opacity: .9;
+}
+.sea-banner .sb-ops{
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.6);
+  border: 1px solid currentColor;
+  letter-spacing: .3px;
+}
+
+/* ── 個人暴露進度條 ───────────────────────────────────────────────────────── */
+.exposure-row{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.expo-card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.expo-card .expo-label{ font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+.expo-card .expo-pct{
+  font-family: var(--font-serif);
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -.5px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.expo-card .expo-pct span{ font-size: 14px; color: var(--muted); font-family: var(--font-sans); }
+.expo-bar{ height: 5px; border-radius: 3px; background: var(--bg-alt); overflow:hidden; }
+.expo-bar-fill{ height:100%; border-radius:3px; transition: width .4s; }
+.expo-bar-fill.low    { background: var(--ok); }
+.expo-bar-fill.mid    { background: var(--warn); }
+.expo-bar-fill.high   { background: var(--accent); }
+
+/* ── 決策警示條（從 recommendations.json 讀入） ──────────────────────────── */
+.dash-alert-strip{
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.dash-alert-strip .das-item{
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.das-item.warn { background: rgba(138,90,12,.07);  border-left: 3px solid var(--warn);  color: #6a3d00; }
+.das-item.err  { background: rgba(201,100,66,.08); border-left: 3px solid var(--accent); color: #8a2e10; }
+.das-item .das-ico{ flex-shrink:0; margin-top:1px; opacity:.7; }
+
+/* ── 最近值勤快覽列表 ─────────────────────────────────────────────────────── */
+.recent-duties{ list-style:none; margin:0; padding:0; }
+.recent-duties li{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.recent-duties li:last-child{ border-bottom: none; }
+.rd-date{ color: var(--muted); font-size: 12px; min-width: 46px; }
+.rd-zone{ font-weight:500; min-width:32px; }
+.rd-sea{ flex:1; }
+.rd-hrs{ color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   明日排班決策頁（scheduler.php）+ 自動排班引擎元件
+   ════════════════════════════════════════════════════════════════════════ */
+.badge.err{ color: var(--err); border-color: rgba(168,52,26,.3); background: rgba(168,52,26,.07); }
+
+/* 決策輸入摘要卡 */
+.sched-inputs{
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 8px 0 28px;
+}
+.si-card{
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 18px; position: relative; overflow: hidden;
+}
+.si-card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background: var(--line-strong); }
+.si-card.ok::before{   background: var(--ok); }
+.si-card.warn::before{ background: var(--warn); }
+.si-card.err::before{  background: var(--err); }
+.si-lbl{ font-size: 12px; color: var(--muted); letter-spacing:.3px; margin-bottom: 8px; }
+.si-val{ font-family: var(--font-serif); font-size: 36px; line-height: 1; color: var(--text); letter-spacing:-.5px; }
+.si-val span{ font-size: 15px; color: var(--muted); font-family: var(--font-sans); margin-left: 2px; }
+.si-sub{ font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* 三海域班表欄位 */
+.roster-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.roster-col{ background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.roster-head{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; font-weight: 600; font-size: 15px; color: #fff;
+}
+.roster-head.zone-port{ background: #3a6b4a; }
+.roster-head.zone-near{ background: #c97a2b; }
+.roster-head.zone-far{  background: #b5341a; }
+.roster-count{ font-size: 12.5px; font-weight: 500; opacity: .92; }
+.roster-empty{ padding: 20px 16px; color: var(--muted); font-size: 13px; text-align: center; }
+.roster-card{ padding: 12px 16px; border-top: 1px solid var(--line); }
+.rc-top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rc-name{ font-weight: 600; font-size: 14.5px; color: var(--text); }
+.rc-vessel{ font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.rc-vessel .ico{ width: 13px; height: 13px; }
+.rc-meta{ display: flex; align-items: center; gap: 10px; margin: 7px 0 6px; }
+.rc-reason{ font-size: 12px; color: var(--text-soft); line-height: 1.5; }
+
+@media (max-width: 880px){
+  .sched-inputs{ grid-template-columns: repeat(2, 1fr); }
+  .roster-grid{ grid-template-columns: 1fr; }
 }

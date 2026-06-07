@@ -29,6 +29,17 @@ CHART_TABS = [
             ("correlation_matrix.png", "特徵相關矩陣（Spearman）"),
             ("regression_coef.png",    "工時驅動因子（OLS 迴歸）"),
             ("crew_clusters.png",      "人員值勤模式分群（K-means）"),
+            ("markov_heatmap.png",     "海況 Markov 轉移矩陣 + 7 天預測"),
+            ("feature_importance.png", "海況預測特徵重要度（RandomForest）"),
+        ],
+    },
+    {
+        "label": "人力資源決策",
+        "charts": [
+            ("fatigue.png",             "人員疲勞指數排行"),
+            ("fairness_lorenz.png",     "工時公平性 Lorenz 曲線"),
+            ("vessel_availability.png", "船艦可用性與維護里程"),
+            ("zone_map_static.png",     "海域配置示意圖"),
         ],
     },
     {
@@ -366,11 +377,12 @@ button.primary:hover,
 
 HERO_HTML = """
 <div class="page-hero">
-  <div class="eyebrow">海象感知智慧排班與勤務決策 · INTERACTIVE</div>
+  <div class="eyebrow">海勤人力資源與作業安全決策 · INTERACTIVE</div>
   <h1>海事勤務互動分析介面</h1>
   <p class="lead">
-    設定日期範圍、海域、船艦條件後點擊「執行分析」，系統會即時重跑 Pandas/SciPy
-    並輸出 15 張統計圖表與勤務決策建議。所有圖表同步寫入分析儀表板，供管理者於 PHP 系統檢視。
+    設定日期範圍、海域、船艦條件後點擊「執行分析」，系統會即時重跑 Pandas/SciPy/scikit-learn
+    並輸出 21 張統計圖表、自動排班班表與決策建議。海況僅為輸入之一——真正的輸出是
+    人員疲勞、工時公平、船艦可用性與明日排班決策。
   </p>
 </div>
 """
@@ -398,6 +410,45 @@ def _rec_to_html(rec: dict) -> str:
         "<div style='font-family:Inter,system-ui,sans-serif;padding:16px 0;'>",
         f"<p style='font-size:16px;font-weight:500;color:#141413;margin:0 0 16px;'>{rec.get('headline','')}</p>",
     ]
+
+    # 即時海況 + 明日預測
+    sn = rec.get("sea_now")
+    ml = rec.get("ml_rough_tomorrow")
+    if sn or ml is not None:
+        chips = []
+        if sn:
+            chips.append(f"即時海況 <strong>{sn.get('sea_state','—')}</strong>（波高 {sn.get('wave_height','—')} m・{sn.get('obs_date','')}）")
+        if ml is not None:
+            chips.append(f"ML 預測明日惡劣海況 <strong>{ml}%</strong>")
+        parts.append("<div style='background:#e3f2fd;border-left:3px solid #2196f3;color:#0d47a1;"
+                     "padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:13.5px;'>"
+                     + "　·　".join(chips) + "</div>")
+
+    # 自動排班引擎：明日班表
+    sched = rec.get("schedule") or {}
+    if sched.get("assignments"):
+        zs = sched.get("zone_slots", {})
+        parts.append(f"<h3 style='font-size:14px;font-weight:600;color:#36352f;margin:18px 0 8px;'>"
+                     f"自動排班引擎 · 明日班表（{sched.get('date','')}）</h3>")
+        parts.append(f"<p style='font-size:12.5px;color:#9a948a;margin:0 0 8px;'>"
+                     f"明日惡劣海況機率 {sched.get('rough_prob',0)}%　·　員額 港口 {zs.get('港口',0)} / 近海 {zs.get('近海',0)} / 外海 {zs.get('外海',0)}</p>")
+        parts.append("<table style='width:100%;border-collapse:collapse;font-size:13px;'>")
+        parts.append("<tr style='color:#9a948a;border-bottom:1px solid #e8e5dc;'>"
+                     "<th style='text-align:left;padding:6px 4px;'>海域</th>"
+                     "<th style='text-align:left;padding:6px 4px;'>人員</th>"
+                     "<th style='text-align:left;padding:6px 4px;'>船艦</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>疲勞</th></tr>")
+        for a in sched["assignments"]:
+            fc = "color:#c0001e;font-weight:600;" if a["fatigue_score"] >= 65 else ""
+            parts.append(f"<tr style='border-bottom:1px solid #f0ede5;'>"
+                         f"<td style='padding:8px 4px;'>{a['zone']}</td>"
+                         f"<td style='padding:8px 4px;font-weight:500;'>{a['name']}</td>"
+                         f"<td style='padding:8px 4px;font-family:monospace;font-size:12px;'>{a['vessel']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;{fc}'>{a['fatigue_score']}</td></tr>")
+        parts.append("</table>")
+        if sched.get("maintenance_vessels"):
+            parts.append(f"<p style='font-size:12.5px;color:#e65100;margin:8px 0 0;'>"
+                         f"維護中船艦（已排除）：{'、'.join(sched['maintenance_vessels'])}</p>")
 
     # 警示
     for al in rec.get("alerts", []):
@@ -442,6 +493,33 @@ def _rec_to_html(rec: dict) -> str:
                          f"<td style='text-align:right;padding:8px 4px;{oc}'>{e['offshore_pct']}%</td>"
                          f"<td style='text-align:right;padding:8px 4px;{rc}'>{e['rough_sea_pct']}%</td></tr>")
         parts.append("</table>")
+
+    # 人員輪換建議
+    rs = rec.get("rotation_suggestions", [])
+    if rs:
+        parts.append("<h3 style='font-size:14px;font-weight:600;color:#36352f;margin:20px 0 8px;'>人員輪換建議</h3>")
+        parts.append("<table style='width:100%;border-collapse:collapse;font-size:13px;'>")
+        parts.append("<tr style='color:#9a948a;border-bottom:1px solid #e8e5dc;'>"
+                     "<th style='text-align:left;padding:6px 4px;'>姓名</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>外海%</th>"
+                     "<th style='text-align:right;padding:6px 4px;'>大浪%</th>"
+                     "<th style='text-align:left;padding:6px 12px;'>建議行動</th></tr>")
+        for r in rs:
+            nc = "color:#c96442;font-weight:600;" if r["priority"] == "high" else ""
+            ac = "color:#c96442;" if r["priority"] == "high" else "color:#1565c0;"
+            parts.append(f"<tr style='border-bottom:1px solid #f0ede5;'>"
+                         f"<td style='padding:8px 4px;font-weight:500;'>{r['name']}</td>"
+                         f"<td style='text-align:right;padding:8px 4px;{nc}'>{r['offshore_pct']}%</td>"
+                         f"<td style='text-align:right;padding:8px 4px;'>{r['rough_sea_pct']}%</td>"
+                         f"<td style='padding:8px 12px;{ac}'>{r['action']}</td></tr>")
+        parts.append("</table>")
+
+    # Markov 預測摘要
+    m7 = rec.get("markov_rough_7day")
+    if m7 is not None:
+        mc = "background:#fff3e0;border-left:3px solid #ff9800;color:#e65100;" if m7 > 15 else "background:#e3f2fd;border-left:3px solid #2196f3;color:#0d47a1;"
+        parts.append(f"<div style='{mc}padding:10px 14px;border-radius:6px;margin-top:16px;font-size:13.5px;'>"
+                     f"Markov 模型預測：未來 7 天大浪期望機率 <strong>{m7}%</strong></div>")
 
     ts = rec.get("generated_at", "")
     if ts:

@@ -19,13 +19,13 @@
 
 ## 摘要
 
-本專題延續上學期完成之 PHP + MySQL 海事勤務值勤管理雛形，將其改造為符合課程要求之 Linux 雲端容器化系統，並以「海象感知智慧排班與勤務決策平台」為核心定位：別人分析海象，我們用海象做人力決策——全班唯一將中央氣象署海象資料接進值勤排班與勤務調度決策的營運管理系統。
+本專題延續上學期完成之 PHP + MySQL 海事勤務值勤管理雛形，將其改造為符合課程要求之 Linux 雲端容器化系統，並以「海勤人力資源與作業安全決策系統」為核心定位：別人把海象畫成圖，我們把海象變成「明天誰上哪艘船」。海象在本系統僅為輸入訊號之一，真正的輸出是人員疲勞指數、工時公平性、船艦可用性與**自動產生的明日值勤班表**——這些都需要人員/勤務/船艦資料，是純海象視覺化系統無法產出的決策維度。全班唯一將海象接進人力資源排班決策的營運管理系統。
 
 系統採三容器 Docker Compose 架構，涵蓋 PHP/Apache 前端、MySQL 資料庫與 Python 分析服務，可以單一指令完成部署。
 
-在資料端，以 Python 腳本動態生成相對今天回推 183 天、約 1,200 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並以 Pandas 進行清洗與統計分析，產出 15 張 Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時間序列預測與多元迴歸建模）。互動端透過 Gradio 提供可即時篩選的分析儀表板，PHP 端亦設有整合顯示頁面。
+在資料端，以 Python 腳本動態生成相對今天回推 183 天、約 1,200 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並串接中央氣象署浮標海象觀測（`sea_observations`，無金鑰時自動季節性模擬備援）；以 Pandas 進行清洗與統計分析，產出 21 張 Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時間序列預測、多元迴歸、Markov 轉移與人力資源決策）。決策端以 scikit-learn RandomForest 預測明日惡劣海況，並由排班引擎（`build_schedule`）綜合海況、疲勞、暴露與船艦可用性自動產出明日班表。互動端透過 Gradio 提供可即時篩選的分析儀表板與 Folium 互動海域地圖，PHP 端設有「明日排班」決策頁與整合顯示儀表板。
 
-本系統完整覆蓋課程必要技術（Python + Pandas、Matplotlib/Seaborn、Docker、Git/GitHub）及多項選擇性技術（MySQL、Apache + PHP、Jupyter、Gradio），具備海事領域特性，可作為實際部署之管理工具基礎。
+本系統完整覆蓋課程必要技術（Python + Pandas、Matplotlib/Seaborn、Docker、Git/GitHub）及多項選擇性技術（MySQL、Apache + PHP、scikit-learn、Folium、Jupyter、Gradio、CWA 開放資料），具備海事領域特性與實務決策能力，可作為實際部署之管理工具基礎。
 
 ---
 
@@ -66,6 +66,7 @@
 | `users` | 13 筆 | 管理員 3 位、員工 10 位 |
 | `attendance` | ~1,200 筆 | 六個月值勤記錄（相對今天動態生成） |
 | `leaves` | 116 筆 | 請假申請記錄 |
+| `sea_observations` | ~720 筆 | 中央氣象署 4 浮標站逐日海象（`fetch_sea_data.py`，無金鑰時季節性模擬備援） |
 
 ### 2.2 資料欄位說明
 
@@ -152,13 +153,16 @@
 
 | 技術 | 類型 | 應用位置 |
 |------|------|---------|
-| Python + Pandas | 必要 | `analysis.py` 資料清洗與統計 |
-| Matplotlib / Seaborn | 必要 | `analysis.py` 15 張圖表 |
+| Python + Pandas | 必要 | `analysis.py` 資料清洗、統計與排班引擎 |
+| Matplotlib / Seaborn | 必要 | `analysis.py` 21 張圖表 |
 | Docker / Docker Compose | 必要 | `docker/` 三容器編排 |
-| Git / GitHub | 必要 | commit 紀錄、PR 管理 |
-| MySQL 8.0 | 選擇性 | 值勤資料持久化 |
-| Apache + PHP 8.2 | 選擇性 | 前端操作介面 |
+| Git / GitHub | 必要 | commit 紀錄、PR 管理、GitHub Actions CI（33 tests）|
+| MySQL 8.0 | 選擇性 | 值勤與海象資料持久化（4 張表）|
+| Apache + PHP 8.2 | 選擇性 | 前端操作介面 + 明日排班決策頁 |
+| scikit-learn | 選擇性 | RandomForest 海況預測 + joblib 落地 |
+| Folium | 選擇性 | 互動海域地圖 `duty_map.html` |
 | Gradio | 選擇性 | 互動分析儀表板 |
+| 中央氣象署開放資料 | 選擇性 | `fetch_sea_data.py` CWA 浮標海象 |
 
 ---
 
@@ -204,7 +208,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 
 ### 4.3 視覺化
 
-共產出 15 張圖表，輸出至 `analysis_output/` 共用 volume：
+共產出 21 張圖表，輸出至 `analysis_output/` 共用 volume：
 
 | 圖檔 | 圖表類型 | 說明 |
 |------|---------|------|
@@ -223,6 +227,14 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | `correlation_matrix.png` | Spearman 相關熱力圖 | 工時與海況、海域、星期、上工時刻等特徵的關聯結構 |
 | `regression_coef.png` | 水平係數圖 | 工時驅動因子的標準化多元迴歸係數（R² 見圖標題）|
 | `crew_clusters.png` | 分群散點圖 | 以平均工時 × 外海暴露比例對人員進行 K-means 分群 |
+| `markov_heatmap.png` | 雙熱力圖 | 海況 Markov 轉移機率矩陣（左）＋ 未來 7 天海況預測機率（右）|
+| `feature_importance.png` | 水平長條圖 | scikit-learn RandomForest 預測明日惡劣海況之特徵重要度（含準確率/AUC）|
+| `fatigue.png` | 水平長條圖 | 人員疲勞指數排行（連續值勤 + 近 7 日工時），紅色為高疲勞 |
+| `fairness_lorenz.png` | Lorenz 曲線 | 工時公平性，曲線越貼近對角線越平均，Gini 係數量化失衡 |
+| `vessel_availability.png` | 水平長條圖 | 船艦距下次維護之可用度，紅色為需維護 |
+| `zone_map_static.png` | 經緯度配置圖 | 三海域、船艦與 CWA 浮標站配置（互動版見 `duty_map.html`）|
+
+> 另輸出 `duty_map.html`（Folium 互動海域地圖）與 `sea_predictor.joblib`（訓練後 RandomForest 模型）。
 
 ### 4.4 統計檢定
 
@@ -250,9 +262,50 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 - **人員值勤模式分群**（`crew_clusters.png`）：以每人之平均工時與外海值勤比例
   為特徵，套用 K-means（`scipy.cluster.vq`）分群，辨識不同輪值型態，輔助排班
   與人力調度決策。
+- **Markov 海況轉移預測**（`markov_heatmap.png`）：以歷史值勤資料中連續兩日的
+  海況轉移次數估計 4×4 Markov 轉移機率矩陣（純 `numpy` 矩陣運算），再以矩陣連乘
+  外推未來 7 天各海況之發生機率分布，呈現為雙熱力圖。7 天內大浪期望機率超過 15%
+  時，系統自動觸發排班預警寫入 `recommendations.json`，直接驅動下週勤務調度建議。
+- **人員輪換最佳化**：`compute_recommendations()` 以外海暴露率（60% 加權）+ 大浪
+  頻率（40% 加權）計算每人風險積分，依優先級輸出具名輪換指令（如「王大明建議下
+  週調至港口值勤」），並列出可接替外海任務之低暴露人員。
 
-上述結果同步寫入 `stats_summary.json`，由 PHP 分析儀表板的「預測與建模」分區與
-推論洞察卡片呈現。
+上述結果同步寫入 `stats_summary.json` 與 `recommendations.json`，由 PHP 分析儀表板的
+「預測與建模」、「勤務決策建議」兩分區呈現。
+
+### 4.6 機器學習海況預測（scikit-learn）
+
+在 Markov 機率模型之外，另以 scikit-learn `RandomForestClassifier` 建立監督式
+分類模型，預測「明日是否為惡劣海況（中浪以上）」（`train_sea_classifier`）。流程：
+
+1. 以每日海況等級均值彙整為時序，建立落後特徵（今日 / 昨日 / 前日 / 近 3 日均況）
+   與時間特徵（月份、星期）及外海比例，共 7 維特徵；目標為次日是否惡劣。
+2. `train_test_split`（test_size=0.25, stratify）切分後訓練 200 棵樹（max_depth=6）。
+3. 輸出測試集準確率與 AUC、特徵重要度（`feature_importance.png`），並以 `joblib`
+   將模型落地為 `sea_predictor.joblib`，供 Gradio 與排班引擎即時推論。
+
+模型對明日的惡劣海況預測機率寫入 `recommendations.json` 之 `ml_rough_tomorrow`，
+與 Markov 7 天期望機率互為對照，並作為排班引擎調整外海員額的依據。
+
+### 4.7 人力資源與排班決策引擎（核心差異化）
+
+本系統最關鍵的差異化在於：海象分析的終點不是圖表，而是**可執行的人力決策**。
+此能力建立在純海象資料所沒有的人員/勤務/船艦維度上：
+
+- **人員疲勞指數**（`compute_fatigue`）：以「結束於最後一次值勤的連續值勤天數」
+  與「近 7 日累計工時」合成 0~100 疲勞分數，分級為低/中/高，產出輪休建議。
+- **工時公平性**（`compute_fairness`）：計算累計工時 Gini 係數並繪製 Lorenz 曲線，
+  辨識過勞（≥ 中位數 1.3 倍）與閒置（≤ 中位數 0.7 倍）人員。
+- **船艦可用性與維護**（`compute_vessel_status`）：以累計趟次對維護里程
+  （`MAINT_INTERVAL = 45`）取模，推估各艦可用度，達門檻者標記「需維護」。
+- **自動排班引擎**（`build_schedule`）：綜合以上輸入產出**明日值勤班表**。決策規則：
+  明日惡劣海況機率越高 → 外海員額越少（≥50% 僅留 1 名外海）；外海優先指派
+  「低疲勞且外海暴露低」者（兼顧安全與公平輪換）；過勞者配置港口輕負荷；
+  維護中船艦自動排除；高疲勞且人力充足時列入建議輪休名單。
+
+輸出寫入 `recommendations.json` 之 `schedule` / `fatigue` / `fairness` /
+`vessel_status` 欄位，由 PHP「明日排班」決策頁（`scheduler.php`）與 Gradio
+「人力資源決策」tab 雙管道呈現。
 
 ---
 
@@ -280,7 +333,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | 資源調度 | 船艦次數、Pareto 圖、人員月度熱力圖（3 張）|
 | 異常診斷 | Z-score 異常偵測（1 張）|
 
-點擊「執行分析」後，`generate_charts()` 依篩選條件動態查詢 MySQL，重新產生 15 張圖表與 `recommendations.json`，Gradio 介面自動更新所有 tab。
+點擊「執行分析」後，`generate_charts()` 依篩選條件動態查詢 MySQL，重新產生 21 張圖表與 `recommendations.json`，Gradio 介面自動更新所有 tab。
 
 ### 5.2 技術設計重點
 
@@ -362,7 +415,8 @@ docker compose run analysis python analysis.py
 | `admin_leave.php` | 請假審核（核准／拒絕）| 管理員以上 |
 | `admin_users.php` | 帳號管理、新增停用 | 管理員以上 |
 | `admin_export.php` | 值勤記錄 CSV 匯出 | 管理員以上 |
-| `admin_dashboard.php` | 分析圖表儀表板 | 管理員以上 |
+| `scheduler.php` | **明日排班決策頁**：自動排班引擎輸出三海域班表、輪休與船艦可用性 | 管理員以上 |
+| `admin_dashboard.php` | 分析儀表板：排班摘要 + Folium 互動地圖 + 21 張圖 | 管理員以上 |
 
 ### 7.2 預設測試帳號
 
@@ -375,7 +429,7 @@ docker compose run analysis python analysis.py
 
 > 種子帳號密碼由 `scripts/setup_web.sh` 在首次啟動時透過 bcrypt 重設，原始 schema.sql 中的 hash 為佔位值。
 
-### 7.3 分析圖表洞察摘要（15 張）
+### 7.3 分析圖表洞察摘要（21 張）
 
 **時序趨勢（3 張）**
 
@@ -389,6 +443,15 @@ docker compose run analysis python analysis.py
 - `correlation_matrix.png`：Spearman 相關矩陣顯示「上工時刻」與「海況等級」對工時的負向關聯最強（r ≈ −0.4 ∼ −0.5）
 - `regression_coef.png`：標準化 OLS 迴歸係數確認「上工時刻越晚、工時越短」與「大浪天工時縮減」兩項效應；模型 R² 約 0.30–0.40
 - `crew_clusters.png`：K-means 將人員分為「高外海輪值型」「港口值守型」「均衡型」三群，輔助調度決策
+- `markov_heatmap.png`：以連續兩日海況轉移次數估計 4×4 Markov 轉移機率矩陣；右子圖以矩陣連乘外推未來 7 天各海況之發生機率分布，並將大浪期望機率寫入 `recommendations.json` 供排班警示使用
+- `feature_importance.png`：scikit-learn RandomForest 預測明日惡劣海況之特徵重要度，「近 3 日均況」與「今日海況」貢獻最高；測試集準確率與 AUC 標於圖標題
+
+**人力資源決策（4 張，第 5 組做不出來的維度）**
+
+- `fatigue.png`：人員疲勞指數排行，以連續值勤天數與近 7 日工時合成，高疲勞者（紅色）由排班引擎自動避開高負荷配置
+- `fairness_lorenz.png`：工時公平性 Lorenz 曲線與 Gini 係數，曲線越貼近對角線代表分配越平均
+- `vessel_availability.png`：各船艦距下次維護里程之可用度，需維護者（紅色）於明日排班自動排除
+- `zone_map_static.png`：三海域、船艦與 CWA 浮標站於經緯度上的配置示意（互動版見 `duty_map.html`）
 
 **海域 × 海況（5 張）**
 
@@ -408,15 +471,27 @@ docker compose run analysis python analysis.py
 
 - `anomaly_detect.png`：Z-score 偵測工時超過 ±2σ 的離群紀錄，便於管理者優先覆核，異常率通常低於 5%
 
-### 7.4 勤務決策建議模組
+### 7.4 勤務決策建議與自動排班引擎（核心差異化）
 
-本系統獨創「勤務決策建議」功能，以近 30 天值勤資料計算：
+本系統的核心價值在於：把海象分析的終點從「圖表」推進到「可執行的人力決策」。
+以近 30 天值勤資料 + 全期人員/船艦資料計算：
 
 - **海域風險摘要**：各海域大浪比例、平均工時，標示超過 20% 閾值的高風險海域
-- **人員外海暴露排名**：依外海值勤比例排序，輔助輪換安排，避免特定人員長期高強度暴露
-- **異常警示**：大浪比例超閾值、外海×大浪組合偏多、超時值勤等自動觸發分級警示（ok/info/warn/err）
+- **人員外海暴露排名與輪換建議**：依外海值勤比例排序，具名輸出輪換指令
+- **人員疲勞指數**：連續值勤 + 近 7 日工時 → 疲勞分數與輪休建議
+- **工時公平性**：Gini 係數 + Lorenz 曲線，辨識過勞/閒置人員
+- **船艦可用性**：維護里程推估，需維護船艦自動標記
+- **scikit-learn / Markov 雙模型海況預測**：明日惡劣海況機率 + 7 天大浪期望機率
+- **⭐ 自動排班引擎**：`build_schedule()` 綜合上述輸入，自動產出**明日值勤班表**
+  （每位人員配置之海域與船艦）。決策規則：海況惡劣自動縮減外海員額、外海優先
+  指派低疲勞低暴露者、過勞者配置港口輕負荷、維護中船艦自動排除。
+- **分級警示**：大浪超閾值、外海×大浪偏多、超時值勤、高疲勞、船艦維護等自動觸發
+  分級警示（ok/info/warn/err）
 
-此功能透過 `analysis.py` 的 `compute_recommendations()` 計算，以 `recommendations.json` 輸出，同時呈現於 PHP 分析儀表板（admin_dashboard.php）與 Gradio 互動介面的「勤務決策建議」頁籤。
+此功能透過 `analysis.py` 的 `compute_recommendations()` 與 `build_schedule()` 計算，
+以 `recommendations.json` 輸出，呈現於 PHP「明日排班」決策頁（`scheduler.php`）、
+分析儀表板（`admin_dashboard.php`）與 Gradio「勤務決策建議」「人力資源決策」頁籤。
+這是純海象視覺化系統無法產出的決策——也是本組與第 5 組（海象資料視覺化）的根本差異。
 
 ---
 

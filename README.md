@@ -1,22 +1,39 @@
-# 海事勤務值勤雲端管理系統
+# 海勤人力資源與作業安全決策系統
 
 > 114-2 巨量資料與雲端運算 ── 期末專題 ── 第 2 組
+> *海象感知智慧排班 · 海事勤務雲端管理平台*
 
-延續上學期 PHP + MySQL 值勤管理雛形，改造為 Linux 雲端容器化系統，並整合 Python 資料分析模組與 Gradio 互動儀表板。一指令 `docker compose up` 完成三容器部署。
+延續上學期 PHP + MySQL 值勤管理雛形，改造為 Linux 雲端容器化系統，並整合 Python 資料分析、scikit-learn 預測、Folium 互動地圖與 Gradio 互動儀表板。一指令 `docker compose up` 完成三容器部署。
 
-> **別人分析海象，我們用海象做人力決策。** 全班唯一把中央氣象署海象資料接進值勤排班決策的營運管理系統。
+> **別人把海象畫成圖，我們把海象變成「明天誰上哪艘船」。**
+>
+> 海象只是輸入訊號——系統真正的輸出是**人員疲勞指數、工時公平性、船艦可用性與自動產生的明日值勤班表**。這些都需要人員/勤務/船艦資料，是純海象視覺化系統做不出來的決策維度。全班唯一把海象接進人力資源排班決策的營運管理系統。
+
+### 核心差異化功能
+
+- 🧭 **自動排班引擎**：輸入明日海況預測 + 人員疲勞 + 外海暴露 + 船艦可用性，自動輸出明日值勤班表（誰、哪海域、哪艘船）。海況惡劣自動縮減外海員額、過勞者配置輕負荷、維護中船艦自動排除。
+- 😴 **人員疲勞指數**：連續值勤天數 + 近 7 日工時 → 疲勞分數與輪休建議。
+- ⚖️ **工時公平性**：Gini 係數 + Lorenz 曲線，辨識過勞/閒置人員。
+- 🚢 **船艦可用性與維護**：累計趟次推估維護里程與可用度。
+- 🤖 **scikit-learn 海況預測**：RandomForest 預測明日惡劣海況機率（含準確率/AUC）。
+- 🗺️ **Folium 互動海域地圖**：三海域風險 + 船艦 + CWA 浮標站。
+- 🌊 **CWA 即時海象資料管線**：中央氣象署浮標觀測（無金鑰自動模擬備援）。
 
 ---
 
 ## 系統截圖
 
-| 登入頁 | 個人儀表板 |
-|--------|-----------|
-| ![登入](docs/screenshots/test/01_login.png) | ![儀表板](docs/screenshots/test/02_dashboard.png) |
+**⭐ 明日排班決策頁（旗艦差異化功能）** — 自動排班引擎輸出三海域班表
 
-| 勤務決策建議看板 | 統計分析圖表 |
-|-----------------|-------------|
-| ![決策建議](docs/screenshots/test/09_recommendations.png) | ![圖表](docs/screenshots/test/11_charts_section.png) |
+![明日排班](docs/screenshots/02_scheduler.png)
+
+| 排班引擎 + Folium 互動地圖 | 員工儀表板（即時海象 + 疲勞指數）|
+|--------------------------|-----------------------------|
+| ![排班地圖](docs/screenshots/04_engine_map.png) | ![儀表板](docs/screenshots/03_dashboard.png) |
+
+| 登入頁 | 分析儀表板 |
+|--------|-----------|
+| ![登入](docs/screenshots/01_login.png) | ![分析](docs/screenshots/03_admin_dashboard_hero.png) |
 
 ---
 
@@ -67,16 +84,19 @@
 
 | 必要技術 | 應用位置 |
 |---------|---------|
-| **Python + Pandas** | `src/analysis/analysis.py` 資料清洗與統計 |
-| **Matplotlib / Seaborn** | 15 張視覺化圖表（含預測與建模）|
+| **Python + Pandas** | `src/analysis/analysis.py` 資料清洗、統計與排班引擎 |
+| **Matplotlib / Seaborn** | 21 張視覺化圖表（含預測、建模、人力資源）|
 | **Docker / Docker Compose** | `docker/` 三容器架構 |
-| **Git / GitHub** | 全部開發歷程 |
+| **Git / GitHub** | 全部開發歷程 + GitHub Actions CI（33 tests）|
 
 | 選擇性技術 | 應用位置 |
 |-----------|---------|
-| **MySQL 8.0** | `src/app/schema.sql` 三張資料表 |
-| **Apache + PHP 8.2** | `src/app/` 22 個 PHP 檔 |
+| **MySQL 8.0** | `src/app/schema.sql` 四張資料表（含 sea_observations）|
+| **Apache + PHP 8.2** | `src/app/` 24 個 PHP 檔 |
+| **scikit-learn** | `analysis.py` RandomForest 海況預測 + joblib 落地 |
+| **Folium** | `analysis.py` 互動海域地圖 `duty_map.html` |
 | **Gradio** | `src/analysis/app.py` 互動分析介面 |
+| **中央氣象署開放資料** | `src/analysis/fetch_sea_data.py` CWA 浮標海象 |
 | **Jupyter Notebook** | `notebooks/eda.ipynb` 探索性資料分析 |
 
 ---
@@ -120,7 +140,7 @@ docker compose run -p 8888:8888 analysis \
 |------|------|------|
 | **登入頁** | **http://localhost:8080/login.php** | 系統入口（首頁也會自動轉跳到此） |
 | PHP 系統首頁 | http://localhost:8080 | `index.php` 會 redirect 到登入或值勤頁 |
-| 分析儀表板 | http://localhost:8080/admin_dashboard.php | 顯示 7 張 Python 圖表（需管理員以上） |
+| 分析儀表板 | http://localhost:8080/admin_dashboard.php | 排班摘要 + Folium 地圖 + 21 張圖表（需管理員以上） |
 | Gradio 互動分析 | http://localhost:7860 | 篩選日期/海域/船艦，即時產圖 |
 
 > PHP 檔案不能直接用檔案總管雙擊開啟（會跳出原始碼），必須走 Apache 服務（即上方 `localhost:8080` 網址），所以**先確認三個容器都在 Up 狀態**再開瀏覽器。
@@ -150,7 +170,7 @@ docker compose run -p 8888:8888 analysis \
 6. **管理員審核**：點「請假審核」→ 把剛才送出的請假核准
 7. **看勤務總覽**：點「勤務總覽」→ 切換日期查看全員狀態
 8. **產生分析圖表**：點「分析儀表板」右上「開啟互動分析介面」→ 跳到 Gradio (http://localhost:7860) → 點「執行分析」
-9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 15 張圖表與推論檢定報告
+9. **回 PHP 儀表板**：重整 http://localhost:8080/admin_dashboard.php → 應看到 21 張圖表、排班摘要與推論檢定報告
 10. **下載日報表**：勤務總覽右上「匯出日報表」會下載當日 CSV
 
 ---
@@ -230,19 +250,21 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 │   └── analysis/Dockerfile    ← python:3.11-slim + fonts-noto-cjk
 │
 ├── src/
-│   ├── app/                   ← PHP 應用程式（22 檔案）
+│   ├── app/                   ← PHP 應用程式（24 檔案）
 │   │   ├── db.php             ← PDO 連線（讀取環境變數）
 │   │   ├── schema.sql         ← MySQL schema（含海事擴充欄位）
 │   │   ├── login.php / auth.php / logout.php
 │   │   ├── punch.php / records.php / leave.php
 │   │   ├── admin_*.php        ← 管理介面
-│   │   ├── admin_dashboard.php ← 分析儀表板
+│   │   ├── admin_dashboard.php ← 分析儀表板（排班摘要+地圖）
+│   │   ├── scheduler.php        ← 明日排班決策頁（旗艦）
 │   │   ├── ui.php / style.css
 │   │   └── ...
 │   │
 │   └── analysis/              ← Python 分析程式
 │       ├── generate_mock_data.py  ← 模擬資料生成
-│       ├── analysis.py            ← 資料清洗 + 15 張圖表
+│       ├── analysis.py            ← 清洗 + 排班引擎 + 21 張圖
+│       ├── fetch_sea_data.py       ← CWA 浮標海象資料管線
 │       └── app.py                 ← Gradio 互動介面
 │
 ├── notebooks/                 ← Jupyter Notebook（探索分析）
@@ -273,12 +295,13 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 | 值勤總覽 | 全員當日狀態 | 管理員以上 |
 | 請假審核 | 核准 / 拒絕 | 管理員以上 |
 | 帳號管理 | 新增、停用、改密 | 管理員以上 |
-| **分析儀表板** | 顯示 15 張 Python 圖表 | 管理員以上 |
+| **明日排班** | 自動排班引擎輸出明日班表 | 管理員以上 |
+| **分析儀表板** | 排班摘要 + Folium 地圖 + 21 張圖 | 管理員以上 |
 | CSV 匯出 | 值勤記錄下載 | 管理員以上 |
 
 ### Python 分析模組
 
-15 張分析圖表，輸出至 `analysis_output/` 共用 volume：
+21 張分析圖表，輸出至 `analysis_output/` 共用 volume：
 
 1. `monthly_trend.png` — 月度值勤人次趨勢（折線圖）
 2. `zone_bar.png` — 值勤海域分布（長條圖）
@@ -295,13 +318,21 @@ docker compose down -v           # 連 DB 資料一起清掉（要重灌時用�
 13. `correlation_matrix.png` — 特徵相關矩陣（Spearman 等級相關熱力圖）
 14. `regression_coef.png` — 工時驅動因子（標準化多元 OLS 迴歸係數）
 15. `crew_clusters.png` — 人員值勤模式分群（K-means）
+16. `markov_heatmap.png` — 海況 Markov 轉移機率矩陣 ＋ 未來 7 天海況預測機率
+17. `zone_map_static.png` — 海域配置示意圖（互動版見 `duty_map.html`）
+18. `feature_importance.png` — 海況預測模型特徵重要度（RandomForest，含準確率/AUC）
+19. `fatigue.png` — 人員疲勞指數排行
+20. `fairness_lorenz.png` — 工時公平性 Lorenz 曲線（Gini 係數）
+21. `vessel_availability.png` — 船艦可用性與維護里程
+
+另輸出 `duty_map.html`（Folium 互動海域地圖）、`recommendations.json`（含明日班表、疲勞、公平性、船艦狀態、即時海況）與 `sea_predictor.joblib`（訓練後模型）。
 
 ### Gradio 互動介面 (port 7860)
 
 - 日期區間篩選
 - 海域勾選（港口 / 近海 / 外海，可多選）
 - 船艦下拉（從 DB 動態載入，可多選）
-- 即時執行分析，依分頁（時序趨勢 / 預測與建模 / 海域 × 海況 / 資源調度 / 異常診斷）顯示 15 張圖
+- 即時執行分析，依分頁（勤務決策建議 / 時序趨勢 / 預測與建模 / 人力資源決策 / 海域 × 海況 / 資源調度 / 異常診斷）顯示 21 張圖與明日班表
 
 ---
 
