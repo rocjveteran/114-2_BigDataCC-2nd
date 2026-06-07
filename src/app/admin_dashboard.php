@@ -28,6 +28,19 @@ $sections = [
             'correlation_matrix.png' => ['特徵相關矩陣（Spearman）', '揭露工時與海況、海域、星期、上工時刻等特徵的關聯強度與方向。'],
             'regression_coef.png'    => ['工時驅動因子（OLS 迴歸）', '標準化多元迴歸係數：正值拉長工時、負值縮短，長度代表影響大小，R² 見標題。'],
             'crew_clusters.png'      => ['人員值勤模式分群（K-means）', '以平均工時與外海暴露比例將人員分群，辨識不同輪值型態。'],
+            'markov_heatmap.png'     => ['海況 Markov 轉移矩陣 + 7 天預測', '以歷史海況轉移機率推估未來 7 天海況走勢。'],
+            'feature_importance.png' => ['海況預測模型特徵重要度（RandomForest）', 'scikit-learn 分類器預測明日惡劣海況，顯示各特徵貢獻與準確率/AUC。'],
+        ],
+    ],
+    [
+        'eyebrow' => '人力資源決策',
+        'title'   => '疲勞、公平性與船艦可用性',
+        'desc'    => '純海象資料無法產出的決策維度：以人員打卡與船艦運用資料計算疲勞指數、工時公平性與維護里程，作為自動排班引擎的輸入。',
+        'charts'  => [
+            'fatigue.png'             => ['人員疲勞指數排行', '連續值勤天數與近 7 日工時合成的疲勞分數，紅色為高疲勞（建議輪休）。'],
+            'fairness_lorenz.png'     => ['工時公平性 Lorenz 曲線', '曲線越接近對角線代表工時分配越平均，Gini 係數量化失衡程度。'],
+            'vessel_availability.png' => ['船艦可用性與維護里程', '各船艦距下次維護的可用度，紅色為已達維護門檻、排班自動排除。'],
+            'zone_map_static.png'     => ['海域配置示意圖', '三海域、船艦與 CWA 浮標站於經緯度上的配置（互動版見上方地圖）。'],
         ],
     ],
     [
@@ -311,6 +324,62 @@ foreach (['filtered_recommendations.json', 'recommendations.json'] as $rfile) {
       <?php if (!empty($rec['generated_at'])): ?>
         <div class="muted" style="font-size:12.5px;margin-top:14px;">建議報告生成時間：<?= h($rec['generated_at']) ?></div>
       <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <!-- 自動排班引擎摘要 + 互動海域地圖 -->
+    <?php
+      $sched   = $rec['schedule'] ?? [];
+      $vessels = $rec['vessel_status'] ?? [];
+      $map_ok  = file_exists($chart_dir . 'duty_map.html');
+    ?>
+    <?php if (!empty($sched['assignments']) || $map_ok): ?>
+    <section class="dash-section" style="border-left:3px solid var(--primary);padding-left:1.5rem;">
+      <div class="section-head">
+        <div class="eyebrow">決策引擎 · Automated Scheduling</div>
+        <h2 class="section-title">明日排班引擎 + 互動海域地圖</h2>
+        <p class="section-desc">綜合海況預測、人員疲勞、外海暴露與船艦可用性，自動產出明日值勤班表；地圖呈現各海域風險與船艦/浮標配置。</p>
+      </div>
+
+      <div class="grid2">
+        <?php if (!empty($sched['assignments'])): ?>
+        <div class="card" style="padding:18px 20px;">
+          <div class="card-head">
+            <h3>明日值勤班表（<?= h($sched['date'] ?? '') ?>）</h3>
+            <a class="btn small" href="scheduler.php">完整排班 →</a>
+          </div>
+          <div class="muted" style="font-size:12.5px;margin-bottom:8px;">
+            明日惡劣海況機率 <strong><?= h($sched['rough_prob'] ?? 0) ?>%</strong>　·　員額：港口 <?= h($sched['zone_slots']['港口'] ?? 0) ?> / 近海 <?= h($sched['zone_slots']['近海'] ?? 0) ?> / 外海 <?= h($sched['zone_slots']['外海'] ?? 0) ?>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tr style="color:var(--muted);font-size:12px;">
+              <th style="text-align:left;padding:4px 0;">海域</th>
+              <th style="text-align:left;">人員</th>
+              <th style="text-align:left;">船艦</th>
+              <th style="text-align:right;">疲勞</th>
+            </tr>
+            <?php foreach (array_slice($sched['assignments'], 0, 8) as $a): ?>
+            <tr style="border-top:1px solid var(--border);">
+              <td style="padding:6px 0;"><?= h($a['zone']) ?></td>
+              <td style="font-weight:500;"><?= h($a['name']) ?></td>
+              <td style="font-family:var(--font-mono);font-size:12px;"><?= h($a['vessel']) ?></td>
+              <td style="text-align:right;<?= $a['fatigue_score']>=65?'color:var(--err);font-weight:600;':'' ?>"><?= h($a['fatigue_score']) ?></td>
+            </tr>
+            <?php endforeach; ?>
+          </table>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($map_ok): ?>
+        <div class="card" style="padding:18px 20px;">
+          <div class="card-head"><h3>互動海域地圖（Folium）</h3></div>
+          <iframe src="analysis_output/duty_map.html" title="海域互動地圖"
+                  style="width:100%;height:360px;border:1px solid var(--border);border-radius:8px;"
+                  loading="lazy"></iframe>
+          <p class="muted" style="font-size:12px;margin-top:8px;">綠=港口、橙=近海、紅=外海；🚢 船艦、● CWA 浮標站。點擊海域查看近 30 天統計。</p>
+        </div>
+        <?php endif; ?>
+      </div>
     </section>
     <?php endif; ?>
 
