@@ -123,14 +123,26 @@ $today_sea = $stmt->fetchColumn() ?: ($_SESSION['today_sea'] ?? null);
 $rec_alerts = [];
 $rec_rotation = [];
 $rec_markov = null;
+$rec_sea_now = null;
+$rec_ml_tomorrow = null;
+$my_fatigue = null;
 $output_dir = getenv('OUTPUT_DIR') ?: '/app/output';
 $rec_path   = $output_dir . '/recommendations.json';
+// Fallback：本機開發時 OUTPUT_DIR 未設則讀 app 內 analysis_output
+if (!file_exists($rec_path) && file_exists(__DIR__ . '/analysis_output/recommendations.json')) {
+  $rec_path = __DIR__ . '/analysis_output/recommendations.json';
+}
 if (file_exists($rec_path)) {
   $rec_raw = @json_decode(file_get_contents($rec_path), true);
   if ($rec_raw) {
     $rec_alerts   = array_values(array_filter($rec_raw['alerts'] ?? [], fn($a) => in_array($a['level'], ['warn','err'])));
     $rec_rotation = array_values(array_filter($rec_raw['rotation_suggestions'] ?? [], fn($r) => $r['priority'] === 'high'));
     $rec_markov   = $rec_raw['markov_rough_7day'] ?? null;
+    $rec_sea_now  = $rec_raw['sea_now'] ?? null;
+    $rec_ml_tomorrow = $rec_raw['ml_rough_tomorrow'] ?? null;
+    foreach (($rec_raw['fatigue'] ?? []) as $f) {
+      if ((int)($f['user_id'] ?? 0) === $uid) { $my_fatigue = $f; break; }
+    }
   }
 }
 
@@ -159,16 +171,18 @@ $area = "M ".round($pts[0][0],1)." ".round($padT+$inner_h,1)
       . " L ".implode(' L ', array_map(fn($p) => round($p[0],1).' '.round($p[1],1), $pts))
       . " L ".round(end($pts)[0],1)." ".round($padT+$inner_h,1)." Z";
 
-// ── 海況橫幅設定 ─────────────────────────────────────────────────────────────
+// ── 海況橫幅設定（今日值勤海況優先，否則退回 CWA 浮標即時觀測）────────────────
+$banner_sea    = $today_sea ?: ($rec_sea_now['sea_state'] ?? null);
+$sea_from_buoy = !$today_sea && $banner_sea;
 $sea_level_map = ['平靜'=>0,'輕浪'=>1,'中浪'=>2,'大浪'=>3];
-$sea_level     = $sea_level_map[$today_sea] ?? -1;
+$sea_level     = $sea_level_map[$banner_sea] ?? -1;
 $banner_cls    = ['calm','light','med','rough'][$sea_level] ?? '';
 $ops_msg       = [
   '平靜' => '海況良好，正常作業',
   '輕浪' => '輕微湧浪，可正常作業',
   '中浪' => '外海注意，評估必要時縮短任務',
   '大浪' => '⚠ 惡劣海況，外海人員請提高警覺',
-][$today_sea] ?? '暫無海況資料';
+][$banner_sea] ?? '暫無海況資料';
 ?>
 <!doctype html>
 <html lang="zh-TW">
@@ -189,11 +203,11 @@ $ops_msg       = [
     );
     ?>
 
-    <?php if ($today_sea): ?>
+    <?php if ($banner_sea): ?>
     <div class="sea-banner <?= h($banner_cls) ?>">
       <div class="sb-ico"><?= icon_svg('wave') ?></div>
       <div class="sb-body">
-        <div class="sb-title">今日海象狀態</div>
+        <div class="sb-title"><?= $sea_from_buoy ? '即時海象（CWA 浮標觀測）' : '今日海象狀態' ?></div>
         <div class="sb-chips">
           <?php if ($today_zone): $zm = ['港口'=>'zone-port','近海'=>'zone-near','外海'=>'zone-far']; ?>
             <span class="sb-badge cond-chip <?= h($zm[$today_zone] ?? '') ?>">
@@ -201,11 +215,17 @@ $ops_msg       = [
             </span>
           <?php endif; ?>
           <?php $sm = ['平靜'=>'sea-calm','輕浪'=>'sea-light','中浪'=>'sea-med','大浪'=>'sea-rough']; ?>
-          <span class="sb-badge cond-chip <?= h($sm[$today_sea] ?? '') ?>">
-            <?= icon_svg('wave') ?> <?= h($today_sea) ?>
+          <span class="sb-badge cond-chip <?= h($sm[$banner_sea] ?? '') ?>">
+            <?= icon_svg('wave') ?> <?= h($banner_sea) ?>
           </span>
+          <?php if ($rec_ml_tomorrow !== null): ?>
+          <span class="sb-badge">🤖 ML 明日惡劣海況 <?= h($rec_ml_tomorrow) ?>%</span>
+          <?php endif; ?>
           <?php if ($rec_markov !== null): ?>
-          <span class="sb-badge">📡 7天大浪預測 <?= h($rec_markov) ?>%</span>
+          <span class="sb-badge">📡 Markov 7天大浪 <?= h($rec_markov) ?>%</span>
+          <?php endif; ?>
+          <?php if ($rec_sea_now && $rec_sea_now['wave_height'] !== null): ?>
+          <span class="sb-badge">🌊 浮標波高 <?= h($rec_sea_now['wave_height']) ?>m</span>
           <?php endif; ?>
         </div>
       </div>
@@ -285,11 +305,23 @@ $ops_msg       = [
         <div class="expo-pct"><?= h($storm_pct) ?><span>%</span></div>
         <div class="expo-bar"><div class="expo-bar-fill <?= $storm_pct>=20?'high':($storm_pct>=10?'mid':'low') ?>" style="width:<?= min($storm_pct,100) ?>%;"></div></div>
       </div>
+      <?php if ($my_fatigue !== null):
+        $fscore = (int)$my_fatigue['fatigue_score'];
+        $flvl = $fscore >= 65 ? 'high' : ($fscore >= 40 ? 'mid' : 'low');
+        $flbl = ['low'=>'良好','mid'=>'適中','high'=>'偏高'][$flvl];
+      ?>
+      <div class="expo-card">
+        <div class="expo-label">疲勞指數（連續值勤 <?= h($my_fatigue['consecutive_days']) ?> 天）</div>
+        <div class="expo-pct"><?= h($fscore) ?><span> / 100 · <?= h($flbl) ?></span></div>
+        <div class="expo-bar"><div class="expo-bar-fill <?= $flvl ?>" style="width:<?= min($fscore,100) ?>%;"></div></div>
+      </div>
+      <?php else: ?>
       <div class="expo-card">
         <div class="expo-label">本月待批請假</div>
         <div class="expo-pct" style="color:<?= $pending>0?'var(--warn)':'var(--ok)' ?>;"><?= h($pending) ?><span> 筆</span></div>
         <div class="expo-bar"><div class="expo-bar-fill <?= $pending>2?'high':($pending>0?'mid':'low') ?>" style="width:<?= min($pending*25,100) ?>%;"></div></div>
       </div>
+      <?php endif; ?>
     </div>
 
     <div class="grid2">
