@@ -23,13 +23,17 @@
 
 ## 系統截圖
 
-| 登入頁 | 個人儀表板 |
-|--------|-----------|
-| ![登入](docs/screenshots/test/01_login.png) | ![儀表板](docs/screenshots/test/02_dashboard.png) |
+**⭐ 明日排班決策頁（旗艦差異化功能）** — 自動排班引擎輸出三海域班表
 
-| 勤務決策建議看板 | 統計分析圖表 |
-|-----------------|-------------|
-| ![決策建議](docs/screenshots/test/09_recommendations.png) | ![圖表](docs/screenshots/test/11_charts_section.png) |
+![明日排班](docs/screenshots/02_scheduler.png)
+
+| 排班引擎 + Folium 互動地圖 | 員工儀表板（即時海象 + 疲勞指數）|
+|--------------------------|-----------------------------|
+| ![排班地圖](docs/screenshots/04_engine_map.png) | ![儀表板](docs/screenshots/03_dashboard.png) |
+
+| 登入頁 | 分析儀表板 |
+|--------|-----------|
+| ![登入](docs/screenshots/01_login.png) | ![分析](docs/screenshots/03_admin_dashboard_hero.png) |
 
 ---
 
