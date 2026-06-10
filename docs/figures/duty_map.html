@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_5377a8dcabe0177da298a82c8d590050 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdn.jsdelivr.net/gh/python-visualization/folium@main/folium/templates/leaflet_heat.min.js"></script>
+</head>
+<body>
+    
+    
+    <div style="position:fixed;bottom:24px;left:24px;z-index:9999;background:#fff;
+                padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.18);
+                font-family:sans-serif;font-size:12.5px;line-height:1.6;">
+      <b>海事勤務海域圖</b><br>
+      <span style="color:#2e7d32;">■</span> 港口
+      <span style="color:#ef6c00;">■</span> 近海
+      <span style="color:#c0001e;">■</span> 外海<br>
+      <span style="color:#0d47a1;">●</span> CWA 浮標站　🚢 船艦
+      <hr style='margin:6px 0;border:none;border-top:1px solid #ddd;'><b>即時海況</b>（2026-04-30）<br>代表海況：輕浪<br>平均波高：0.73 m
+    </div>
+    
+            <div class="folium-map" id="map_5377a8dcabe0177da298a82c8d590050" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_5377a8dcabe0177da298a82c8d590050 = L.map(
+                "map_5377a8dcabe0177da298a82c8d590050",
+                {
+                    center: [24.0, 121.8],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 7,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+            L.control.scale().addTo(map_5377a8dcabe0177da298a82c8d590050);
+
+            
+
+        
+    
+            var tile_layer_5c2e314a066979ff30b43790acbdddd7 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_5c2e314a066979ff30b43790acbdddd7.addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var polygon_3986c155e169511ce32e34cc6d596923 = L.polygon(
+                [[25.22, 121.66], [25.22, 121.84], [25.02, 121.84], [25.02, 121.66]],
+                {"bubblingMouseEvents": true, "color": "#2e7d32", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2e7d32", "fillOpacity": 0.16, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+        var popup_478d14b8846d431723f0ccfdbc7f7e0f = L.popup({
+  "maxWidth": 220,
+});
+
+        
+            
+                var html_9281940dc9fea07243ca16801033bfa7 = $(`<div id="html_9281940dc9fea07243ca16801033bfa7" style="width: 100.0%; height: 100.0%;"><div style='font-family:sans-serif;font-size:13px;'><b style='font-size:14px;'>港口海域</b><br>近 30 天值勤：<b>71</b> 次<br>大浪比例：<b>1%</b><br>平均工時：<b>9.4</b> h</div></div>`)[0];
+                popup_478d14b8846d431723f0ccfdbc7f7e0f.setContent(html_9281940dc9fea07243ca16801033bfa7);
+            
+        
+
+        polygon_3986c155e169511ce32e34cc6d596923.bindPopup(popup_478d14b8846d431723f0ccfdbc7f7e0f)
+        ;
+
+        
+    
+    
+            polygon_3986c155e169511ce32e34cc6d596923.bindTooltip(
+                `<div>
+                     港口（71 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_4d704450b45819d493182cf9e3ab6936 = L.marker(
+                [25.12, 121.74],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var div_icon_4ce6500107be9c7c5045b864fbbcb99c = L.divIcon({
+  "html": "\u003cdiv style=\u0027font-size:12px;font-weight:700;color:#2e7d32;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;\u0027\u003e\u6e2f\u53e3 71\u003c/div\u003e",
+  "className": "empty",
+});
+        
+    
+                marker_4d704450b45819d493182cf9e3ab6936.setIcon(div_icon_4ce6500107be9c7c5045b864fbbcb99c);
+            
+    
+            var polygon_85505b7d43cfe15b34348d339d2bbd0a = L.polygon(
+                [[25.35, 121.9], [25.35, 122.65], [23.55, 122.65], [23.55, 121.9]],
+                {"bubblingMouseEvents": true, "color": "#ef6c00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#ef6c00", "fillOpacity": 0.16, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+        var popup_45fdcbd43cd6ece917db483982ad8649 = L.popup({
+  "maxWidth": 220,
+});
+
+        
+            
+                var html_558bfb1ce9ee00cddc79ef7ea4d17d26 = $(`<div id="html_558bfb1ce9ee00cddc79ef7ea4d17d26" style="width: 100.0%; height: 100.0%;"><div style='font-family:sans-serif;font-size:13px;'><b style='font-size:14px;'>近海海域</b><br>近 30 天值勤：<b>78</b> 次<br>大浪比例：<b>5%</b><br>平均工時：<b>9.0</b> h</div></div>`)[0];
+                popup_45fdcbd43cd6ece917db483982ad8649.setContent(html_558bfb1ce9ee00cddc79ef7ea4d17d26);
+            
+        
+
+        polygon_85505b7d43cfe15b34348d339d2bbd0a.bindPopup(popup_45fdcbd43cd6ece917db483982ad8649)
+        ;
+
+        
+    
+    
+            polygon_85505b7d43cfe15b34348d339d2bbd0a.bindTooltip(
+                `<div>
+                     近海（78 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_ec995a8210245f6741a008b9d1999263 = L.marker(
+                [24.5, 122.25],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var div_icon_4163b09db2bff7112a63e424047aff16 = L.divIcon({
+  "html": "\u003cdiv style=\u0027font-size:12px;font-weight:700;color:#ef6c00;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;\u0027\u003e\u8fd1\u6d77 78\u003c/div\u003e",
+  "className": "empty",
+});
+        
+    
+                marker_ec995a8210245f6741a008b9d1999263.setIcon(div_icon_4163b09db2bff7112a63e424047aff16);
+            
+    
+            var polygon_bc076bca875b7e82f8a4266359b235f5 = L.polygon(
+                [[25.45, 122.7], [25.45, 124.1], [22.4, 124.1], [22.4, 122.7]],
+                {"bubblingMouseEvents": true, "color": "#c0001e", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#c0001e", "fillOpacity": 0.16, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+        var popup_bef892e117ab46b43ce63ca8ea877181 = L.popup({
+  "maxWidth": 220,
+});
+
+        
+            
+                var html_8bf62b199411c579904cc99c9b11d4c1 = $(`<div id="html_8bf62b199411c579904cc99c9b11d4c1" style="width: 100.0%; height: 100.0%;"><div style='font-family:sans-serif;font-size:13px;'><b style='font-size:14px;'>外海海域</b><br>近 30 天值勤：<b>42</b> 次<br>大浪比例：<b>31%</b><br>平均工時：<b>8.4</b> h</div></div>`)[0];
+                popup_bef892e117ab46b43ce63ca8ea877181.setContent(html_8bf62b199411c579904cc99c9b11d4c1);
+            
+        
+
+        polygon_bc076bca875b7e82f8a4266359b235f5.bindPopup(popup_bef892e117ab46b43ce63ca8ea877181)
+        ;
+
+        
+    
+    
+            polygon_bc076bca875b7e82f8a4266359b235f5.bindTooltip(
+                `<div>
+                     外海（42 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_f8cd4cbe3238782bae2849ba7b21eb77 = L.marker(
+                [23.9, 123.25],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var div_icon_e6d85a8ff4ebcf832eb9648847e23c3c = L.divIcon({
+  "html": "\u003cdiv style=\u0027font-size:12px;font-weight:700;color:#c0001e;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;\u0027\u003e\u5916\u6d77 42\u003c/div\u003e",
+  "className": "empty",
+});
+        
+    
+                marker_f8cd4cbe3238782bae2849ba7b21eb77.setIcon(div_icon_e6d85a8ff4ebcf832eb9648847e23c3c);
+            
+    
+            var heat_map_31eba9899b204a7177ceb74c5775b095 = L.heatLayer(
+                [[25.079852838031158, 121.93831429482036], [25.19423806137965, 121.7834097330467], [25.00992596494158, 121.58863758894792], [24.978586755893826, 121.90111750414097], [25.15235680375783, 121.83155193423025], [24.96658703817466, 121.94676033495128], [25.226381645056136, 121.61342920869843], [25.018183989506273, 121.60069798433551], [25.057357517747054, 121.75089282991819], [25.09822240596548, 121.64814082168714], [25.15579292631116, 121.58137729868689], [25.05348628753127, 121.68119921104922], [25.10594239494945, 121.86547742301292], [25.023895610290676, 121.74626315290199], [25.149572662035855, 121.5404381815968], [25.154414352608462, 121.5950306144224], [24.98081650975529, 121.93750963639147], [25.26900225058386, 121.87569483317124], [25.05747640613548, 121.5629757301628], [25.178954568483892, 121.71366709724542], [24.99905223515033, 121.73787784044896], [24.97100432675687, 121.92010097691465], [25.042809594112008, 121.81150980511575], [25.059747544348614, 121.74882992931823], [25.13494728938985, 121.60133596043123], [25.27026708088466, 121.86105844227889], [25.26063966130054, 121.91372403418816], [25.15132799321955, 121.92562466341016], [24.988317600656615, 121.60623245946442], [24.974472732451375, 121.66314534553584], [25.084376732700637, 121.63939357398051], [25.22519600292862, 121.67697146374518], [25.049899043099963, 121.75878627658962], [25.005095751991924, 121.87296667153177], [24.983856205977528, 121.95423025210422], [25.207118326174932, 121.60743489987503], [24.961767077479553, 121.87880302852012], [25.18619435003124, 121.84076315393803], [25.206806510939504, 121.552579646763], [25.07470903313417, 121.57098238619105], [25.23619309628019, 121.79425117580412], [25.06588736795285, 121.54796567412585], [25.05951434294901, 121.66308066169177], [25.19347397706818, 121.80052528739628], [25.243908077624425, 121.72777456707125], [24.998270158700258, 121.83382770637812], [25.203451215557408, 121.76696196693058], [25.20670949758546, 121.73727006240033], [25.12727450540224, 121.70811804807775], [24.968134120558112, 121.56747222787705], [24.970057339419757, 121.80002058095606], [25.060593913944427, 121.74377110411247], [25.25042127165635, 121.6296885808255], [25.091322535371404, 121.85244250095893], [25.033215412957322, 121.55387116032466], [25.052720464932406, 121.59093736639176], [25.257503248749625, 121.87557296700834], [25.162689202083335, 121.9034426596826], [25.21717506460772, 121.60209082590985], [25.245618879516794, 121.75731058644288], [25.2183808496525, 121.91428017196633], [25.061761111990997, 121.56842284679217], [25.03293925201342, 121.70792742699555], [25.2217647250952, 121.89872145663279], [24.96222468176998, 121.74472881313412], [25.09357152100761, 121.61772743660711], [24.99835691754678, 121.66855067541759], [25.261731105252007, 121.66220929008912], [25.12601299895788, 121.82932834191388], [25.076361472761374, 121.94758411639722], [25.267983134381478, 121.63078421016316], [24.499119521885564, 122.16238645631938], [24.43114895820079, 122.046230256836], [24.535060586873566, 122.2511787702207], [24.356473200399996, 122.15260444426411], [24.63064508350933, 122.13540723189347], [24.386366359069193, 122.24535921452213], [24.65540814531539, 122.13650431946506], [24.555083375169882, 122.36511263074463], [24.416044014077567, 122.35041519338922], [24.457690602470162, 122.30821456546117], [24.542729507443486, 122.26574086099289], [24.36889272641741, 122.39753309805927], [24.442649620790956, 122.11206814457593], [24.353048045297523, 122.28999289500283], [24.55682059578953, 122.03729864472825], [24.50386977865577, 122.12965814108709], [24.546455292931025, 122.1067212287622], [24.56110007619279, 122.20016355237223], [24.639753596395757, 122.09050921542423], [24.449141232336082, 122.07992834934586], [24.63590195784914, 122.41602931548763], [24.42254132086885, 122.32039298025504], [24.60151110406439, 122.27428835710376], [24.509488185073923, 122.13641500799619], [24.369792885697887, 122.42477493349946], [24.628133778292266, 122.30856464120023], [24.448489533135586, 122.18365221282957], [24.572305817238476, 122.42472851437914], [24.623867655764837, 122.37314524017735], [24.54545012676937, 122.06702158459782], [24.391721188510278, 122.42536384295191], [24.534057299091067, 122.03404670271132], [24.37247089371713, 122.32194077840755], [24.34161970683079, 122.1007555426237], [24.515594812597307, 122.33443388698478], [24.54862760304083, 122.12867849616265], [24.56789735083121, 122.13438959849859], [24.444127903410966, 122.35845621825193], [24.54788252769511, 122.40365830061744], [24.55043612553611, 122.28005578546761], [24.36997592570499, 122.19179495334615], [24.424864757658153, 122.13735544308679], [24.651363377520784, 122.20296299885338], [24.625454897656677, 122.3077009954388], [24.59433961713333, 122.25116032096628], [24.524609243080434, 122.24670778528031], [24.402477756095376, 122.34787893071507], [24.429847155981072, 122.04069902522984], [24.546551134690294, 122.1079286989391], [24.64094674699293, 122.44972857388113], [24.632756604870544, 122.19286982811239], [24.344946117289236, 122.4384601675386], [24.47701892746154, 122.45532812037922], [24.648358392668563, 122.40532416040564], [24.434223645462268, 122.19944300058485], [24.612363734885395, 122.16944568226876], [24.39423767893955, 122.27499255548167], [24.63956952773145, 122.33625311053699], [24.522419574428596, 122.07275765725913], [24.536802312543735, 122.46562369404587], [24.384826884875686, 122.25806504704005], [24.620759383016946, 122.35593819181184], [24.563045037118485, 122.33909299695434], [24.455037168390323, 122.15918041147637], [24.598995569753125, 122.38644989365883], [24.617463141945635, 122.43182584312484], [24.5036295676355, 122.25066716966236], [24.59545445726937, 122.31598412954222], [24.564629400722467, 122.38014877455188], [24.62480170938162, 122.17871786901468], [24.46018654484478, 122.07135205352998], [24.525049645118777, 122.04581460047056], [24.488991365802388, 122.26876363927133], [24.43169320068105, 122.28996663465037], [24.349760079980495, 122.04643320304966], [24.60323217941109, 122.18848388222095], [24.380659364048604, 122.25978703442411], [24.586397936991556, 122.12496125209861], [23.93932495226208, 123.06755288459726], [23.756538150773952, 123.26379603788999], [23.913003238915234, 123.31046915665921], [23.972349226791252, 123.45937491496352], [23.90521611145638, 123.17210084809415], [23.994459582325984, 123.1491661905553], [23.880470854625802, 123.0645208077906], [23.748112237892943, 123.45356530245829], [24.007513638563903, 123.33622865068122], [23.870864942212563, 123.10624950083117], [23.790059853654746, 123.14010687519242], [23.91575253270596, 123.34442220598802], [23.951263160549672, 123.15317091465622], [24.04555688981222, 123.35467464334614], [23.917393296803645, 123.29915712834311], [23.874272019976893, 123.13900163538051], [23.853911257168402, 123.36345228860432], [23.74460591636152, 123.08107196182304], [23.75472084544696, 123.04792067302034], [24.01374738688352, 123.33960945812721], [23.89173562530794, 123.07304703068644], [23.897317080037386, 123.23832757914344], [23.795424598371202, 123.2208947256647], [23.86752151500716, 123.30097404314297], [23.943229968277645, 123.0499337642997], [23.85987603668047, 123.30537836291427], [23.901003602745625, 123.40685553012287], [23.95078196211806, 123.10169114791583], [23.762581999168138, 123.31266448241078], [23.748483619373317, 123.28774125576032], [24.040873677255984, 123.28320863826539], [23.864214376386087, 123.31304681611464], [23.886640924957284, 123.27007138729901], [24.041268738808487, 123.19988516063233], [24.04758098042365, 123.42835428246067], [23.80265316313257, 123.06051897238507], [23.772248960440773, 123.03801760328668], [23.770221747441894, 123.3305229803032], [23.762780367507272, 123.17034927732925], [24.010360099510223, 123.04023965172377], [24.00062991442846, 123.1540161009003], [23.77781274483893, 123.33656435276022]],
+                {
+  "minOpacity": 0.25,
+  "maxZoom": 18,
+  "radius": 17,
+  "blur": 23,
+}
+            );
+        
+    
+            heat_map_31eba9899b204a7177ceb74c5775b095.addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var marker_e8bbdd745b8796fd47467c0619db8e3b = L.marker(
+                [25.150946283227174, 121.87588992486974],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_c4229d152a45e72f003770e0174df029 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_e8bbdd745b8796fd47467c0619db8e3b.bindTooltip(
+                `<div>
+                     MAR-001（港口・近30天 26 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e8bbdd745b8796fd47467c0619db8e3b.setIcon(icon_c4229d152a45e72f003770e0174df029);
+            
+    
+            var marker_e332902217bb596462f0e73288643bd4 = L.marker(
+                [25.176417050512935, 121.84925313493854],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_b212a33b2657932d809e183f2b6aec10 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_e332902217bb596462f0e73288643bd4.bindTooltip(
+                `<div>
+                     MAR-002（港口・近30天 31 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e332902217bb596462f0e73288643bd4.setIcon(icon_b212a33b2657932d809e183f2b6aec10);
+            
+    
+            var marker_976700c68b67d693099de2bf0a950d7a = L.marker(
+                [24.447688297417113, 122.1338782357607],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_e027cb9d4053d9c65b9ea5f574484d83 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_976700c68b67d693099de2bf0a950d7a.bindTooltip(
+                `<div>
+                     MAR-003（近海・近30天 31 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_976700c68b67d693099de2bf0a950d7a.setIcon(icon_e027cb9d4053d9c65b9ea5f574484d83);
+            
+    
+            var marker_76eb15e72eda5f0e187bb96a5599eaaf = L.marker(
+                [24.560147540393807, 122.36046050613622],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_eac0900478062acd8f7688b3646b1004 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_76eb15e72eda5f0e187bb96a5599eaaf.bindTooltip(
+                `<div>
+                     MAR-004（近海・近30天 34 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_76eb15e72eda5f0e187bb96a5599eaaf.setIcon(icon_eac0900478062acd8f7688b3646b1004);
+            
+    
+            var marker_2a71ee06287bf4d693ac033c2e84497a = L.marker(
+                [24.61772123408016, 122.21854236368812],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_6ada81c33bbb5d091b1e2e55a924525b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_2a71ee06287bf4d693ac033c2e84497a.bindTooltip(
+                `<div>
+                     MAR-005（近海・近30天 17 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_2a71ee06287bf4d693ac033c2e84497a.setIcon(icon_6ada81c33bbb5d091b1e2e55a924525b);
+            
+    
+            var marker_8def9525089e5f4ee48604ad0f08350c = L.marker(
+                [23.869284340590266, 123.34950866586712],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_2631934152b0ac9fb98c0f1a7bf2d1a0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_8def9525089e5f4ee48604ad0f08350c.bindTooltip(
+                `<div>
+                     MAR-006（外海・近30天 19 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_8def9525089e5f4ee48604ad0f08350c.setIcon(icon_2631934152b0ac9fb98c0f1a7bf2d1a0);
+            
+    
+            var marker_8f59344d0fe3768b4df205564543ed8d = L.marker(
+                [23.861792849660723, 123.40507263721729],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_8d1938e2348471db214b00d53f22e512 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_8f59344d0fe3768b4df205564543ed8d.bindTooltip(
+                `<div>
+                     MAR-007（外海・近30天 16 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_8f59344d0fe3768b4df205564543ed8d.setIcon(icon_8d1938e2348471db214b00d53f22e512);
+            
+    
+            var marker_d353078aba5c406d56c9a923124b2386 = L.marker(
+                [23.98601906044232, 123.22443784985501],
+                {
+}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            var icon_f9d40919302367da56bf5422e6f72a50 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "ship",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+            marker_d353078aba5c406d56c9a923124b2386.bindTooltip(
+                `<div>
+                     MAR-008（外海・近30天 17 次）
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_d353078aba5c406d56c9a923124b2386.setIcon(icon_f9d40919302367da56bf5422e6f72a50);
+            
+    
+            var circle_marker_9372ef5f45c91f1f700c28dfc1f478e3 = L.circleMarker(
+                [25.63, 122.07],
+                {"bubblingMouseEvents": true, "color": "#0d47a1", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#42a5f5", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            circle_marker_9372ef5f45c91f1f700c28dfc1f478e3.bindTooltip(
+                `<div>
+                     浮標 彭佳嶼｜波高 1.14 m｜輕浪｜季節模擬
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_85c7a49ee09655d8d9cc81d28735f4ef = L.circleMarker(
+                [23.98, 121.62],
+                {"bubblingMouseEvents": true, "color": "#0d47a1", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#42a5f5", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            circle_marker_85c7a49ee09655d8d9cc81d28735f4ef.bindTooltip(
+                `<div>
+                     浮標 花蓮外海｜波高 0.79 m｜輕浪｜季節模擬
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_29a2e7c5082ddf12e73e58792c26ad0f = L.circleMarker(
+                [20.7, 116.72],
+                {"bubblingMouseEvents": true, "color": "#0d47a1", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#42a5f5", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            circle_marker_29a2e7c5082ddf12e73e58792c26ad0f.bindTooltip(
+                `<div>
+                     浮標 東沙島｜波高 0.27 m｜平靜｜季節模擬
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_e7b6371d8abcc2875a561321f8d15e9e = L.circleMarker(
+                [25.18, 121.53],
+                {"bubblingMouseEvents": true, "color": "#0d47a1", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#42a5f5", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(map_5377a8dcabe0177da298a82c8d590050);
+        
+    
+            circle_marker_e7b6371d8abcc2875a561321f8d15e9e.bindTooltip(
+                `<div>
+                     浮標 鞍部浮標｜波高 0.72 m｜輕浪｜季節模擬
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>

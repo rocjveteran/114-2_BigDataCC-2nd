@@ -1,0 +1,483 @@
+{
+  "generated_at": "2026-06-10 11:07",
+  "headline": "近 30 天「外海」大浪比例最高（31.0%），建議優先評估值勤調度。",
+  "zone_risk": [
+    {
+      "zone": "外海",
+      "count": 42,
+      "avg_sea_rank": 2.83,
+      "avg_hours": 8.43,
+      "rough_pct": 31.0
+    },
+    {
+      "zone": "近海",
+      "count": 78,
+      "avg_sea_rank": 1.99,
+      "avg_hours": 8.98,
+      "rough_pct": 5.1
+    },
+    {
+      "zone": "港口",
+      "count": 71,
+      "avg_sea_rank": 1.3,
+      "avg_hours": 9.36,
+      "rough_pct": 1.4
+    }
+  ],
+  "exposure_ranking": [
+    {
+      "user_id": 9,
+      "records": 17,
+      "offshore_pct": 35.3,
+      "rough_sea_pct": 5.9,
+      "avg_hours": 8.7
+    },
+    {
+      "user_id": 2,
+      "records": 14,
+      "offshore_pct": 28.6,
+      "rough_sea_pct": 7.1,
+      "avg_hours": 8.75
+    },
+    {
+      "user_id": 12,
+      "records": 14,
+      "offshore_pct": 28.6,
+      "rough_sea_pct": 21.4,
+      "avg_hours": 9.08
+    },
+    {
+      "user_id": 13,
+      "records": 19,
+      "offshore_pct": 26.3,
+      "rough_sea_pct": 10.5,
+      "avg_hours": 9.0
+    },
+    {
+      "user_id": 8,
+      "records": 16,
+      "offshore_pct": 25.0,
+      "rough_sea_pct": 6.2,
+      "avg_hours": 8.96
+    },
+    {
+      "user_id": 6,
+      "records": 17,
+      "offshore_pct": 23.5,
+      "rough_sea_pct": 17.6,
+      "avg_hours": 8.84
+    },
+    {
+      "user_id": 7,
+      "records": 19,
+      "offshore_pct": 21.1,
+      "rough_sea_pct": 10.5,
+      "avg_hours": 9.05
+    },
+    {
+      "user_id": 4,
+      "records": 17,
+      "offshore_pct": 17.6,
+      "rough_sea_pct": 0.0,
+      "avg_hours": 9.35
+    },
+    {
+      "user_id": 3,
+      "records": 18,
+      "offshore_pct": 16.7,
+      "rough_sea_pct": 11.1,
+      "avg_hours": 9.0
+    },
+    {
+      "user_id": 10,
+      "records": 12,
+      "offshore_pct": 16.7,
+      "rough_sea_pct": 16.7,
+      "avg_hours": 8.7
+    },
+    {
+      "user_id": 11,
+      "records": 13,
+      "offshore_pct": 15.4,
+      "rough_sea_pct": 7.7,
+      "avg_hours": 9.36
+    },
+    {
+      "user_id": 5,
+      "records": 15,
+      "offshore_pct": 6.7,
+      "rough_sea_pct": 0.0,
+      "avg_hours": 9.18
+    }
+  ],
+  "alerts": [
+    {
+      "level": "warn",
+      "text": "外海 × 大浪值勤共 13 筆（占 6.8%），請評估人員安全風險。"
+    },
+    {
+      "level": "warn",
+      "text": "疲勞偵測：林佳 等 1 人疲勞指數偏高（連續值勤過長），建議安排輪休。"
+    },
+    {
+      "level": "info",
+      "text": "船艦維護：MAR-007 已達維護里程，明日排班已自動排除。"
+    }
+  ],
+  "rotation_suggestions": [
+    {
+      "name": "吳超",
+      "offshore_pct": 28.6,
+      "rough_sea_pct": 21.4,
+      "action": "建議下週調至港口值勤（外海暴露偏高）",
+      "priority": "high"
+    },
+    {
+      "name": "黃峻",
+      "offshore_pct": 35.3,
+      "rough_sea_pct": 5.9,
+      "action": "建議下週調至港口值勤（外海暴露偏高）",
+      "priority": "high"
+    },
+    {
+      "name": "王明",
+      "offshore_pct": 23.5,
+      "rough_sea_pct": 17.6,
+      "action": "建議下週調至港口值勤（外海暴露偏高）",
+      "priority": "high"
+    },
+    {
+      "name": "林佳",
+      "offshore_pct": 6.7,
+      "rough_sea_pct": 0.0,
+      "action": "外海暴露率低，可接替外海勤務",
+      "priority": "normal"
+    }
+  ],
+  "markov_rough_7day": 6.4,
+  "ml_rough_tomorrow": 20.7,
+  "ml_metrics": {
+    "accuracy": 0.923,
+    "auc": 0.713,
+    "n_train": 116,
+    "n_test": 39
+  },
+  "sea_now": {
+    "obs_date": "2026-04-30",
+    "wave_height": 0.73,
+    "sea_temp": 24.4,
+    "sea_state": "輕浪",
+    "stations": 4,
+    "data_source": "synthetic"
+  },
+  "fatigue": [
+    {
+      "user_id": 5,
+      "name": "林佳",
+      "consecutive_days": 5,
+      "hours_7d": 46.6,
+      "days_since_duty": 0,
+      "fatigue_score": 66,
+      "level": "high"
+    },
+    {
+      "user_id": 4,
+      "name": "陳偉",
+      "consecutive_days": 4,
+      "hours_7d": 37.6,
+      "days_since_duty": 1,
+      "fatigue_score": 53,
+      "level": "mid"
+    },
+    {
+      "user_id": 7,
+      "name": "張宏",
+      "consecutive_days": 4,
+      "hours_7d": 34.3,
+      "days_since_duty": 0,
+      "fatigue_score": 51,
+      "level": "mid"
+    },
+    {
+      "user_id": 6,
+      "name": "王明",
+      "consecutive_days": 3,
+      "hours_7d": 45.6,
+      "days_since_duty": 0,
+      "fatigue_score": 48,
+      "level": "mid"
+    },
+    {
+      "user_id": 9,
+      "name": "黃峻",
+      "consecutive_days": 3,
+      "hours_7d": 35.1,
+      "days_since_duty": 0,
+      "fatigue_score": 43,
+      "level": "mid"
+    },
+    {
+      "user_id": 11,
+      "name": "孫芳",
+      "consecutive_days": 3,
+      "hours_7d": 36.6,
+      "days_since_duty": 0,
+      "fatigue_score": 43,
+      "level": "mid"
+    },
+    {
+      "user_id": 2,
+      "name": "Admin",
+      "consecutive_days": 3,
+      "hours_7d": 25.0,
+      "days_since_duty": 1,
+      "fatigue_score": 38,
+      "level": "low"
+    },
+    {
+      "user_id": 3,
+      "name": "Employee",
+      "consecutive_days": 2,
+      "hours_7d": 42.6,
+      "days_since_duty": 0,
+      "fatigue_score": 37,
+      "level": "low"
+    },
+    {
+      "user_id": 13,
+      "name": "鄭宇",
+      "consecutive_days": 2,
+      "hours_7d": 36.2,
+      "days_since_duty": 0,
+      "fatigue_score": 34,
+      "level": "low"
+    },
+    {
+      "user_id": 8,
+      "name": "劉燕",
+      "consecutive_days": 1,
+      "hours_7d": 45.2,
+      "days_since_duty": 0,
+      "fatigue_score": 29,
+      "level": "low"
+    },
+    {
+      "user_id": 10,
+      "name": "趙磊",
+      "consecutive_days": 2,
+      "hours_7d": 16.4,
+      "days_since_duty": 4,
+      "fatigue_score": 25,
+      "level": "low"
+    },
+    {
+      "user_id": 12,
+      "name": "吳超",
+      "consecutive_days": 1,
+      "hours_7d": 19.2,
+      "days_since_duty": 0,
+      "fatigue_score": 18,
+      "level": "low"
+    }
+  ],
+  "fairness": {
+    "gini": 0.033,
+    "label": "均勻",
+    "median_hours": 905.4,
+    "overworked": [],
+    "underused": [],
+    "lorenz": {
+      "x": [
+        0.0,
+        0.083,
+        0.167,
+        0.25,
+        0.333,
+        0.417,
+        0.5,
+        0.583,
+        0.667,
+        0.75,
+        0.833,
+        0.917,
+        1.0
+      ],
+      "y": [
+        0.0,
+        0.074,
+        0.152,
+        0.231,
+        0.311,
+        0.392,
+        0.475,
+        0.559,
+        0.645,
+        0.732,
+        0.819,
+        0.909,
+        1.0
+      ]
+    }
+  },
+  "vessel_status": [
+    {
+      "vessel": "MAR-001",
+      "zone": "港口",
+      "total_duties": 202,
+      "since_maint": 22,
+      "maint_interval": 45,
+      "availability_pct": 51,
+      "status": "可用",
+      "last_used": "2026-06-05"
+    },
+    {
+      "vessel": "MAR-002",
+      "zone": "港口",
+      "total_duties": 206,
+      "since_maint": 26,
+      "maint_interval": 45,
+      "availability_pct": 42,
+      "status": "可用",
+      "last_used": "2026-06-06"
+    },
+    {
+      "vessel": "MAR-003",
+      "zone": "近海",
+      "total_duties": 206,
+      "since_maint": 26,
+      "maint_interval": 45,
+      "availability_pct": 42,
+      "status": "可用",
+      "last_used": "2026-06-06"
+    },
+    {
+      "vessel": "MAR-004",
+      "zone": "近海",
+      "total_duties": 189,
+      "since_maint": 9,
+      "maint_interval": 45,
+      "availability_pct": 80,
+      "status": "可用",
+      "last_used": "2026-06-06"
+    },
+    {
+      "vessel": "MAR-005",
+      "zone": "近海",
+      "total_duties": 96,
+      "since_maint": 6,
+      "maint_interval": 45,
+      "availability_pct": 87,
+      "status": "可用",
+      "last_used": "2026-06-06"
+    },
+    {
+      "vessel": "MAR-006",
+      "zone": "外海",
+      "total_duties": 104,
+      "since_maint": 14,
+      "maint_interval": 45,
+      "availability_pct": 69,
+      "status": "可用",
+      "last_used": "2026-06-06"
+    },
+    {
+      "vessel": "MAR-007",
+      "zone": "外海",
+      "total_duties": 88,
+      "since_maint": 43,
+      "maint_interval": 45,
+      "availability_pct": 4,
+      "status": "需維護",
+      "last_used": "2026-06-06"
+    },
+    {
+      "vessel": "MAR-008",
+      "zone": "外海",
+      "total_duties": 109,
+      "since_maint": 19,
+      "maint_interval": 45,
+      "availability_pct": 58,
+      "status": "可用",
+      "last_used": "2026-06-06"
+    }
+  ],
+  "schedule": {
+    "date": "2026-06-07",
+    "rough_prob": 20.7,
+    "zone_slots": {
+      "港口": 2,
+      "近海": 3,
+      "外海": 3
+    },
+    "assignments": [
+      {
+        "name": "趙磊",
+        "zone": "外海",
+        "vessel": "MAR-006",
+        "fatigue_score": 25,
+        "offshore_pct": 16.7,
+        "reason": "低疲勞且外海暴露低，適合輪派外海"
+      },
+      {
+        "name": "吳超",
+        "zone": "外海",
+        "vessel": "MAR-008",
+        "fatigue_score": 18,
+        "offshore_pct": 28.6,
+        "reason": "低疲勞且外海暴露低，適合輪派外海"
+      },
+      {
+        "name": "劉燕",
+        "zone": "近海",
+        "vessel": "MAR-003",
+        "fatigue_score": 29,
+        "offshore_pct": 25.0,
+        "reason": "疲勞適中，配置近海任務"
+      },
+      {
+        "name": "鄭宇",
+        "zone": "近海",
+        "vessel": "MAR-004",
+        "fatigue_score": 34,
+        "offshore_pct": 26.3,
+        "reason": "疲勞適中，配置近海任務"
+      },
+      {
+        "name": "Employee",
+        "zone": "近海",
+        "vessel": "MAR-005",
+        "fatigue_score": 37,
+        "offshore_pct": 16.7,
+        "reason": "疲勞適中，配置近海任務"
+      },
+      {
+        "name": "林佳",
+        "zone": "港口",
+        "vessel": "MAR-001",
+        "fatigue_score": 66,
+        "offshore_pct": 6.7,
+        "reason": "疲勞偏高，配置港口輕負荷"
+      },
+      {
+        "name": "陳偉",
+        "zone": "港口",
+        "vessel": "MAR-002",
+        "fatigue_score": 53,
+        "offshore_pct": 17.6,
+        "reason": "疲勞偏高，配置港口輕負荷"
+      }
+    ],
+    "rest_recommended": [],
+    "maintenance_vessels": [
+      "MAR-007"
+    ],
+    "vessel_limited": [
+      {
+        "zone": "外海",
+        "slots": 3,
+        "filled": 2,
+        "available_vessels": 2
+      }
+    ]
+  }
+}
