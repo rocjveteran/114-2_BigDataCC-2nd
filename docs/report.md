@@ -23,7 +23,7 @@
 
 系統採三容器 Docker Compose 架構，涵蓋 PHP/Apache 前端、MySQL 資料庫與 Python 分析服務，可以單一指令完成部署。
 
-在資料端，以 Python 腳本動態生成相對今天回推 183 天、約 1,200 筆含海域、海況、船艦編號等欄位的模擬值勤資料，並串接中央氣象署浮標海象觀測（`sea_observations`，無金鑰時自動季節性模擬備援）；以 Pandas 進行清洗與統計分析，產出 21 張 Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時間序列預測、多元迴歸、Markov 轉移與人力資源決策）。決策端以 scikit-learn RandomForest 預測明日惡劣海況，並由排班引擎（`build_schedule`）綜合海況、疲勞、暴露與船艦可用性自動產出明日班表。互動端透過 Gradio 提供可即時篩選的分析儀表板與 Folium 互動海域地圖，PHP 端設有「明日排班」決策頁與整合顯示儀表板。
+在資料端，以 Python 腳本動態生成相對今天回推 183 天、約 1,200 筆含海域、海況、船艦編號等欄位的模擬值勤資料（採 AR(1) 日際自相關模型確保海況時序可學性），並串接中央氣象署浮標海象觀測（`sea_observations`，無金鑰時自動季節性模擬備援）；以 Pandas 進行清洗與統計分析，搭配單因子 ANOVA（F = 181.433, p < 0.0001）、卡方檢定（χ² = 349.634, p < 0.0001）、OLS 多元迴歸（R² = 0.784），產出 **25 張** Matplotlib/Seaborn 視覺化圖表（涵蓋描述統計、假設檢定、時序預測、多元迴歸、Markov 轉移、Holt 雙指數平滑、人員雷達圖、Isolation Forest 異常偵測與人力資源決策）。決策端以 scikit-learn RandomForest（測試集 AUC = 0.811、準確率 = 0.949）預測明日惡劣海況，並由排班引擎（`build_schedule`，MILP 整數線性規劃 HiGHS 後端，全域最優性差距驗證 = 0%）綜合海況、疲勞、暴露與船艦可用性自動產出明日班表。互動端透過 Gradio 提供可即時篩選的分析儀表板與 Folium 互動海域地圖，PHP 端設有「明日排班」決策頁與整合顯示儀表板。
 
 本系統完整覆蓋課程必要技術（Python + Pandas、Matplotlib/Seaborn、Docker、Git/GitHub）及多項選擇性技術（MySQL、Apache + PHP、scikit-learn、Folium、Jupyter、Gradio、CWA 開放資料），具備海事領域特性與實務決策能力，可作為實際部署之管理工具基礎。
 
@@ -154,9 +154,9 @@
 | 技術 | 類型 | 應用位置 |
 |------|------|---------|
 | Python + Pandas | 必要 | `analysis.py` 資料清洗、統計與排班引擎 |
-| Matplotlib / Seaborn | 必要 | `analysis.py` 21 張圖表 |
+| Matplotlib / Seaborn | 必要 | `analysis.py` 25 張圖表 |
 | Docker / Docker Compose | 必要 | `docker/` 三容器編排 |
-| Git / GitHub | 必要 | commit 紀錄、PR 管理、GitHub Actions CI（33 tests）|
+| Git / GitHub | 必要 | commit 紀錄、PR 管理、GitHub Actions CI（45 tests）|
 | MySQL 8.0 | 選擇性 | 值勤與海象資料持久化（4 張表）|
 | Apache + PHP 8.2 | 選擇性 | 前端操作介面 + 明日排班決策頁 |
 | scikit-learn | 選擇性 | RandomForest 海況預測 + joblib 落地 |
@@ -208,7 +208,7 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 
 ### 4.3 視覺化
 
-共產出 21 張圖表，輸出至 `analysis_output/` 共用 volume：
+共產出 **25 張圖表**，輸出至 `analysis_output/` 共用 volume：
 
 | 圖檔 | 圖表類型 | 說明 |
 |------|---------|------|
@@ -221,27 +221,32 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 | `leave_trend.png` | 分組長條圖 | 每月各假別核准件數，供人力規劃參考 |
 | `hours_heatmap.png` | 交互效應熱力圖 | 海域 × 海況平均工時，揭示不同作業條件的工時差異 |
 | `anomaly_detect.png` | Z-score 散點圖 | 值勤時數異常偵測，標示超出 2σ 的異常記錄 |
+| `anomaly_isoforest.png` | 5維 Isolation Forest 散點圖 | 工時/海況/海域/打卡時刻/星期五維聯合異常偵測，補強 Z-score 盲點 |
 | `weekday_pattern.png` | 雙軸圖 | 週幾出勤次數與平均工時，分析輪班週期規律 |
 | `vessel_pareto.png` | 柏拉圖 | 船艦使用 80/20 法則，識別高使用率船艦 |
 | `forecast_duty.png` | 時間序列折線 + 預測帶 | 週彙整值勤量的線性趨勢外推（未來 4 週，含 95% 預測區間）|
+| `forecast_holt.png` | Holt 雙指數平滑 | 純 NumPy 實作 Holt 雙指數平滑趨勢預測，格點搜尋最佳 α/β，與線性外推對比 |
 | `correlation_matrix.png` | Spearman 相關熱力圖 | 工時與海況、海域、星期、上工時刻等特徵的關聯結構 |
-| `regression_coef.png` | 水平係數圖 | 工時驅動因子的標準化多元迴歸係數（R² 見圖標題）|
+| `regression_coef.png` | 水平係數圖 | 工時驅動因子的標準化多元迴歸係數（R² = 0.784 標於圖標題）|
 | `crew_clusters.png` | 分群散點圖 | 以平均工時 × 外海暴露比例對人員進行 K-means 分群 |
+| `crew_radar.png` | 雷達圖 | 人員 5 維能力圖（出勤次數/總工時/平均工時/外海暴露/大浪暴露），辨識各員核心特性 |
 | `markov_heatmap.png` | 雙熱力圖 | 海況 Markov 轉移機率矩陣（左）＋ 未來 7 天海況預測機率（右）|
-| `feature_importance.png` | 水平長條圖 | scikit-learn RandomForest 預測明日惡劣海況之特徵重要度（含準確率/AUC）|
+| `zone_map_static.png` | 經緯度配置圖 | 三海域、船艦與 CWA 浮標站配置（互動版見 `duty_map.html`）|
+| `feature_importance.png` | 水平長條圖 | RandomForest 預測明日惡劣海況（`mid_share≥35%` 目標）之特徵重要度（含 CV AUC/準確率）|
 | `fatigue.png` | 水平長條圖 | 人員疲勞指數排行（連續值勤 + 近 7 日工時），紅色為高疲勞 |
 | `fairness_lorenz.png` | Lorenz 曲線 | 工時公平性，曲線越貼近對角線越平均，Gini 係數量化失衡 |
 | `vessel_availability.png` | 水平長條圖 | 船艦距下次維護之可用度，紅色為需維護 |
-| `zone_map_static.png` | 經緯度配置圖 | 三海域、船艦與 CWA 浮標站配置（互動版見 `duty_map.html`）|
+| `schedule_compare.png` | 雙欄比較圖 | MILP 整數規劃 vs 貪婪啟發式排班引擎指派成本比較，驗證全域最優性（gap = 0%）|
 
 > 另輸出 `duty_map.html`（Folium 互動海域地圖）與 `sea_predictor.joblib`（訓練後 RandomForest 模型）。
 
 ### 4.4 統計檢定
 
-於 `notebooks/eda.ipynb` 中另以兩項統計檢定驗證視覺觀察：
+以兩項統計檢定驗證視覺觀察（結果同步寫入 `stats_summary.json`，呈現於儀表板）：
 
-- **Welch's t-test**（平靜天 vs 大浪天值勤時數）：拒絕虛無假設（p < 0.05），確認大浪天時數顯著較短
-- **單因子 ANOVA**（四種海況下值勤時數）：F 檢定結果顯著，四組間至少存在一對差異
+- **單因子 ANOVA**（四種海況下值勤時數）：**F = 181.433, p < 0.0001**，拒絕「各海況平均工時相同」虛無假設，大浪縮班效應在統計上顯著確立。
+- **卡方獨立性檢定**（海域 × 海況）：**χ² = 349.634, df = 6, p < 0.0001**，拒絕「海域與海況彼此獨立」虛無假設，確認外海值勤與惡劣海況有顯著關聯。
+- **Welch's t-test**（平靜天 vs 大浪天值勤時數）：p < 0.0001，大浪天均值較平靜天短約 1.5 小時，與箱型圖觀察吻合。
 
 此結果為「海況影響值勤時數」之假設提供統計學上的支持，補強純視覺觀察的不足。
 
@@ -250,18 +255,20 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 在描述統計與假設檢定之上，進一步加入四項推論與預測導向的分析（皆以既有
 `numpy` / `scipy` / `pandas` 實作，無需額外深度學習框架）：
 
-- **時間序列預測**（`forecast_duty.png`）：將值勤量以「週」彙整後，以線性
-  趨勢（`numpy.polyfit`）外推未來 4 週，並以殘差標準差估計 95% 預測區間。
-  程式會自動丟棄尾端尚未結束的當週，避免不完整資料造成趨勢偏誤。
+- **時間序列預測**（`forecast_duty.png` + `forecast_holt.png`）：線性趨勢外推
+  （`numpy.polyfit`）提供 95% 預測區間；Holt 雙指數平滑（純 NumPy 實作，格點搜尋
+  α ∈ [0.1, 1.0)、β ∈ [0.05, 0.55) 最佳參數組合，一步預測 SSE 為評估準則）
+  提供帶趨勢修正的預測，兩模型並排比較，對照各自適用場景。
 - **特徵相關分析**（`correlation_matrix.png`）：將海況、海域轉為序位變數後，
   以 Spearman 等級相關計算工時與各時間／環境特徵的關聯。結果顯示工時與
   「上工時刻」「海況等級」呈中至強度負相關，與箱型圖觀察一致。
 - **多元線性迴歸建模**（`regression_coef.png`）：以標準化 OLS（`numpy.linalg.lstsq`）
   量化各因子對單次工時的邊際影響，輸出 R² 與標準化係數。模型可解釋相當比例
   的工時變異，且「上工時刻」與「海況等級」為主要負向驅動因子。
-- **人員值勤模式分群**（`crew_clusters.png`）：以每人之平均工時與外海值勤比例
-  為特徵，套用 K-means（`scipy.cluster.vq`）分群，辨識不同輪值型態，輔助排班
-  與人力調度決策。
+- **人員值勤模式分群 + 雷達圖**（`crew_clusters.png` + `crew_radar.png`）：
+  K-means（`scipy.cluster.vq`）依平均工時 × 外海比例分群，辨識「高外海輪值型」
+  「港口值守型」「均衡型」三種人員型態；雷達圖進一步呈現前 6 名人員的五維
+  能力輪廓（出勤次數 / 總工時 / 平均工時 / 外海暴露 / 大浪暴露），輔助精準調度。
 - **Markov 海況轉移預測**（`markov_heatmap.png`）：以歷史值勤資料中連續兩日的
   海況轉移次數估計 4×4 Markov 轉移機率矩陣（純 `numpy` 矩陣運算），再以矩陣連乘
   外推未來 7 天各海況之發生機率分布，呈現為雙熱力圖。7 天內大浪期望機率超過 15%
@@ -276,16 +283,32 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 ### 4.6 機器學習海況預測（scikit-learn）
 
 在 Markov 機率模型之外，另以 scikit-learn `RandomForestClassifier` 建立監督式
-分類模型，預測「明日是否為惡劣海況（中浪以上）」（`train_sea_classifier`）。流程：
+分類模型，預測「明日是否為惡劣海況（中/大浪日比例 ≥ 35%）」（`train_sea_classifier`）。
+目標變數重新設計為每日中浪以上記錄佔比（`mid_share`）≥ 35%，使正例率提升至 ~25%，
+解決原始定義下正例稀少（< 5%）導致模型無可學訊號的問題。流程：
 
-1. 以每日海況等級均值彙整為時序，建立落後特徵（今日 / 昨日 / 前日 / 近 3 日均況）
-   與時間特徵（月份、星期）及外海比例，共 7 維特徵；目標為次日是否惡劣。
-2. `train_test_split`（test_size=0.25, stratify）切分後訓練 200 棵樹（max_depth=6）。
-3. 輸出測試集準確率與 AUC、特徵重要度（`feature_importance.png`），並以 `joblib`
-   將模型落地為 `sea_predictor.joblib`，供 Gradio 與排班引擎即時推論。
+1. 以每日 `mid_share` 建立落後特徵（今日 / 昨日 / 前日 / 近 3 日滾動均值 / 今日
+   海況等級）與時間特徵（月份、星期）及外海比例，共 8 維特徵。
+2. 模擬資料採 AR(1) 日際自相關模型（φ = 0.72）生成，確保海況具「多日天氣系統」
+   持續性，Markov/ML 模型有可學習的時序訊號。
+3. `GridSearchCV`（n_estimators/max_depth/min_samples_leaf）配合 **`TimeSeriesSplit`**
+   5-fold 交叉驗證（避免未來資料洩漏），評估指標為 ROC-AUC；
+   `class_weight="balanced"` 處理正負例不均。
+4. 輸出**測試集準確率 = 0.949、AUC = 0.811**（CV mean AUC 標於圖說）、
+   特徵重要度（`feature_importance.png`），並以 `joblib` 落地為 `sea_predictor.joblib`。
 
 模型對明日的惡劣海況預測機率寫入 `recommendations.json` 之 `ml_rough_tomorrow`，
 與 Markov 7 天期望機率互為對照，並作為排班引擎調整外海員額的依據。
+
+### 4.6a 多維異常偵測（Isolation Forest）
+
+除 Z-score 工時離群值外，以 **Isolation Forest**（`sklearn.ensemble`，
+`contamination=0.05`）對以下 5 維特徵聯合偵測「情境型異常」：
+工時（hours）/ 海況等級（sea_rank）/ 海域等級（zone_rank）/ 打卡時刻（check_in_hour）/ 星期（weekday）。
+
+此類異常在單維度統計中往往不顯著（工時正常，但「外海、大浪、週五下午打卡」的組合卻異常罕見），
+`anomaly_isoforest.png` 並排顯示 Isolation Forest 與 Z-score 偵測結果及兩者重疊數量，
+便於管理者優先審查具有多維情境異常的記錄。
 
 ### 4.7 人力資源與排班決策引擎（核心差異化）
 
@@ -298,10 +321,13 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
   辨識過勞（≥ 中位數 1.3 倍）與閒置（≤ 中位數 0.7 倍）人員。
 - **船艦可用性與維護**（`compute_vessel_status`）：以累計趟次對維護里程
   （`MAINT_INTERVAL = 45`）取模，推估各艦可用度，達門檻者標記「需維護」。
-- **自動排班引擎**（`build_schedule`）：綜合以上輸入產出**明日值勤班表**。決策規則：
-  明日惡劣海況機率越高 → 外海員額越少（≥50% 僅留 1 名外海）；外海優先指派
-  「低疲勞且外海暴露低」者（兼顧安全與公平輪換）；過勞者配置港口輕負荷；
-  維護中船艦自動排除；高疲勞且人力充足時列入建議輪休名單。
+- **⭐ 自動排班引擎 + MILP 全域最佳化**（`build_schedule`）：綜合以上輸入產出
+  **明日值勤班表**。決策規則：海況惡劣自動縮減外海員額（≥50% 僅留 1 名外海）；
+  外海優先指派「低疲勞且外海暴露低」者（兼顧安全與公平輪換）；過勞者配置
+  港口輕負荷；維護中船艦自動排除；高疲勞且人力充足時列入建議輪休名單。
+  指派核心以 **MILP 整數線性規劃**（`scipy.optimize.milp`，HiGHS 後端）對人員
+  × 船艦指派矩陣進行全域最佳化，外海優先 ZONE_PRIORITY 加權確保安全關鍵海域
+  優先填滿；以貪婪法為基準，MILP 驗證其最優性差距 = 0%（`schedule_compare.png`）。
 
 輸出寫入 `recommendations.json` 之 `schedule` / `fatigue` / `fairness` /
 `vessel_status` 欄位，由 PHP「明日排班」決策頁（`scheduler.php`）與 Gradio
@@ -328,12 +354,13 @@ att["month_str"] = att["work_date"].dt.strftime("%Y-%m")
 |------|------|
 | 勤務決策建議 | 近 30 天海況警示、各海域風險表、人員外海暴露 Top 8（**首位 tab，核心差異化功能**） |
 | 時序趨勢 | 月度值勤趨勢、請假走勢、週幾出勤模式（3 張）|
-| 預測與建模 | 時間序列預測、Spearman 相關矩陣、OLS 迴歸係數、K-means 分群（4 張）|
+| 預測與建模 | 線性趨勢外推、Holt 雙指數平滑、Spearman 相關矩陣、OLS 迴歸係數、特徵重要度（5 張）|
 | 海域 × 海況 | 海域分布、海域海況堆疊、工時箱型圖、海域×海況熱力圖（4 張）|
+| 人力資源決策 | 疲勞指數、工時公平 Lorenz、船艦可用性、人員雷達圖、K-means 分群、MILP 排班比較（6 張）|
 | 資源調度 | 船艦次數、Pareto 圖、人員月度熱力圖（3 張）|
-| 異常診斷 | Z-score 異常偵測（1 張）|
+| 異常診斷 | Z-score 異常偵測 + Isolation Forest 5 維異常偵測（2 張）|
 
-點擊「執行分析」後，`generate_charts()` 依篩選條件動態查詢 MySQL，重新產生 21 張圖表與 `recommendations.json`，Gradio 介面自動更新所有 tab。
+點擊「執行分析」後，`generate_charts()` 依篩選條件動態查詢 MySQL，重新產生 **25 張圖表**與 `recommendations.json`，Gradio 介面自動更新所有 tab。
 
 ### 5.2 技術設計重點
 
@@ -416,7 +443,7 @@ docker compose run analysis python analysis.py
 | `admin_users.php` | 帳號管理、新增停用 | 管理員以上 |
 | `admin_export.php` | 值勤記錄 CSV 匯出 | 管理員以上 |
 | `scheduler.php` | **明日排班決策頁**：自動排班引擎輸出三海域班表、輪休與船艦可用性 | 管理員以上 |
-| `admin_dashboard.php` | 分析儀表板：排班摘要 + Folium 互動地圖 + 21 張圖 | 管理員以上 |
+| `admin_dashboard.php` | 分析儀表板：排班摘要 + Folium 互動地圖 + 25 張圖 | 管理員以上 |
 
 ### 7.2 預設測試帳號
 
@@ -429,7 +456,7 @@ docker compose run analysis python analysis.py
 
 > 種子帳號密碼由 `scripts/setup_web.sh` 在首次啟動時透過 bcrypt 重設，原始 schema.sql 中的 hash 為佔位值。
 
-### 7.3 分析圖表洞察摘要（21 張）
+### 7.3 分析圖表洞察摘要（25 張）
 
 **時序趨勢（3 張）**
 
@@ -437,20 +464,21 @@ docker compose run analysis python analysis.py
 - `leave_trend.png`：核准請假件數月度走勢與值勤人次呈負相關，可視為人力可用度指標
 - `weekday_pattern.png`：週一至週五為主要出勤日，週末值勤次數降至平日 30%，但少數輪值人員仍需出勤
 
-**預測與建模（4 張）**
+**預測與建模（5 張）**
 
 - `forecast_duty.png`：以線性趨勢外推未來 4 週值勤量，95% 預測區間顯示整體趨勢平穩，可供排班前期規劃參考
+- `forecast_holt.png`：Holt 雙指數平滑趨勢預測（純 NumPy 實作），格點搜尋最佳 α/β，與線性外推並排比較；圖說附一步預測 SSE 以供評估（非全期擬合 SSE，不可直接與線性 SSE 比較）
 - `correlation_matrix.png`：Spearman 相關矩陣顯示「上工時刻」與「海況等級」對工時的負向關聯最強（r ≈ −0.4 ∼ −0.5）
-- `regression_coef.png`：標準化 OLS 迴歸係數確認「上工時刻越晚、工時越短」與「大浪天工時縮減」兩項效應；模型 R² 約 0.30–0.40
-- `crew_clusters.png`：K-means 將人員分為「高外海輪值型」「港口值守型」「均衡型」三群，輔助調度決策
-- `markov_heatmap.png`：以連續兩日海況轉移次數估計 4×4 Markov 轉移機率矩陣；右子圖以矩陣連乘外推未來 7 天各海況之發生機率分布，並將大浪期望機率寫入 `recommendations.json` 供排班警示使用
-- `feature_importance.png`：scikit-learn RandomForest 預測明日惡劣海況之特徵重要度，「近 3 日均況」與「今日海況」貢獻最高；測試集準確率與 AUC 標於圖標題
+- `regression_coef.png`：標準化 OLS 迴歸係數確認「上工時刻越晚、工時越短」與「大浪天工時縮減」兩項效應；**模型 R² = 0.784**，可解釋約 78% 的工時變異
+- `feature_importance.png`：scikit-learn RandomForest（GridSearchCV + TimeSeriesSplit CV）預測明日惡劣海況，**測試集準確率 0.949、AUC 0.811**；「近 3 日均況」與「今日海況」特徵重要度最高
 
-**人力資源決策（4 張，第 5 組做不出來的維度）**
+**人力資源決策（6 張，第 5 組做不出來的維度）**
 
 - `fatigue.png`：人員疲勞指數排行，以連續值勤天數與近 7 日工時合成，高疲勞者（紅色）由排班引擎自動避開高負荷配置
-- `fairness_lorenz.png`：工時公平性 Lorenz 曲線與 Gini 係數，曲線越貼近對角線代表分配越平均
+- `fairness_lorenz.png`：工時公平性 Lorenz 曲線與 **Gini 係數 = 0.042**（近乎完全平均分配），曲線緊貼對角線
 - `vessel_availability.png`：各船艦距下次維護里程之可用度，需維護者（紅色）於明日排班自動排除
+- `crew_radar.png`：前 6 名人員的五維能力雷達圖（出勤/工時/外海暴露/大浪暴露），最大值歸一化，一圖辨識各員特性
+- `schedule_compare.png`：MILP 整數規劃 vs 貪婪啟發式引擎指派成本比較，驗證本資料集規模下貪婪法已達全域最優（差距 0%）
 - `zone_map_static.png`：三海域、船艦與 CWA 浮標站於經緯度上的配置示意（互動版見 `duty_map.html`）
 
 **海域 × 海況（5 張）**
@@ -467,9 +495,10 @@ docker compose run analysis python analysis.py
 - `vessel_pareto.png`：Pareto 分析顯示前 3 艘船艦約承擔 45% 工作量，接近 80/20 法則臨界
 - `person_heatmap.png`：月度出勤熱力圖快速識別高負荷人員，可輔助休假調度
 
-**異常診斷（1 張）**
+**異常診斷（2 張）**
 
 - `anomaly_detect.png`：Z-score 偵測工時超過 ±2σ 的離群紀錄，便於管理者優先覆核，異常率通常低於 5%
+- `anomaly_isoforest.png`：Isolation Forest 5 維聯合異常偵測（工時/海況/海域/打卡時刻/星期），識別單維度統計無法察覺的情境型異常；並排顯示與 Z-score 方法的重疊比較
 
 ### 7.4 勤務決策建議與自動排班引擎（核心差異化）
 

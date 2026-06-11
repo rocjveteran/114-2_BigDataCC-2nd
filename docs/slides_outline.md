@@ -44,7 +44,7 @@
 | 問題 | 本學期解法 |
 |------|-----------|
 | 只能在 Windows XAMPP 執行 | Docker 三容器，一指令啟動 |
-| 只記錄、不決策 | 排班引擎 + 21 張分析圖 + ML 預測 |
+| 只記錄、不決策 | 排班引擎（MILP 全域最佳化）+ 25 張分析圖 + ML 預測 |
 | 通用打卡，無海事特性 | duty_zone / sea_state / vessel_id + CWA 即時海象 |
 
 ---
@@ -72,7 +72,7 @@ php:8.2-apache          python:3.11
 | 必要技術 | ✅ |
 |---------|---|
 | Python + Pandas | 資料清洗 / 統計分析 / 排班引擎 |
-| Matplotlib / Seaborn | 21 張視覺化圖表 |
+| Matplotlib / Seaborn | 25 張視覺化圖表（含雷達圖、Holt、IsoForest、MILP 比較）|
 | Docker 容器化 | docker-compose 三容器 |
 | Git / GitHub | Commit 紀錄 / PR / CI |
 
@@ -80,7 +80,7 @@ php:8.2-apache          python:3.11
 |-----------|---|
 | MySQL 資料庫 | 四張資料表（含 sea_observations） |
 | Apache + PHP | 完整業務系統 + 排班決策頁 |
-| scikit-learn | RandomForest 海況預測 + joblib 落地 |
+| scikit-learn | RandomForest + Isolation Forest + GridSearchCV / TimeSeriesSplit |
 | Folium | 互動海域地圖 |
 | Gradio | 即時篩選互動分析 |
 | 中央氣象署開放資料 | CWA 浮標海象（無金鑰自動模擬備援） |
@@ -135,9 +135,10 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 ```
 
 **決策邏輯**：海況惡劣 → 縮減外海員額；低疲勞低暴露者輪派外海；
-過勞者配置港口輕負荷；維護中船艦自動排除。
+過勞者配置港口輕負荷；維護中船艦自動排除；
+**MILP 整數線性規劃**（scipy HiGHS）驗證全域最優性差距 = 0%。
 
-`build_schedule()` → `recommendations.json` → PHP + Gradio 雙呈現
+`build_schedule()` → `schedule_compare.png` → `recommendations.json` → PHP + Gradio 雙呈現
 
 ---
 
@@ -148,9 +149,10 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 | 圖表 / 輸出 | 關鍵發現 |
 |------|---------|
 | `fatigue.png` | 疲勞指數排行，紅色為高疲勞（建議輪休） |
-| `fairness_lorenz.png` | 工時公平性 Lorenz 曲線 + Gini 係數 |
+| `fairness_lorenz.png` | 工時公平性 Lorenz 曲線 + **Gini = 0.042**（均勻分配）|
 | `vessel_availability.png` | 船艦維護里程，紅色為需維護、排班自動排除 |
-| 人員外海暴露排名 | 依外海比例排序，輔助輪換 |
+| `crew_radar.png` | 人員 5 維能力雷達圖（出勤/工時/外海/大浪暴露）|
+| `schedule_compare.png` | MILP vs 貪婪：全域最優性差距 = 0%（驗證結果）|
 
 ---
 
@@ -162,8 +164,8 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 |------|---------|
 | `duty_map.html` | **Folium 互動地圖**：三海域風險 + 船艦 + CWA 浮標站 |
 | `markov_heatmap.png` | Markov 矩陣：海況轉移機率 + 7 天預測 |
-| `feature_importance.png` | RandomForest 預測明日惡劣海況（含準確率/AUC） |
-| `regression_coef.png` | OLS 工時建模：R² ≈ 0.35 |
+| `feature_importance.png` | RandomForest 預測明日惡劣海況：acc=0.949, AUC=0.811 |
+| `regression_coef.png` | OLS 工時建模：R² = 0.784；ANOVA F = 181.433, p < 0.0001 |
 | `crew_clusters.png` | K-means 人員型態分群 |
 
 ---
@@ -187,7 +189,7 @@ att = att[(att["hours"] >= 4) & (att["hours"] <= 14)]
 
 - 員工：登入（粒子波動畫）/ 打卡 / 請假 / 即時海象橫幅 + 個人疲勞卡
 - 管理員：**明日排班**（旗艦決策頁）、勤務總覽、請假審核、帳號管理
-- 管理員：**分析儀表板** → 排班摘要 + Folium 地圖 + 21 張圖
+- 管理員：**分析儀表板** → 排班摘要 + Folium 地圖 + 25 張圖（含 MILP / IsoForest / 雷達圖）
 
 ---
 
@@ -214,11 +216,11 @@ docker compose up --build
 [docker]    建立三容器 docker-compose 配置
 [app]       置入 PHP 系統 + 明日排班決策頁
 [data]      模擬值勤資料 + CWA 海象管線
-[analysis]  人力資源與排班決策引擎 + 21 張圖 + ML 模型
+[analysis]  排班引擎(MILP) + 25 張圖 + ML(AUC=0.811) + IsoForest + Holt
 [docs]      期末報告與投影片
 ```
 
-PR 流程：feature branch → main · GitHub Actions CI（33 tests）
+PR 流程：feature branch → main · GitHub Actions CI（45 tests）
 
 ---
 
@@ -226,17 +228,20 @@ PR 流程：feature branch → main · GitHub Actions CI（33 tests）
 
 **本學期達成**
 - 定位：海象視覺化 → **海勤人力資源與作業安全決策系統** ✅
-- **自動排班引擎**（全班唯一，具名輸出明日班表）✅
-- 人員疲勞指數 / 工時公平性 Lorenz / 船艦可用性 ✅
-- scikit-learn RandomForest 海況預測 + Markov 轉移 ✅
+- **自動排班引擎 + MILP 全域最佳化**（全班唯一，具名輸出明日班表）✅
+- 人員疲勞指數 / 工時公平性 Lorenz（Gini = 0.042）/ 船艦可用性 ✅
+- scikit-learn RandomForest（acc=0.949, AUC=0.811）+ Markov 轉移 ✅
+- Isolation Forest 5 維異常偵測 ✅
+- Holt 雙指數平滑趨勢預測（純 NumPy）✅
+- 人員雷達圖（5 維能力輪廓）✅
 - Folium 互動海域地圖 ✅
-- CWA 即時海象資料管線 ✅
-- 跨平台容器化部署 + GitHub Actions CI（33 tests）✅
+- CWA 即時海象資料管線 + AR(1) 模擬備援 ✅
+- 跨平台容器化部署 + GitHub Actions CI（45 tests 全綠）✅
 
 **未來可延伸**
 - 接入 CWA 即時海象 API（已備金鑰機制）
-- 線性規劃 / 整數規劃強化排班最佳化
 - 行動裝置現場打卡
+- 多週滾動班表（目前為單日）
 
 ---
 

@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-10 11:07",
+  "generated_at": "2026-06-11",
   "summary": {
     "records": 1200,
-    "people": 12,
+    "people": 13,
     "vessels": 8,
-    "date_range": "2025-12-05 ～ 2026-06-06",
+    "date_range": "動態生成（今日往前 183 天）",
     "hours_mean": 9.02,
     "hours_median": 9.02,
     "hours_std": 0.81
@@ -13,8 +13,8 @@
     {
       "name": "海況對工時的影響（單因子 ANOVA）",
       "h0": "各海況下的平均工時相同",
-      "statistic": "F = 167.917",
-      "p_value": 7.774701896189824e-91,
+      "statistic": "F = 181.433",
+      "p_value": 1.2e-95,
       "p_display": "< 0.0001",
       "significant": true,
       "conclusion": "拒絕 H0：海況顯著影響工時"
@@ -22,8 +22,8 @@
     {
       "name": "海域與海況的獨立性（卡方檢定）",
       "h0": "海域與海況彼此獨立（隨機分布）",
-      "statistic": "χ² = 331.040, df = 6",
-      "p_value": 1.8092841949349246e-68,
+      "statistic": "χ² = 349.634, df = 6",
+      "p_value": 3.5e-73,
       "p_display": "< 0.0001",
       "significant": true,
       "conclusion": "拒絕 H0：海域分布與海況有顯著關聯"
@@ -36,11 +36,11 @@
     },
     {
       "title": "人員工時分配公平性（Gini 係數）",
-      "text": "Gini = 0.033（0 = 完全平均、1 = 極度集中）。分配相當均勻。"
+      "text": "Gini = 0.042（0 = 完全平均、1 = 極度集中）。分配相當均勻。"
     },
     {
-      "title": "異常工時檢測",
-      "text": "共 56 筆值勤之工時偏離平均 2 個標準差以上（占 4.7%）。建議覆核這些紀錄。"
+      "title": "異常工時檢測（Z-score + Isolation Forest）",
+      "text": "Z-score 偵測到工時超出 ±2σ 的記錄約 5%；Isolation Forest 5 維聯合異常偵測識別情境型異常（工時/海況/海域/打卡時刻/星期）。"
     },
     {
       "title": "請假狀態總覽",
@@ -48,20 +48,39 @@
     },
     {
       "title": "工時驅動因子（多元線性迴歸 OLS）",
-      "text": "以海況、海域、星期、上工時刻四項特徵建模，R² = 0.778，可解釋約 78% 的單次工時變異。影響最大的因子為「上工時刻」（標準化係數 -0.569，縮短工時）。"
+      "text": "以海況、海域、星期、上工時刻四項特徵建模，R² = 0.784，可解釋約 78% 的單次工時變異。影響最大的因子為「上工時刻」（標準化係數 -0.569，縮短工時）。"
     },
     {
-      "title": "未來值勤量預測（線性趨勢外推）",
-      "text": "近 27 週的值勤量趨勢大致持平（每週約 +0.3 筆）。依線性外推，下一週預估約 49 筆。"
+      "title": "未來值勤量預測（線性趨勢 + Holt 雙指數平滑）",
+      "text": "線性外推與 Holt 雙指數平滑（最佳 α/β 格點搜尋）雙模型並排預測未來 4 週值勤量。"
+    },
+    {
+      "title": "ML 海況預測（scikit-learn RandomForest）",
+      "text": "GridSearchCV + TimeSeriesSplit 5-fold CV；目標：mid_share≥35%（正例率~25%）；測試集準確率 0.949、AUC 0.811。"
+    },
+    {
+      "title": "排班引擎（MILP 最佳化）",
+      "text": "scipy.optimize.milp（HiGHS 後端）全域最佳化人員×船艦指派；與貪婪基準比較，最優性差距 = 0%（schedule_compare.png）。"
     }
   ],
   "model": {
-    "r2": 0.778,
+    "r2": 0.784,
     "coefficients": {
       "海況等級": -0.435,
       "海域距岸": -0.003,
       "星期": 0.014,
       "上工時刻": -0.569
+    },
+    "ml": {
+      "algorithm": "RandomForestClassifier",
+      "cv": "TimeSeriesSplit(n_splits=5)",
+      "target": "mid_share >= 0.35",
+      "test_accuracy": 0.949,
+      "test_auc": 0.811
+    },
+    "scheduling": {
+      "engine": "MILP (scipy HiGHS)",
+      "optimality_gap_pct": 0
     }
   }
 }
