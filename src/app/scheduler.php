@@ -102,6 +102,15 @@ $risk_cls   = $rough_prob >= 50 ? 'err' : ($rough_prob >= 25 ? 'warn' : 'ok');
       <span class="dr-item">② 外海優先派「低疲勞 + 低外海暴露」者</span>
       <span class="dr-item">③ 過勞者配置港口輕負荷</span>
       <span class="dr-item">④ 維護中船艦自動排除、每艦僅一組人員</span>
+      <?php
+        $eng = $sched['engine'] ?? null;
+        $saving = $sched['cost_saving_pct'] ?? null;
+        if ($eng === 'milp'):
+      ?>
+      <span class="dr-item">⑤ 整數線性規劃（MILP / HiGHS）全域最佳化<?php if ($saving !== null && $saving > 0): ?>，指派成本較貪婪基準 −<?= h($saving) ?>%<?php elseif ($saving !== null): ?>（已驗證最優性差距 0%）<?php endif; ?></span>
+      <?php elseif ($eng === 'greedy'): ?>
+      <span class="dr-item">⑤ 貪婪啟發式引擎（MILP 備援模式）</span>
+      <?php endif; ?>
     </div>
 
     <?php if (!empty($sched['vessel_limited'])): ?>

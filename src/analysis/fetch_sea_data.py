@@ -31,9 +31,19 @@ CWA_API_KEY = os.getenv("CWA_API_KEY", "")
 CWA_BASE    = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
 DATASET_ID  = "M-A0064-001"  # 海氣象觀測資料（浮標站）
 
-# 分析期間
-START = date(2025, 11, 1)
-END   = date(2026,  4, 30)
+# 分析期間：預設「今天往前 183 天」與值勤模擬資料對齊，
+# 可用 SEA_START / SEA_END（YYYY-MM-DD）釘死固定區間以對齊報告數字。
+def _env_date(name):
+    v = os.getenv(name, "").strip()
+    if v:
+        try:
+            return date.fromisoformat(v)
+        except ValueError:
+            print(f"  [警告] {name}={v!r} 非 YYYY-MM-DD 格式，已忽略")
+    return None
+
+END   = _env_date("SEA_END")   or date.today()
+START = _env_date("SEA_START") or (END - timedelta(days=183))
 
 # 浮標觀測站（臺灣周邊主要站點）
 STATIONS = [
@@ -121,20 +131,27 @@ def parse_cwa_records(raw: list[dict], station_id: str, station_name: str) -> li
 
 
 # ── 季節性模擬備援 ─────────────────────────────────────────────────────────────
-# 臺灣周邊海域冬季東北季風期（11–2月）浪況明顯高於春季（3–4月）
+# 臺灣周邊海域季節波高統計（平均, 標準差）：冬季東北季風期（11–2月）浪況最高、
+# 春末初夏（4–6月）平穩、夏秋（7–10月）受颱風影響變異大。
 MONTHLY_WAVE_PARAMS = {
-    11: (1.4, 0.6), 12: (1.6, 0.7),
-     1: (1.5, 0.7),  2: (1.3, 0.6),
-     3: (0.9, 0.5),  4: (0.7, 0.4),
+     1: (1.5, 0.7),  2: (1.3, 0.6),  3: (0.9, 0.5),  4: (0.7, 0.4),
+     5: (0.7, 0.4),  6: (0.8, 0.5),  7: (1.0, 0.8),  8: (1.1, 0.9),
+     9: (1.2, 0.8), 10: (1.3, 0.7), 11: (1.4, 0.6), 12: (1.6, 0.7),
 }
 
 def generate_synthetic(station_id: str, station_name: str) -> list[tuple]:
-    """無 API 金鑰時，依台灣海域季節統計生成模擬觀測資料。"""
+    """
+    無 API 金鑰時，依台灣海域季節統計生成模擬觀測資料。
+    波高採 AR(1) 日際自相關（φ=0.65）疊加月別季節基準——
+    對齊真實海象「多日風浪系統」的持續性，使 Markov / ML 模型有可學訊號。
+    """
     rows = []
     d = START
+    anom = 0.0   # AR(1) 距平項
     while d <= END:
         mean, std = MONTHLY_WAVE_PARAMS.get(d.month, (1.0, 0.5))
-        wh = max(0.0, random.gauss(mean, std))
+        anom = 0.65 * anom + random.gauss(0, std * 0.75)
+        wh = max(0.0, mean + anom)
         st = random.uniform(20, 27) if d.month <= 2 else random.uniform(22, 28)
         rows.append((
             station_id, station_name, d,

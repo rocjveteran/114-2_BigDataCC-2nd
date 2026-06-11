@@ -69,26 +69,47 @@ VESSELS = [
 # ── 值勤海域機率 ──────────────────────────────────────────────────────────────
 ZONE_WEIGHTS = {"港口": 0.35, "近海": 0.40, "外海": 0.25}
 
-# 各海域的海況機率（外海大浪機率較高）
+# 各海域的海況基礎機率（外海大浪機率較高）
 SEA_WEIGHTS = {
     "港口": {"平靜": 0.70, "輕浪": 0.25, "中浪": 0.04, "大浪": 0.01},
     "近海": {"平靜": 0.40, "輕浪": 0.35, "中浪": 0.20, "大浪": 0.05},
     "外海": {"平靜": 0.15, "輕浪": 0.30, "中浪": 0.35, "大浪": 0.20},
 }
 
+SEA_RANK = {"平靜": 1, "輕浪": 2, "中浪": 3, "大浪": 4}
+
 # 大浪時提前收班（分鐘）
 EARLY_CHECKOUT = {"平靜": 0, "輕浪": -20, "中浪": -50, "大浪": -100}
 
+# ── 日際海象 regime（AR(1) 自相關）──────────────────────────────────────────
+# 真實海象具有「多日天氣系統」的持續性：今天浪大、明天多半也大。
+# 若各筆海況彼此獨立抽樣，Markov 轉移矩陣與「預測明日海況」的 ML 模型
+# 將毫無可學訊號。因此以 AR(1) 潛變數生成每日區域海象嚴重度，
+# 再以指數加權傾斜各海域的海況分布（嚴重度為正 → 偏向大浪）。
+AR_PHI   = 0.72   # 日際自相關係數（多日風浪系統的持續性）
+AR_SIGMA = 0.65   # 創新項標準差
+TILT     = 0.85   # 嚴重度對海況分布的傾斜強度
 
-# ── 輔助函式 ──────────────────────────────────────────────────────────────────
+
+def build_daily_severity(days: list) -> dict:
+    """AR(1) 生成每日區域海象嚴重度（近似標準常態、跨日自相關 ≈ AR_PHI）。"""
+    sev, z = {}, 0.0
+    for d in days:
+        z = AR_PHI * z + random.gauss(0, AR_SIGMA)
+        sev[d] = z
+    return sev
+
+
 def pick_zone():
     keys, weights = zip(*ZONE_WEIGHTS.items())
     return random.choices(keys, weights=weights)[0]
 
 
-def pick_sea(zone):
+def pick_sea(zone, severity: float = 0.0):
+    """依海域基礎分布 × 當日嚴重度指數傾斜抽樣海況（severity=0 即還原基礎分布）。"""
     d = SEA_WEIGHTS[zone]
-    keys, weights = zip(*d.items())
+    keys = list(d)
+    weights = [d[k] * pow(2.718281828, TILT * severity * (SEA_RANK[k] - 2.5)) for k in keys]
     return random.choices(keys, weights=weights)[0]
 
 
@@ -139,6 +160,7 @@ def main():
     vessel_map = {uid: VESSELS[i % len(VESSELS)] for i, uid in enumerate(user_ids)}
 
     all_days = list(daterange(START, END))
+    severity = build_daily_severity(all_days)   # 日際自相關海象 regime
 
     # 3. 產生值勤記錄
     att_rows = []
@@ -150,7 +172,7 @@ def main():
                 continue
 
             zone    = pick_zone()
-            sea     = pick_sea(zone)
+            sea     = pick_sea(zone, severity[d])
             ci      = make_checkin(d)
             co      = make_checkout(ci, sea)
             vessel  = vessel_map[uid]

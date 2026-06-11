@@ -75,7 +75,7 @@ jobs:
       - name: Install analysis dependencies
         run: |
           python -m pip install --upgrade pip -q
-          pip install -q pandas numpy matplotlib seaborn scipy mysql-connector-python pytest
+          pip install -q pandas numpy matplotlib seaborn scipy scikit-learn mysql-connector-python pytest
 
       - name: Run pytest (synthetic-data smoke tests, no DB)
         run: |

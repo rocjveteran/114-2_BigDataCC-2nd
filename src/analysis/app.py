@@ -26,11 +26,12 @@ CHART_TABS = [
         "label": "預測與建模",
         "charts": [
             ("forecast_duty.png",      "值勤量時間序列預測"),
+            ("forecast_holt.png",      "值勤量預測（Holt 指數平滑 vs 線性）"),
             ("correlation_matrix.png", "特徵相關矩陣（Spearman）"),
             ("regression_coef.png",    "工時驅動因子（OLS 迴歸）"),
             ("crew_clusters.png",      "人員值勤模式分群（K-means）"),
             ("markov_heatmap.png",     "海況 Markov 轉移矩陣 + 7 天預測"),
-            ("feature_importance.png", "海況預測特徵重要度（RandomForest）"),
+            ("feature_importance.png", "海況預測特徵重要度（RandomForest + GridSearchCV）"),
         ],
     },
     {
@@ -38,7 +39,9 @@ CHART_TABS = [
         "charts": [
             ("fatigue.png",             "人員疲勞指數排行"),
             ("fairness_lorenz.png",     "工時公平性 Lorenz 曲線"),
+            ("crew_radar.png",          "人員勤務剖面雷達圖（Top 6）"),
             ("vessel_availability.png", "船艦可用性與維護里程"),
+            ("schedule_compare.png",    "排班引擎對比（MILP vs 貪婪）"),
             ("zone_map_static.png",     "海域配置示意圖"),
         ],
     },
@@ -62,7 +65,8 @@ CHART_TABS = [
     {
         "label": "異常診斷",
         "charts": [
-            ("anomaly_detect.png", "異常值勤偵測（Z-score）"),
+            ("anomaly_detect.png",    "異常值勤偵測（Z-score 單變量）"),
+            ("anomaly_isoforest.png", "多變量異常偵測（Isolation Forest）"),
         ],
     },
 ]
@@ -381,7 +385,7 @@ HERO_HTML = """
   <h1>海事勤務互動分析介面</h1>
   <p class="lead">
     設定日期範圍、海域、船艦條件後點擊「執行分析」，系統會即時重跑 Pandas/SciPy/scikit-learn
-    並輸出 21 張統計圖表、自動排班班表與決策建議。海況僅為輸入之一——真正的輸出是
+    並輸出 25 張統計圖表、MILP 最佳化排班班表與決策建議。海況僅為輸入之一——真正的輸出是
     人員疲勞、工時公平、船艦可用性與明日排班決策。
   </p>
 </div>
@@ -428,10 +432,19 @@ def _rec_to_html(rec: dict) -> str:
     sched = rec.get("schedule") or {}
     if sched.get("assignments"):
         zs = sched.get("zone_slots", {})
+        engine_lbl = "MILP 整數規劃最佳化" if sched.get("engine") == "milp" else "貪婪啟發式"
+        saving = sched.get("cost_saving_pct")
+        if saving is not None and saving > 0:
+            saving_txt = f"　·　成本較貪婪基準 −{saving}%"
+        elif saving is not None:
+            saving_txt = "　·　已驗證最優性差距 0%"
+        else:
+            saving_txt = ""
         parts.append(f"<h3 style='font-size:14px;font-weight:600;color:#36352f;margin:18px 0 8px;'>"
                      f"自動排班引擎 · 明日班表（{sched.get('date','')}）</h3>")
         parts.append(f"<p style='font-size:12.5px;color:#9a948a;margin:0 0 8px;'>"
-                     f"明日惡劣海況機率 {sched.get('rough_prob',0)}%　·　員額 港口 {zs.get('港口',0)} / 近海 {zs.get('近海',0)} / 外海 {zs.get('外海',0)}</p>")
+                     f"明日惡劣海況機率 {sched.get('rough_prob',0)}%　·　員額 港口 {zs.get('港口',0)} / 近海 {zs.get('近海',0)} / 外海 {zs.get('外海',0)}"
+                     f"　·　引擎：{engine_lbl}{saving_txt}</p>")
         parts.append("<table style='width:100%;border-collapse:collapse;font-size:13px;'>")
         parts.append("<tr style='color:#9a948a;border-bottom:1px solid #e8e5dc;'>"
                      "<th style='text-align:left;padding:6px 4px;'>海域</th>"

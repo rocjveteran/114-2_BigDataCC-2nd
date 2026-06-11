@@ -112,11 +112,12 @@ def test_fit_hours_ols_insufficient_data_returns_none():
 @pytest.mark.parametrize("fn", [
     "_chart_monthly_trend", "_chart_zone_bar", "_chart_zone_sea_stacked",
     "_chart_hours_boxplot", "_chart_person_heatmap", "_chart_hours_heatmap",
-    "_chart_anomaly_detect", "_chart_weekday_pattern", "_chart_vessel_pareto",
-    "_chart_vessel_count", "_chart_forecast_duty", "_chart_correlation",
-    "_chart_regression_coef", "_chart_crew_clusters", "_chart_markov_heatmap",
+    "_chart_anomaly_detect", "_chart_anomaly_isoforest", "_chart_weekday_pattern",
+    "_chart_vessel_pareto", "_chart_vessel_count", "_chart_forecast_duty",
+    "_chart_forecast_holt", "_chart_correlation", "_chart_regression_coef",
+    "_chart_crew_clusters", "_chart_crew_radar", "_chart_markov_heatmap",
     "_chart_zone_map_static", "_chart_feature_importance", "_chart_fatigue",
-    "_chart_fairness_lorenz", "_chart_vessel_availability",
+    "_chart_fairness_lorenz", "_chart_vessel_availability", "_chart_schedule_compare",
 ])
 def test_chart_functions_return_figure(fn):
     from matplotlib.figure import Figure
@@ -127,7 +128,7 @@ def test_chart_functions_return_figure(fn):
 
 
 def test_generate_charts_writes_all_outputs(tmp_path, monkeypatch):
-    """端到端（不連 DB）：產生全部 15 張圖 + 統計 JSON。"""
+    """端到端（不連 DB）：產生全部 25 張圖 + 統計 JSON。"""
     class _DummyConn:
         def close(self):
             pass
@@ -138,7 +139,7 @@ def test_generate_charts_writes_all_outputs(tmp_path, monkeypatch):
     monkeypatch.setattr(analysis, "_clean", lambda a, l: (a, l))
 
     paths = analysis.generate_charts(tmp_path)
-    assert len(paths) == 21
+    assert len(paths) == 25
     for p in paths:
         assert Path(p).exists()
     assert (tmp_path / "stats_summary.json").exists()
@@ -232,3 +233,108 @@ def test_recommendations_includes_workforce_engine():
     assert "schedule" in rec and "assignments" in rec["schedule"]
     assert "fairness" in rec and "gini" in rec["fairness"]
     assert "sea_now" in rec  # 即時海況欄位存在（可為 None）
+
+
+# ── MILP 最佳化排班引擎測試 ──────────────────────────────────────────────────
+def _schedule_inputs():
+    att = _synthetic_att()
+    fat = analysis.compute_fatigue(att)
+    vs = analysis.compute_vessel_status(att)
+    rec = analysis.compute_recommendations(att)
+    return att, fat, vs, rec["exposure_ranking"]
+
+
+def test_build_schedule_no_double_assignment():
+    """硬約束驗證：每人至多一艦、每艦至多一組、維護中船艦不得指派。"""
+    att, fat, vs, expo = _schedule_inputs()
+    sched = analysis.build_schedule(att, fat, vs, expo, rough_prob=20.0)
+    names = [a["name"] for a in sched["assignments"]]
+    vessels = [a["vessel"] for a in sched["assignments"]]
+    assert len(names) == len(set(names)), "同一人被重複指派"
+    assert len(vessels) == len(set(vessels)), "同一艦被重複指派"
+    maint = set(sched["maintenance_vessels"])
+    assert not (set(vessels) & maint), "維護中船艦被指派"
+
+
+def test_build_schedule_engine_and_cost():
+    """MILP 引擎啟用時，總成本不得高於貪婪基準（全域最佳化定義）。"""
+    att, fat, vs, expo = _schedule_inputs()
+    sched = analysis.build_schedule(att, fat, vs, expo, rough_prob=20.0)
+    assert sched["engine"] in ("milp", "greedy")
+    assert sched["greedy_cost"] >= 0
+    if sched["engine"] == "milp" and len(sched["assignments"]) > 0:
+        assert sched["objective_cost"] <= sched["greedy_cost"] + 1e-6
+
+
+def test_build_schedule_zone_caps_respected():
+    """各海域成班數不得超過員額上限。"""
+    att, fat, vs, expo = _schedule_inputs()
+    sched = analysis.build_schedule(att, fat, vs, expo, rough_prob=60.0)
+    by_zone = {}
+    for a in sched["assignments"]:
+        by_zone[a["zone"]] = by_zone.get(a["zone"], 0) + 1
+    for zone, n in by_zone.items():
+        assert n <= sched["zone_slots"][zone]
+
+
+def test_milp_prioritizes_offshore_when_crew_short():
+    """人力短缺時，安全關鍵海域（外海）應優先派滿（ZONE_PRIORITY 機制）。"""
+    att = _synthetic_att()
+    fatigue = [{"user_id": i, "name": f"P{i}", "fatigue_score": 30 + i, "level": "low",
+                "consecutive_days": 1, "hours_7d": 8.0, "days_since_duty": 0}
+               for i in range(1, 5)]   # 僅 4 人
+    vessel_status = [
+        {"vessel": "V-OFF1", "zone": "外海", "status": "可用", "total_duties": 1,
+         "since_maint": 1, "maint_interval": 45, "availability_pct": 95, "last_used": "2026-06-01"},
+        {"vessel": "V-OFF2", "zone": "外海", "status": "可用", "total_duties": 1,
+         "since_maint": 1, "maint_interval": 45, "availability_pct": 95, "last_used": "2026-06-01"},
+        {"vessel": "V-PORT1", "zone": "港口", "status": "可用", "total_duties": 1,
+         "since_maint": 1, "maint_interval": 45, "availability_pct": 95, "last_used": "2026-06-01"},
+        {"vessel": "V-PORT2", "zone": "港口", "status": "可用", "total_duties": 1,
+         "since_maint": 1, "maint_interval": 45, "availability_pct": 95, "last_used": "2026-06-01"},
+    ]
+    expo = [{"user_id": i, "records": 10, "offshore_pct": 10.0,
+             "rough_sea_pct": 5.0, "avg_hours": 9.0} for i in range(1, 5)]
+    sched = analysis.build_schedule(att, fatigue, vessel_status, expo, rough_prob=5.0)
+    n_offshore = sum(1 for a in sched["assignments"] if a["zone"] == "外海")
+    # 平穩海況外海員額 3、可用外海艦 2 → 外海應派滿 2 組
+    assert n_offshore == 2
+
+
+# ── Holt 指數平滑與 Isolation Forest 測試 ────────────────────────────────────
+def test_holt_forecast_follows_trend():
+    """單調上升序列的 Holt 預測應延續上升趨勢且長度正確。"""
+    y = np.array([10, 12, 14, 16, 18, 20, 22, 24], dtype=float)
+    res = analysis.holt_forecast(y, horizon=4)
+    assert res is not None
+    assert len(res["forecast"]) == 4
+    assert res["forecast"][0] > y[-1] - 1e-6
+    assert all(np.diff(res["forecast"]) > 0)
+    assert 0 < res["alpha"] < 1 and 0 < res["beta"] < 1
+
+
+def test_holt_forecast_insufficient_data():
+    assert analysis.holt_forecast(np.array([1.0, 2.0, 3.0]), horizon=2) is None
+
+
+def test_detect_anomalies_iforest():
+    pytest.importorskip("sklearn")
+    att = _synthetic_att(n=200)
+    res = analysis.detect_anomalies_iforest(att, contamination=0.05)
+    assert res is not None
+    flags, scores = res
+    assert len(flags) == len(att) and len(scores) == len(att)
+    # contamination=5% 時異常筆數應在合理範圍
+    assert 0 < int(flags.sum()) <= int(len(att) * 0.10)
+
+
+def test_train_sea_classifier_reports_cv():
+    """GridSearchCV 交叉驗證指標應隨模型輸出（資料足夠時）。"""
+    pytest.importorskip("sklearn")
+    res = analysis.train_sea_classifier(_synthetic_att(n=300))
+    if res is None:
+        pytest.skip("合成資料不足以訓練（每日彙整後樣本過少）")
+    assert {"accuracy", "auc", "cv_auc_mean", "cv_auc_std", "best_params"} <= set(res)
+    if res["cv_auc_mean"] is not None:
+        assert 0.0 <= res["cv_auc_mean"] <= 1.0
+        assert res["best_params"] is not None

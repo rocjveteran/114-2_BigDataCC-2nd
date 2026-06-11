@@ -1,13 +1,16 @@
-pandas
-numpy
-matplotlib
-seaborn
+# 版本釘定確保 Docker 重建之可重現性。
+# pandas 必須 <3：pandas 3.x 變更 read_sql 對原生 DBAPI 連線之行為，
+# 會使 mysql-connector 直連的 _load_data() 失效（須改用 SQLAlchemy）。
+pandas>=2.2,<3.0
+numpy>=1.26,<3
+matplotlib>=3.8
+seaborn>=0.13
 jupyter
-gradio
-mysql-connector-python
-scipy
-scikit-learn
-folium
-joblib
-bcrypt
-requests
+gradio>=5
+mysql-connector-python>=8.3
+scipy>=1.11
+scikit-learn>=1.4
+folium>=0.16
+joblib>=1.3
+bcrypt>=4.1
+requests>=2.31

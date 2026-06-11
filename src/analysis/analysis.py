@@ -132,18 +132,22 @@ def generate_charts(
         (f"{prefix}leave_trend.png",      lambda: _chart_leave_trend(leaves)),
         (f"{prefix}hours_heatmap.png",    lambda: _chart_hours_heatmap(att)),
         (f"{prefix}anomaly_detect.png",   lambda: _chart_anomaly_detect(att)),
+        (f"{prefix}anomaly_isoforest.png",lambda: _chart_anomaly_isoforest(att)),
         (f"{prefix}weekday_pattern.png",  lambda: _chart_weekday_pattern(att)),
         (f"{prefix}vessel_pareto.png",    lambda: _chart_vessel_pareto(att)),
         (f"{prefix}forecast_duty.png",      lambda: _chart_forecast_duty(att)),
+        (f"{prefix}forecast_holt.png",      lambda: _chart_forecast_holt(att)),
         (f"{prefix}correlation_matrix.png", lambda: _chart_correlation(att)),
         (f"{prefix}regression_coef.png",    lambda: _chart_regression_coef(att)),
         (f"{prefix}crew_clusters.png",      lambda: _chart_crew_clusters(att)),
+        (f"{prefix}crew_radar.png",         lambda: _chart_crew_radar(att)),
         (f"{prefix}markov_heatmap.png",     lambda: _chart_markov_heatmap(att)),
         (f"{prefix}zone_map_static.png",    lambda: _chart_zone_map_static(att, sea_obs)),
         (f"{prefix}feature_importance.png", lambda: _chart_feature_importance(att)),
         (f"{prefix}fatigue.png",            lambda: _chart_fatigue(att)),
         (f"{prefix}fairness_lorenz.png",    lambda: _chart_fairness_lorenz(att)),
         (f"{prefix}vessel_availability.png",lambda: _chart_vessel_availability(att)),
+        (f"{prefix}schedule_compare.png",   lambda: _chart_schedule_compare(att)),
     ]:
         fig = chart_fn()
         path = out / fn
@@ -368,6 +372,60 @@ def _chart_anomaly_detect(att):
     fig.autofmt_xdate(); fig.tight_layout(); return fig
 
 
+# ── 多變量異常偵測（Isolation Forest）────────────────────────────────────────
+def detect_anomalies_iforest(att, contamination: float = 0.05):
+    """
+    多變量異常偵測：以工時、海況、海域、上工時刻、星期五維特徵建 Isolation Forest。
+    與單變量 Z-score 互補——可抓出「單看工時正常、但組合異常」的紀錄
+    （例如：平靜海況的港口勤務卻出現 13 小時工時）。
+    回傳 (flags, scores)；sklearn 未安裝或樣本不足時回傳 None。
+    """
+    try:
+        from sklearn.ensemble import IsolationForest
+    except Exception as e:
+        print(f"[analysis] scikit-learn 未安裝，跳過 Isolation Forest：{e}")
+        return None
+    if att is None or att.empty or len(att) < 30:
+        return None
+    X = np.column_stack([
+        att["hours"].astype(float).values,
+        att["sea_state"].map(SEA_RANK).astype(float).values,
+        att["duty_zone"].map(ZONE_RANK).astype(float).values,
+        (att["check_in"].dt.hour + att["check_in"].dt.minute / 60.0).values,
+        att["work_date"].dt.weekday.astype(float).values,
+    ])
+    iso = IsolationForest(n_estimators=200, contamination=contamination, random_state=42)
+    pred = iso.fit_predict(X)
+    scores = -iso.score_samples(X)   # 越大越異常
+    return pred == -1, scores
+
+
+def _chart_anomaly_isoforest(att):
+    """圖：多變量異常偵測（Isolation Forest）— 與 Z-score 單變量法對照。"""
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    res = detect_anomalies_iforest(att)
+    if res is None:
+        ax.set_title("多變量異常偵測（資料不足或 sklearn 未安裝）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    flags, scores = res
+    z_cnt = int((np.abs(sps.zscore(att["hours"])) > 2).sum())
+    ci_hour = att["check_in"].dt.hour + att["check_in"].dt.minute / 60.0
+    normal, outlier = att[~flags], att[flags]
+    ax.scatter(ci_hour[~flags], normal["hours"], s=24, alpha=0.4,
+               color=BLUE_PAL[3], label=f"正常 ({len(normal)})", edgecolors="none")
+    if len(outlier):
+        ax.scatter(ci_hour[flags], outlier["hours"], s=80,
+                   c=scores[flags], cmap="Reds", marker="X",
+                   label=f"異常 ({len(outlier)})", edgecolors="#7a0010", linewidth=0.7)
+    ax.set_title(f"多變量異常偵測（Isolation Forest：{int(flags.sum())} 筆 vs Z-score：{z_cnt} 筆）",
+                 fontsize=13.5, fontweight="bold", pad=10)
+    ax.set_xlabel("上工時刻（時）"); ax.set_ylabel("值勤時數（小時）")
+    ax.legend(loc="best", framealpha=0.9, fontsize=10)
+    ax.text(0.01, 0.02, "特徵：工時 × 海況 × 海域 × 上工時刻 × 星期（五維）",
+            transform=ax.transAxes, fontsize=8.5, color="#888")
+    fig.tight_layout(); return fig
+
+
 # ── 圖 10：週幾出勤模式 ──────────────────────────────────────────────────────
 def _chart_weekday_pattern(att):
     """分析星期效應：哪天人力最忙、哪天最閒？"""
@@ -460,6 +518,79 @@ def _chart_forecast_duty(att):
     ax.set_title("值勤量時間序列預測（週彙整 + 線性外推）", fontsize=14, fontweight="bold", pad=10)
     ax.set_xlabel("週"); ax.set_ylabel("每週值勤筆數")
     ax.legend(fontsize=9, loc="best", framealpha=0.9)
+    fig.autofmt_xdate(); fig.tight_layout(); return fig
+
+
+# ── Holt 雙參數指數平滑（時間序列預測升級）──────────────────────────────────
+def _weekly_series(att):
+    """週彙整值勤量序列（丟棄尚未結束的當週），供時間序列模型共用。"""
+    if att is None or att.empty or att["work_date"].nunique() < 14:
+        return None
+    weekly = att.set_index("work_date").resample("W")["att_id"].count()
+    weekly = weekly[weekly > 0]
+    today = pd.Timestamp.today().normalize()
+    if len(weekly) >= 2 and weekly.index[-1].normalize() > today:
+        weekly = weekly.iloc[:-1]
+    return weekly if len(weekly) >= 6 else None
+
+
+def holt_forecast(y, horizon: int = 4):
+    """
+    Holt 雙參數指數平滑（level + trend）：以一步預測 SSE 對 α、β 做網格搜尋。
+    純 NumPy 實作（無需 statsmodels），回傳 dict{forecast, fitted, alpha, beta, sse}。
+    """
+    y = np.asarray(y, dtype=float)
+    if len(y) < 6:
+        return None
+    best = None
+    for a in np.arange(0.1, 1.0, 0.1):
+        for b in np.arange(0.05, 0.55, 0.05):
+            level, trend = y[0], y[1] - y[0]
+            sse, fitted = 0.0, [y[0]]
+            for v in y[1:]:
+                pred = level + trend
+                fitted.append(pred)
+                sse += (v - pred) ** 2
+                new_level = a * v + (1 - a) * (level + trend)
+                trend = b * (new_level - level) + (1 - b) * trend
+                level = new_level
+            if best is None or sse < best["sse"]:
+                best = {"sse": float(sse), "alpha": round(float(a), 2),
+                        "beta": round(float(b), 2), "level": level, "trend": trend,
+                        "fitted": np.array(fitted)}
+    fc = np.array([best["level"] + (i + 1) * best["trend"] for i in range(horizon)])
+    return {"forecast": fc, "fitted": best["fitted"], "alpha": best["alpha"],
+            "beta": best["beta"], "sse": best["sse"]}
+
+
+def _chart_forecast_holt(att):
+    """圖：值勤量預測 — Holt 指數平滑 vs 線性外推（雙模型對照，含一步預測殘差比較）。"""
+    fig, ax = plt.subplots(figsize=(10, 4.5))
+    weekly = _weekly_series(att)
+    if weekly is None:
+        ax.set_title("Holt 指數平滑預測（週資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    y = weekly.values.astype(float)
+    x = np.arange(len(y))
+    H = 4
+    holt = holt_forecast(y, horizon=H)
+    slope, intercept = np.polyfit(x, y, 1)
+    lin_fc = slope * np.arange(len(y), len(y) + H) + intercept
+    lin_sse = float(((y - (slope * x + intercept)) ** 2).sum())
+    future = [weekly.index[-1] + pd.Timedelta(weeks=i + 1) for i in range(H)]
+    ax.plot(weekly.index, y, marker="o", color=BLUE_PAL[2], lw=2, markersize=5, label="歷史週值勤量")
+    ax.plot(weekly.index, holt["fitted"], color="#3a6b4a", ls=":", lw=1.4, alpha=0.8, label="Holt 一步擬合")
+    ax.plot(future, holt["forecast"], marker="D", color="#3a6b4a", lw=2.2, markersize=6,
+            label=f"Holt 預測（α={holt['alpha']}, β={holt['beta']}）")
+    ax.plot(future, lin_fc, marker="s", color="#c96442", lw=1.6, ls="--", markersize=5, label="線性外推（對照）")
+    ax.axvline(weekly.index[-1], color="#999", ls=":", lw=1)
+    ax.set_title("值勤量預測：Holt 雙參數指數平滑 vs 線性外推（雙模型對照）",
+                 fontsize=13, fontweight="bold", pad=10)
+    ax.set_xlabel("週"); ax.set_ylabel("每週值勤筆數")
+    ax.legend(fontsize=9, loc="best", framealpha=0.9)
+    ax.text(0.01, 0.02,
+            f"SSE：Holt 一步預測 {holt['sse']:.0f}（因果）vs 線性全樣本擬合 {lin_sse:.0f}（事後），口徑不同僅供參考",
+            transform=ax.transAxes, fontsize=8, color="#888")
     fig.autofmt_xdate(); fig.tight_layout(); return fig
 
 
@@ -572,6 +703,39 @@ def _chart_crew_clusters(att):
     ax.legend(fontsize=9, loc="best", framealpha=0.9, title="型態分群")
     ax.text(0.01, 0.98, "點大小 = 值勤次數", transform=ax.transAxes,
             ha="left", va="top", fontsize=8, color="#888")
+    fig.tight_layout(); return fig
+
+
+def _chart_crew_radar(att):
+    """圖：人員多維度勤務剖面雷達圖（Top 6 出勤者）— 五維正規化比較。"""
+    fig, ax = plt.subplots(figsize=(7.5, 7), subplot_kw=dict(polar=True))
+    if att is None or att.empty or att["full_name"].nunique() < 3:
+        ax.set_title("人員多維度雷達圖（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    g = att.groupby("full_name")
+    prof = pd.DataFrame({
+        "出勤次數": g.size(),
+        "總工時":   g["hours"].sum(),
+        "平均工時": g["hours"].mean(),
+        "外海暴露": g["duty_zone"].apply(lambda s: (s == "外海").mean() * 100),
+        "大浪暴露": g["sea_state"].apply(lambda s: (s == "大浪").mean() * 100),
+    }).dropna()
+    top = prof.sort_values("出勤次數", ascending=False).head(6)
+    dims = list(top.columns)
+    angles = np.linspace(0, 2 * np.pi, len(dims), endpoint=False).tolist()
+    angles += angles[:1]
+    palette = ["#1565C0", "#c96442", "#3a6b4a", "#8a5a0c", "#6a3ab2", "#00838f"]
+    for i, (name, row) in enumerate(top.iterrows()):
+        vals = [(float(row[d]) / float(top[d].max())) if float(top[d].max()) > 0 else 0.0 for d in dims]
+        vals += vals[:1]
+        ax.plot(angles, vals, lw=1.8, color=palette[i % len(palette)], label=str(name))
+        ax.fill(angles, vals, color=palette[i % len(palette)], alpha=0.06)
+    ax.set_xticks(angles[:-1]); ax.set_xticklabels(dims, fontsize=11)
+    ax.set_ylim(0, 1.05); ax.set_yticks([0.25, 0.5, 0.75, 1.0])
+    ax.set_yticklabels(["25%", "50%", "75%", "max"], fontsize=8, color="#888")
+    ax.set_title("人員勤務剖面雷達圖（Top 6 出勤者，各維以最大值正規化）",
+                 fontsize=13, fontweight="bold", pad=22)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.32, 1.1), fontsize=9, framealpha=0.9)
     fig.tight_layout(); return fig
 
 
@@ -863,44 +1027,58 @@ def _chart_zone_map_static(att, sea_obs=None):
 
 
 # ── scikit-learn 海況預測模型 ─────────────────────────────────────────────────
+# 「惡劣海況日」定義：當日值勤紀錄之中浪以上比例 ≥ 35%。
+# 採比例制而非全日平均（平均會被多數港口平靜紀錄稀釋，正樣本率僅約 4%，
+# 任何交叉驗證都不穩定）；35% 門檻使正樣本率落在約 20~30%，
+# 且操作語意明確——「明日逾三分之一勤務將處於中浪以上」即應調整外海排班。
+ROUGH_SHARE_THRESHOLD = 0.35
+
+
 def _build_supervised(att):
-    """建立每日海況監督式資料集：以今日 + 近日特徵預測『明日是否惡劣海況（中浪以上）』。"""
+    """建立每日海況監督式資料集：以今日 + 近日特徵預測『明日是否惡劣海況日』。"""
     if att is None or att.empty:
         return None
     daily = (att.assign(_d=att["work_date"].dt.normalize())
                 .groupby("_d")
                 .agg(sea_rank=("sea_state", lambda s: s.map(SEA_RANK).mean()),
+                     mid_share=("sea_state", lambda s: s.map(SEA_RANK).ge(3).mean()),
                      offshore=("duty_zone", lambda z: (z == "外海").mean()))
                 .sort_index())
     if len(daily) < 30:
         return None
-    rough_today = (daily["sea_rank"] >= 2.5).astype(int)
+    rough_today = (daily["mid_share"] >= ROUGH_SHARE_THRESHOLD).astype(int)
     df = pd.DataFrame(index=daily.index)
-    df["today"]    = daily["sea_rank"]
-    df["lag1"]     = daily["sea_rank"].shift(1)
-    df["lag2"]     = daily["sea_rank"].shift(2)
-    df["roll3"]    = daily["sea_rank"].rolling(3).mean()
-    df["offshore"] = daily["offshore"]
-    df["month"]    = daily.index.month
-    df["weekday"]  = daily.index.weekday
-    df["target"]   = rough_today.shift(-1)   # 明日是否惡劣
-    feat_cols = ["today", "lag1", "lag2", "roll3", "offshore", "month", "weekday"]
+    df["today"]     = daily["sea_rank"]
+    df["mid_share"] = daily["mid_share"]
+    df["lag1"]      = daily["sea_rank"].shift(1)
+    df["lag2"]      = daily["sea_rank"].shift(2)
+    df["roll3"]     = daily["sea_rank"].rolling(3).mean()
+    df["offshore"]  = daily["offshore"]
+    df["month"]     = daily.index.month
+    df["weekday"]   = daily.index.weekday
+    df["target"]    = rough_today.shift(-1)   # 明日是否惡劣
+    feat_cols = ["today", "mid_share", "lag1", "lag2", "roll3", "offshore", "month", "weekday"]
     last_feat = df[feat_cols].iloc[[-1]].dropna()   # 最新一日（target=NaN）供預測明日
     train = df.dropna()
     return feat_cols, train, last_feat
 
 
 FEATURE_LABELS = {
-    "today": "今日海況", "lag1": "昨日海況", "lag2": "前日海況",
+    "today": "今日海況", "mid_share": "今日中浪+比例", "lag1": "昨日海況", "lag2": "前日海況",
     "roll3": "近3日均況", "offshore": "外海比例", "month": "月份", "weekday": "星期",
 }
 
 
 def train_sea_classifier(att, output_dir=None) -> dict | None:
-    """訓練 RandomForest 預測明日惡劣海況。回傳指標 + 特徵重要度 + 明日機率；可存 joblib。"""
+    """
+    訓練 RandomForest 預測明日惡劣海況。
+    以 GridSearchCV（分層 K 折交叉驗證、ROC-AUC 評分）在訓練集內調參，
+    再以獨立保留集（hold-out）回報泛化指標，避免資料洩漏。
+    回傳指標 + 特徵重要度 + 明日機率；可存 joblib。
+    """
     try:
         from sklearn.ensemble import RandomForestClassifier
-        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, train_test_split
         from sklearn.metrics import accuracy_score, roc_auc_score
     except Exception as e:
         print(f"[analysis] scikit-learn 未安裝，跳過海況預測模型：{e}")
@@ -915,9 +1093,37 @@ def train_sea_classifier(att, output_dir=None) -> dict | None:
 
     X = train[feat_cols].values
     y = train["target"].astype(int).values
+    # 保留集採分層隨機抽樣確保兩類別皆有評估樣本；
+    # 交叉驗證則採 TimeSeriesSplit（僅用過去預測未來）以避免時間洩漏——
+    # 兩種口徑互補，正文需註明隨機保留集對時序資料有樂觀偏誤風險。
     Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
-    clf = RandomForestClassifier(n_estimators=200, max_depth=6, random_state=42)
-    clf.fit(Xtr, ytr)
+
+    cv_folds = 4 if len(ytr) >= 60 else 0
+    best_params, cv_auc_mean, cv_auc_std = None, None, None
+    if cv_folds >= 3:
+        grid = {"n_estimators": [150, 300], "max_depth": [4, 8], "min_samples_leaf": [1, 3]}
+        try:
+            search = GridSearchCV(
+                RandomForestClassifier(random_state=42, class_weight="balanced"), grid,
+                cv=TimeSeriesSplit(n_splits=cv_folds),
+                scoring="roc_auc", n_jobs=-1, error_score=np.nan,
+            )
+            search.fit(Xtr, ytr)
+            clf = search.best_estimator_
+            best_params = {k: (int(v) if isinstance(v, (int, np.integer)) else v)
+                           for k, v in search.best_params_.items()}
+            if np.isfinite(search.best_score_):
+                cv_auc_mean = float(search.best_score_)
+                cv_auc_std  = float(search.cv_results_["std_test_score"][search.best_index_])
+        except Exception as e:
+            print(f"[analysis] GridSearchCV 失敗，退回固定超參數：{e}")
+            clf = RandomForestClassifier(n_estimators=200, max_depth=6,
+                                         class_weight="balanced", random_state=42)
+            clf.fit(Xtr, ytr)
+    else:
+        clf = RandomForestClassifier(n_estimators=200, max_depth=6,
+                                     class_weight="balanced", random_state=42)
+        clf.fit(Xtr, ytr)
 
     pred = clf.predict(Xte)
     acc = float(accuracy_score(yte, pred))
@@ -946,6 +1152,10 @@ def train_sea_classifier(att, output_dir=None) -> dict | None:
         "auc": round(auc, 3) if auc == auc else None,
         "n_train": int(len(Xtr)),
         "n_test": int(len(Xte)),
+        "cv_folds": cv_folds if cv_folds >= 3 else None,
+        "cv_auc_mean": round(cv_auc_mean, 3) if cv_auc_mean is not None else None,
+        "cv_auc_std": round(cv_auc_std, 3) if cv_auc_std is not None else None,
+        "best_params": best_params,
         "importances": importances,
         "prob_tomorrow": round(prob_tomorrow * 100, 1) if prob_tomorrow is not None else None,
     }
@@ -968,6 +1178,12 @@ def _chart_feature_importance(att):
     ax.set_title(f"明日惡劣海況預測：特徵重要度（RandomForest，準確率 {res['accuracy']}{auc_txt}）",
                  fontsize=13, fontweight="bold", pad=10)
     ax.set_xlabel("特徵重要度（Gini importance）")
+    if res.get("cv_auc_mean") is not None:
+        bp = res.get("best_params") or {}
+        bp_txt = "、".join(f"{k}={v}" for k, v in bp.items())
+        ax.text(0.99, 0.02,
+                f"GridSearchCV {res.get('cv_folds')} 折：AUC {res['cv_auc_mean']} ± {res['cv_auc_std']}（{bp_txt}）",
+                transform=ax.transAxes, ha="right", fontsize=8, color="#888")
     fig.tight_layout(); return fig
 
 
@@ -1074,11 +1290,133 @@ def compute_vessel_status(att) -> list:
     return sorted(out, key=lambda x: x["vessel"])
 
 
+# 人力短缺時的填補優先序（安全關鍵海域優先派滿）
+ZONE_PRIORITY = {"外海": 300, "近海": 200, "港口": 100}
+
+
+def _zone_cost(cand: dict, zone: str) -> float:
+    """
+    指派成本（越低越適合該海域）：
+    外海＝疲勞×0.6＋外海暴露×0.4（安全＋公平輪換）；近海＝疲勞；
+    港口＝100−疲勞（反向：把過勞者留在輕負荷崗位）。三式值域皆為 0~100。
+    """
+    if zone == "外海":
+        return cand["fatigue_score"] * 0.6 + cand["offshore_pct"] * 0.4
+    if zone == "近海":
+        return float(cand["fatigue_score"])
+    return 100.0 - cand["fatigue_score"]
+
+
+def _assign_reason(cand: dict, zone: str) -> str:
+    if zone == "外海":
+        return "低疲勞且外海暴露低，適合輪派外海"
+    if zone == "近海":
+        return "疲勞適中，配置近海任務"
+    return "疲勞偏高，配置港口輕負荷" if cand["fatigue_score"] >= 40 else "配置港口值守"
+
+
+def _make_assignment(cand: dict, zone: str, vessel: str) -> dict:
+    return {
+        "name": cand["name"], "zone": zone, "vessel": vessel,
+        "fatigue_score": cand["fatigue_score"], "offshore_pct": cand["offshore_pct"],
+        "reason": _assign_reason(cand, zone),
+    }
+
+
+def _schedule_total_cost(schedule: list) -> float:
+    """以 _zone_cost 同一把尺衡量整份班表的總指派成本（供引擎對比）。"""
+    return float(sum(_zone_cost(a, a["zone"]) for a in schedule))
+
+
+def _schedule_greedy(pool: list, zone_slots: dict, avail_by_zone: dict) -> list:
+    """貪婪啟發式（基準引擎）：外海→近海→港口逐區排序指派，每艦僅一組人員。"""
+    schedule, assigned = [], set()
+    for zone in ["外海", "近海", "港口"]:
+        ranked = sorted(pool, key=lambda c: _zone_cost(c, zone))
+        vessels = list(avail_by_zone.get(zone, []))
+        effective_n = min(zone_slots.get(zone, 0), len(vessels))
+        vi = 0
+        for c in ranked:
+            if vi >= effective_n:
+                break
+            if c["user_id"] in assigned:
+                continue
+            schedule.append(_make_assignment(c, zone, vessels[vi]))
+            assigned.add(c["user_id"]); vi += 1
+    return schedule
+
+
+def _schedule_milp(pool: list, zone_slots: dict, avail_by_zone: dict) -> list | None:
+    """
+    整數線性規劃引擎（MILP，scipy HiGHS）：
+        min Σ x[i,v]·( cost(i, zone(v)) − BIG − priority(zone) )
+        s.t. 每人 ≤ 1 艦、每艦 ≤ 1 組、各海域 ≤ 員額上限、x ∈ {0,1}
+    BIG 項使「指派人數最大化」優先於成本；priority 項使人力短缺時
+    安全關鍵海域（外海）優先派滿；其後才以最小成本決定「誰上哪艦」。
+    與貪婪法的逐區局部排序不同，MILP 對 人×艦 全域聯合求最佳解。
+    求解失敗或 scipy 過舊時回傳 None（呼叫端退回貪婪法）。
+    """
+    try:
+        from scipy.optimize import Bounds, LinearConstraint, milp
+    except Exception as e:
+        print(f"[analysis] scipy.optimize.milp 不可用，退回貪婪排班：{e}")
+        return None
+
+    vessels = [(v, z) for z in DUTY_ZONES for v in avail_by_zone.get(z, [])]
+    if not pool or not vessels:
+        return []
+    P, V = len(pool), len(vessels)
+    BIG = 10000.0
+    c = np.zeros(P * V)
+    for i, cand in enumerate(pool):
+        for j, (_v, z) in enumerate(vessels):
+            c[i * V + j] = _zone_cost(cand, z) - BIG - ZONE_PRIORITY[z]
+
+    rows, ubs = [], []
+    for i in range(P):                       # 每人至多一艦
+        r = np.zeros(P * V); r[i * V:(i + 1) * V] = 1
+        rows.append(r); ubs.append(1)
+    for j in range(V):                       # 每艦至多一組
+        r = np.zeros(P * V); r[j::V] = 1
+        rows.append(r); ubs.append(1)
+    for z in DUTY_ZONES:                     # 各海域員額上限
+        idx = [j for j, (_v, zz) in enumerate(vessels) if zz == z]
+        if not idx:
+            continue
+        r = np.zeros(P * V)
+        for j in idx:
+            r[j::V] = 1
+        rows.append(r); ubs.append(zone_slots.get(z, 0))
+
+    try:
+        res = milp(c=c,
+                   constraints=LinearConstraint(np.array(rows), -np.inf, np.array(ubs, dtype=float)),
+                   integrality=np.ones(P * V), bounds=Bounds(0, 1))
+    except Exception as e:
+        print(f"[analysis] MILP 求解異常，退回貪婪排班：{e}")
+        return None
+    if res is None or not getattr(res, "success", False) or res.x is None:
+        return None
+
+    x = np.round(res.x).astype(int).reshape(P, V)
+    schedule = []
+    for zone in ["外海", "近海", "港口"]:    # 輸出順序與貪婪法一致
+        for j, (v, z) in enumerate(vessels):
+            if z != zone:
+                continue
+            for i in range(P):
+                if x[i, j] == 1:
+                    schedule.append(_make_assignment(pool[i], zone, v))
+    return schedule
+
+
 def build_schedule(att, fatigue, vessel_status, exposure_ranking,
                    rough_prob: float) -> dict:
     """
     自動排班引擎：依「明日惡劣海況機率 + 人員疲勞 + 外海暴露 + 船艦可用性」
     產生明日值勤班表（誰上哪艦、哪海域）。純海象資料無法生成此輸出。
+    主引擎為整數線性規劃（MILP），並同步計算貪婪啟發式作為成本對照基準；
+    scipy 不可用時自動退回貪婪法。
     """
     # 排班「現在」基準採資料末日，使班表與疲勞 / 暴露口徑一致
     if att is not None and not att.empty:
@@ -1122,49 +1460,38 @@ def build_schedule(att, fatigue, vessel_status, exposure_ranking,
         if v["status"] == "可用":
             avail_by_zone.setdefault(v["zone"], []).append(v["vessel"])
 
-    schedule = []
-    assigned = set()
-    vessel_limited = []   # 因可用船艦不足而無法排滿員額的海域
-    # 由外海→近海→港口指派；外海優先給「低疲勞 + 低外海暴露」者（安全 + 公平輪換）
-    for zone in ["外海", "近海", "港口"]:
-        n = zone_slots.get(zone, 0)
-        if zone == "外海":
-            ranked = sorted(pool, key=lambda c: c["fatigue_score"] * 0.6 + c["offshore_pct"] * 0.4)
-        elif zone == "近海":
-            ranked = sorted(pool, key=lambda c: c["fatigue_score"])
-        else:  # 港口：留給疲勞較高者（輕負荷）
-            ranked = sorted(pool, key=lambda c: -c["fatigue_score"])
-        # 每艘可用船艦僅配一組人員（避免同艦重複指派）；員額受可用艦數上限約束
-        vessels = list(avail_by_zone.get(zone, []))
-        effective_n = min(n, len(vessels)) if vessels else 0
-        if effective_n < n:
-            vessel_limited.append({"zone": zone, "slots": n, "filled": effective_n,
-                                   "available_vessels": len(vessels)})
-        vi = 0
-        for c in ranked:
-            if vi >= effective_n:
-                break
-            if c["user_id"] in assigned:
-                continue
-            vessel = vessels[vi]; vi += 1
-            if zone == "外海":
-                reason = "低疲勞且外海暴露低，適合輪派外海"
-            elif zone == "近海":
-                reason = "疲勞適中，配置近海任務"
-            else:
-                reason = "疲勞偏高，配置港口輕負荷" if c["fatigue_score"] >= 40 else "配置港口值守"
-            schedule.append({
-                "name": c["name"], "zone": zone, "vessel": vessel,
-                "fatigue_score": c["fatigue_score"], "offshore_pct": c["offshore_pct"],
-                "reason": reason,
-            })
-            assigned.add(c["user_id"])
+    # 雙引擎：MILP 為主、貪婪為基準對照
+    greedy = _schedule_greedy(pool, zone_slots, avail_by_zone)
+    optimal = _schedule_milp(pool, zone_slots, avail_by_zone)
+    if optimal is not None:
+        schedule, engine = optimal, "milp"
+    else:
+        schedule, engine = greedy, "greedy"
+
+    greedy_cost = round(_schedule_total_cost(greedy), 1)
+    chosen_cost = round(_schedule_total_cost(schedule), 1)
+    saving_pct = None
+    if engine == "milp" and greedy_cost > 0 and len(schedule) == len(greedy):
+        saving_pct = round((greedy_cost - chosen_cost) / greedy_cost * 100, 1)
+
+    # 因可用船艦不足而無法排滿員額的海域（以實際成班數計）
+    vessel_limited = []
+    for zone, n in zone_slots.items():
+        filled = sum(1 for a in schedule if a["zone"] == zone)
+        n_avail = len(avail_by_zone.get(zone, []))
+        if filled < n and n_avail < n:
+            vessel_limited.append({"zone": zone, "slots": n, "filled": filled,
+                                   "available_vessels": n_avail})
 
     maint_vessels = [v["vessel"] for v in vessel_status if v["status"] == "需維護"]
     return {
         "date": str(tomorrow),
         "rough_prob": round(float(rough_prob), 1),
         "zone_slots": zone_slots,
+        "engine": engine,
+        "objective_cost": chosen_cost,
+        "greedy_cost": greedy_cost,
+        "cost_saving_pct": saving_pct,
         "assignments": schedule,
         "rest_recommended": [{"name": c["name"], "fatigue_score": c["fatigue_score"]} for c in rest],
         "maintenance_vessels": maint_vessels,
@@ -1230,6 +1557,73 @@ def _chart_vessel_availability(att):
     ax.set_title("船艦可用性（距下次維護里程，紅=需維護）", fontsize=14, fontweight="bold", pad=10)
     ax.set_xlabel("可用度 (%)")
     ax.legend(loc="lower right", fontsize=9)
+    fig.tight_layout(); return fig
+
+
+def _exposure_ranking(df) -> list:
+    """人員外海/大浪暴露排名（compute_recommendations 與排班對比圖共用）。"""
+    out = []
+    if df is None or df.empty:
+        return out
+    for uid, g in df.groupby("user_id"):
+        out.append({
+            "user_id": int(uid),
+            "records": int(len(g)),
+            "offshore_pct": round(float((g["duty_zone"] == "外海").mean() * 100), 1),
+            "rough_sea_pct": round(float((g["sea_state"] == "大浪").mean() * 100), 1),
+            "avg_hours": round(float(g["hours"].mean()), 2),
+        })
+    return sorted(out, key=lambda x: x["offshore_pct"], reverse=True)
+
+
+def _chart_schedule_compare(att):
+    """圖：排班引擎成本對比 — MILP 全域最佳化 vs 貪婪啟發式（同一成本尺度）。"""
+    fig, ax = plt.subplots(figsize=(8.5, 4.8))
+    if att is None or att.empty or att["user_id"].nunique() < 4:
+        ax.set_title("排班引擎成本對比（資料不足）", fontsize=14, fontweight="bold")
+        fig.tight_layout(); return fig
+    fat = compute_fatigue(att)
+    vs = compute_vessel_status(att)
+    cutoff = pd.Timestamp.today().normalize() - pd.Timedelta(days=30)
+    recent = att[att["work_date"] >= cutoff]
+    if len(recent) < 5:
+        recent = att
+    expo = _exposure_ranking(recent)
+
+    # 三種海況情境下的引擎成本對比
+    scenarios = [("平穩 (10%)", 10.0), ("中度 (35%)", 35.0), ("惡劣 (60%)", 60.0)]
+    greedy_costs, milp_costs, engines = [], [], []
+    for _label, prob in scenarios:
+        sched = build_schedule(att, fat, vs, expo, prob)
+        greedy_costs.append(sched["greedy_cost"])
+        milp_costs.append(sched["objective_cost"] if sched["engine"] == "milp" else None)
+        engines.append(sched["engine"])
+
+    x = np.arange(len(scenarios)); w = 0.36
+    bars_g = ax.bar(x - w / 2, greedy_costs, w, color="#9a948a",
+                    edgecolor="white", label="貪婪啟發式（基準）")
+    ax.bar_label(bars_g, fmt="%.0f", padding=3, fontsize=9)
+    if any(m is not None for m in milp_costs):
+        mvals = [m if m is not None else 0 for m in milp_costs]
+        bars_m = ax.bar(x + w / 2, mvals, w, color=BLUE_PAL[2],
+                        edgecolor="white", label="MILP 最佳解（HiGHS）")
+        ax.bar_label(bars_m, fmt="%.0f", padding=3, fontsize=9)
+        for xi, (g, m) in enumerate(zip(greedy_costs, milp_costs)):
+            if m is None or not g or g <= 0:
+                continue
+            gap = (g - m) / g * 100
+            label = f"−{gap:.0f}%" if gap > 0.5 else "gap 0%"
+            color = "#1565C0" if gap > 0.5 else "#3a6b4a"
+            ax.annotate(label, (xi + w / 2, m), xytext=(0, 14),
+                        textcoords="offset points", ha="center",
+                        fontsize=9.5, color=color, fontweight="bold")
+    ax.set_xticks(x); ax.set_xticklabels([s[0] for s in scenarios])
+    ax.set_title("排班引擎最優性驗證：MILP 精確解 vs 貪婪啟發式（指派總成本，越低越佳）",
+                 fontsize=12.5, fontweight="bold", pad=10)
+    ax.set_xlabel("明日惡劣海況機率情境"); ax.set_ylabel("指派總成本")
+    ax.legend(fontsize=9, loc="upper left", framealpha=0.9)
+    ax.text(0.99, 0.02, "成本 = Σ 海域別指派成本（疲勞 / 外海暴露加權）；gap 0% = 啟發式已達全域最優",
+            transform=ax.transAxes, ha="right", fontsize=8, color="#888")
     fig.tight_layout(); return fig
 
 
@@ -1316,6 +1710,18 @@ def compute_stats(att, leaves) -> dict:
             "text": f"共 {n_outlier} 筆值勤之工時偏離平均 2 個標準差以上（占 {n_outlier/len(att)*100:.1f}%）。"
                     f"{'建議覆核這些紀錄' if n_outlier > 0 else '所有紀錄都在正常範圍內'}。"
         })
+        # 多變量交叉驗證：Isolation Forest（工時×海況×海域×時刻×星期 五維）
+        iso = detect_anomalies_iforest(att)
+        if iso is not None:
+            flags, _scores = iso
+            n_iso = int(flags.sum())
+            both = int((flags & (z > 2)).sum())
+            out["insights"].append({
+                "title": "多變量異常偵測（Isolation Forest）",
+                "text": f"以五維特徵（工時、海況、海域、上工時刻、星期）偵測出 {n_iso} 筆多變量異常，"
+                        f"其中 {both} 筆與單變量 Z-score 法重疊——其餘為「單看工時正常、"
+                        f"但情境組合異常」的紀錄，建議優先覆核。"
+            })
 
     # ── 洞察 4：請假狀況 ──
     if not leaves.empty:
@@ -1342,22 +1748,25 @@ def compute_stats(att, leaves) -> dict:
         out["model"] = {"r2": round(float(r2), 3),
                         "coefficients": {k: round(float(v), 3) for k, v in coefs.items()}}
 
-    # ── 洞察 6：未來值勤量預測（週線性外推）──
-    if att["work_date"].nunique() >= 14:
-        weekly = att.set_index("work_date").resample("W")["att_id"].count()
-        weekly = weekly[weekly > 0]
-        _today = pd.Timestamp.today().normalize()
-        if len(weekly) >= 2 and weekly.index[-1].normalize() > _today:
-            weekly = weekly.iloc[:-1]
-        if len(weekly) >= 6:
-            yv = weekly.values.astype(float)
-            slope, intercept = np.polyfit(np.arange(len(yv)), yv, 1)
-            nxt = slope * len(yv) + intercept
-            trend_txt = "上升" if slope > 0.3 else "下降" if slope < -0.3 else "大致持平"
+    # ── 洞察 6：未來值勤量預測（線性外推 + Holt 指數平滑雙模型）──
+    weekly = _weekly_series(att)
+    if weekly is not None:
+        yv = weekly.values.astype(float)
+        slope, intercept = np.polyfit(np.arange(len(yv)), yv, 1)
+        nxt = slope * len(yv) + intercept
+        trend_txt = "上升" if slope > 0.3 else "下降" if slope < -0.3 else "大致持平"
+        out["insights"].append({
+            "title": "未來值勤量預測（線性趨勢外推）",
+            "text": f"近 {len(weekly)} 週的值勤量趨勢{trend_txt}"
+                    f"（每週約 {slope:+.1f} 筆）。依線性外推，下一週預估約 {max(nxt, 0):.0f} 筆。"
+        })
+        holt = holt_forecast(yv, horizon=1)
+        if holt is not None:
             out["insights"].append({
-                "title": "未來值勤量預測（線性趨勢外推）",
-                "text": f"近 {len(weekly)} 週的值勤量趨勢{trend_txt}"
-                        f"（每週約 {slope:+.1f} 筆）。依線性外推，下一週預估約 {max(nxt, 0):.0f} 筆。"
+                "title": "未來值勤量預測（Holt 雙參數指數平滑）",
+                "text": f"Holt 模型（α={holt['alpha']}、β={holt['beta']}，以一步預測 SSE 網格搜尋）"
+                        f"下一週預估約 {max(float(holt['forecast'][0]), 0):.0f} 筆，"
+                        f"與線性外推互為交叉驗證；兩者差距大時代表近期趨勢轉折，應以 Holt 為準。"
             })
 
     return out
@@ -1413,16 +1822,7 @@ def compute_recommendations(att, sea_obs=None, output_dir=None) -> dict:
     out["zone_risk"] = sorted(zone_stats, key=lambda x: x["avg_sea_rank"], reverse=True)
 
     # 人員外海暴露排名
-    per_person = []
-    for uid, g in recent.groupby("user_id"):
-        per_person.append({
-            "user_id": int(uid),
-            "records": int(len(g)),
-            "offshore_pct": round(float((g["duty_zone"] == "外海").mean() * 100), 1),
-            "rough_sea_pct": round(float((g["sea_state"] == "大浪").mean() * 100), 1),
-            "avg_hours": round(float(g["hours"].mean()), 2),
-        })
-    out["exposure_ranking"] = sorted(per_person, key=lambda x: x["offshore_pct"], reverse=True)
+    out["exposure_ranking"] = _exposure_ranking(recent)
 
     # 警示
     alerts = []
@@ -1471,7 +1871,11 @@ def compute_recommendations(att, sea_obs=None, output_dir=None) -> dict:
     if ml is not None:
         out["ml_rough_tomorrow"] = ml.get("prob_tomorrow")
         out["ml_metrics"] = {"accuracy": ml.get("accuracy"), "auc": ml.get("auc"),
-                             "n_train": ml.get("n_train"), "n_test": ml.get("n_test")}
+                             "n_train": ml.get("n_train"), "n_test": ml.get("n_test"),
+                             "cv_folds": ml.get("cv_folds"),
+                             "cv_auc_mean": ml.get("cv_auc_mean"),
+                             "cv_auc_std": ml.get("cv_auc_std"),
+                             "best_params": ml.get("best_params")}
         ptm = ml.get("prob_tomorrow")
         if ptm is not None and ptm > 50:
             alerts.append({
