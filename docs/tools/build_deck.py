@@ -42,10 +42,11 @@ SW, SH = Inches(13.333), Inches(7.5)
 ML     = Inches(0.7)            # 左邊界
 MR     = Inches(0.7)            # 右邊界
 CW     = SW - ML - MR           # 內容寬
+HW     = int((CW - Inches(0.3)) / 2)   # 兩欄卡片寬（含 0.3" 欄間隙），確保右欄不超出邊界
 CONTENT_TOP = Inches(1.95)
 CONTENT_BOT = Inches(6.95)
 
-IMG = "/tmp/demo_output"
+IMG = "/home/user/114-2_BigDataCC-2nd/docs/figures/charts"   # 已提交之標準分析圖表（可重現，不依賴 /tmp）
 SCR = "/home/user/114-2_BigDataCC-2nd/docs/screenshots"
 FIG = "/home/user/114-2_BigDataCC-2nd/docs/figures"
 
@@ -129,9 +130,17 @@ def text(s, l, t, w, h, lines, size=14, color=BODY, bold=False, italic=False,
             rb = p.add_run(); _font(rb, font, d.get('size',size),
                                     d.get('bullet_color', GOLD), True, False)
             rb.text = bullet + "  "
-        r = p.add_run(); r.text = txt
-        _font(r, d.get('font',font), d.get('size',size), d.get('color',color),
-              d.get('bold',bold), d.get('italic',italic))
+        # 'runs'：同一段落（同一行）多個不同樣式的 run，避免被拆成多行
+        if 'runs' in d:
+            for rd in d['runs']:
+                r = p.add_run(); r.text = rd.get('text','')
+                _font(r, rd.get('font', d.get('font',font)), rd.get('size', d.get('size',size)),
+                      rd.get('color', d.get('color',color)), rd.get('bold', d.get('bold',bold)),
+                      rd.get('italic', d.get('italic',italic)))
+        else:
+            r = p.add_run(); r.text = txt
+            _font(r, d.get('font',font), d.get('size',size), d.get('color',color),
+                  d.get('bold',bold), d.get('italic',italic))
     return tb
 
 def fit_image(s, path, bl, bt, bw, bh, align='c', valign='m', border=True, shadow=True, pad=0):
@@ -298,7 +307,7 @@ text(s, ML, Inches(4.3), Inches(8), Inches(0.9),
       {'text':'組員　黃宇平（組長）· 傅瀚鋌 · 曾紹喆 · 劉家样 · 李翊丞 · 林秉賢','size':12.5,'color':BODY,'space_after':3},
       {'text':'指導教師　張珀銀 老師　　　2026 年 6 月','size':12.5,'color':MUTED}])
 # KPI strip bottom-right
-kdata=[("25","分析圖表"),("45","CI 測試"),("0.811","ML AUC"),("0%","MILP 差距")]
+kdata=[("25","分析圖表"),("45","CI 測試"),("0.703","ML AUC"),("0%","MILP 差距")]
 kx=Inches(8.55)
 
 for i,(v,l) in enumerate(kdata):
@@ -505,9 +514,9 @@ cmds=[("$ ",H("7FD0B0"),"git clone …/114-2_BigDataCC-2nd && cd docker"),
 yy=ty+Inches(0.62)
 for pre,col,c in cmds:
     if not c: yy+=Inches(0.18); continue
-    text(s, tx+Inches(0.3), yy, tw-Inches(0.5), Inches(0.3),
-         [{'text':pre,'size':12,'color':col or WHITE,'font':FONT_M},
-          {'text':c,'size':12,'color':H("D5E0E8"),'font':FONT_M}], wrap=False)
+    text(s, tx+Inches(0.45), yy, tw-Inches(0.7), Inches(0.3),
+         [{'runs':[{'text':pre,'size':12,'color':col or WHITE,'font':FONT_M},
+                   {'text':c,'size':12,'color':H("D5E0E8"),'font':FONT_M}], 'align':L}], wrap=True)
     yy+=Inches(0.355)
 # right notes
 rx=ML+tw+Inches(0.4); rw=CW-tw-Inches(0.4)
@@ -592,17 +601,17 @@ s = content_slide("排班引擎 · 核心功能", "四項純海象資料系統�
 feats=[
     ("自動排班班表","綜合海況風險、人員疲勞、外海暴露、船艦可用性四項因子，自動產出明日具名值勤班表。",GOLD),
     ("人員疲勞指數","連續值勤天數（60%）× 近 7 日累計工時（40%）合成 0–100 疲勞分，高疲勞者自動降低外海負荷。",INK),
-    ("工時公平性 Gini","Lorenz 曲線量化人員工時分配均等度，Gini = 0.042，確保排班公平可追溯。",TEAL),
-    ("船艦可用性管理","依累計趟次推估維護需求，可用度 < 30% 自動排除於排班候選池。",INK2),
+    ("工時公平性 Gini","Lorenz 曲線量化人員工時分配均等度，Gini = 0.031，確保排班公平可追溯。",TEAL),
+    ("船艦可用性管理","依累計趟次推估維護需求，可用度 ≤ 15% 自動排除於排班候選池。",INK2),
 ]
 for i,(t_,d,acc) in enumerate(feats):
     col=i%2; row=i//2
-    x=ML+col*(Inches(6.2)+Inches(0.3)); y=Inches(2.1)+row*Inches(1.7)
-    card(s, x, y, Inches(6.2), Inches(1.5), fill=WHITE, line=LINE)
+    x=ML+col*(HW+Inches(0.3)); y=Inches(2.1)+row*Inches(1.7)
+    card(s, x, y, HW, Inches(1.5), fill=WHITE, line=LINE)
     rect(s, x, y, Inches(0.08), Inches(1.5), fill=acc)
-    text(s, x+Inches(0.28), y+Inches(0.18), Inches(5.7), Inches(0.38),
+    text(s, x+Inches(0.28), y+Inches(0.18), HW-Inches(0.5), Inches(0.38),
          [{'text':t_,'size':15,'color':INK,'bold':True}])
-    text(s, x+Inches(0.28), y+Inches(0.62), Inches(5.7), Inches(0.8),
+    text(s, x+Inches(0.28), y+Inches(0.62), HW-Inches(0.5), Inches(0.8),
          [{'text':d,'size':12,'color':BODY}], leading=1.15)
 takeaway(s, "整合", "四項功能共用同一個排班引擎，以 MILP 全域最佳化一次求解 — 不是分別看四張圖再人工判斷。")
 
@@ -629,13 +638,13 @@ s = content_slide("排班引擎 · 決策規則", "五條規則編碼海事作�
 rules=[("01","海況風險調控員額","明日惡劣機率 ≥ 50% → 外海僅留 1 人；< 25% → 外海最多 4 人。機率越高、外海員額越少。",INK),
        ("02","外海輪換公平","外海優先指派「疲勞低 AND 外海累積暴露低」者，兼顧安全與輪換公平。",INK),
        ("03","過勞者輕負荷","疲勞 ≥ 65（高）自動配置港口值守；人力充足且疲勞 ≥ 80 列入建議輪休。",INK),
-       ("04","維護船艦排除","可用度 < 30% 標記需維護，不進入候選池；每艦僅一組人員。",INK),
+       ("04","維護船艦排除","可用度 ≤ 15% 標記需維護，不進入候選池；每艦僅一組人員。",INK),
        ("05","MILP 全域最佳化","scipy.optimize.milp（HiGHS）對人員×船艦矩陣求全域最優，ZONE_PRIORITY 確保安全關鍵海域優先填滿。",GOLD)]
 for i,(n,t_,d,acc) in enumerate(rules):
     if i<4:
         col=i%2; row=i//2
-        x=ML+col*(CW/2+Inches(0.1))-(Inches(0.0)); x=ML+col*(Inches(6.2)+Inches(0.3))
-        y=Inches(2.1)+row*Inches(1.4); w=Inches(6.2); h=Inches(1.22)
+        x=ML+col*(HW+Inches(0.3))
+        y=Inches(2.1)+row*Inches(1.4); w=HW; h=Inches(1.22)
     else:
         x=ML; y=Inches(4.9); w=CW; h=Inches(1.05)
     star=acc==GOLD
@@ -687,9 +696,10 @@ text(s, rx+Inches(0.2), Inches(5.28), rw-Inches(0.4), Inches(1.1),
 # 4-7 實機班表（LIVE）
 rec=json.load(open(f"{IMG}/recommendations.json"))
 sc=rec.get("schedule",{}); asg=sc.get("assignments",[])
-s = content_slide("排班引擎 · 實機輸出", f"今日實際執行：明日（{sc.get('date','')}）惡劣海況 {sc.get('rough_prob',0)}% → 外海縮減至 1 人")
-# KPI row
 slots=sc.get("zone_slots",{})
+s = content_slide(f"排班引擎 · 實機輸出 · {sc.get('date','')}",
+                  f"明日惡劣海況 {sc.get('rough_prob',0)}%，引擎自動配置外海 {slots.get('外海',2)} 人")
+# KPI row
 for i,(v,l,acc) in enumerate([(str(sc.get('engine','milp')).upper(),"求解引擎",GOLD),
                               (f"{sc.get('cost_saving_pct',0)}%","最優性差距",TEAL),
                               (f"{rec.get('ml_rough_tomorrow',0)}%","ML 惡劣機率",TERRA),
@@ -702,12 +712,13 @@ rows=[]
 for a in asg[:8]:
     rows.append([(a['zone'],zc.get(a['zone'],INK),L,True), a['name'], (a['vessel'],BODY,L,False,'m'),
                  (str(a['fatigue_score']),BODY,C), (f"{a['offshore_pct']}%",BODY,C), (a['reason'][:22],MUTED,L)])
-table(s, ML, Inches(3.3),
+table(s, ML, Inches(3.18),
       [Inches(1.3),Inches(2.0),Inches(2.0),Inches(1.3),Inches(1.7),Inches(3.633)],
       [("海域",L),("人員",L),("船艦",L),("疲勞",C),("外海暴露",C),("配置理由",L)],
-      rows, row_h=Inches(0.4), fsize=11.5, hsize=12)
+      rows, row_h=Inches(0.33), header_h=Inches(0.42), fsize=11.5, hsize=12)
 rest=[r['name'] for r in sc.get('rest_recommended',[])]
-takeaway(s, "決策亮點", f"系統自動將最低暴露者派外海、把高疲勞的「{('、'.join(rest)) if rest else '—'}」列入輪休 — 一次完成安全與公平兩個目標。")
+rest_txt = ("把高疲勞的「"+"、".join(rest)+"」列入輪休") if rest else "本次無人達輪休門檻、人力配置均衡"
+takeaway(s, "決策亮點", f"系統自動將最低暴露者派外海、{rest_txt} — 一次完成安全與公平兩個目標。")
 
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION 05  資料工程
@@ -744,10 +755,10 @@ for i,(t_,cnt,d) in enumerate([("users","13 筆","三層級權限"),
                                ("sea_observations","736 筆","CWA 浮標觀測（無金鑰自動模擬）")]):
     y=Inches(2.5)+i*Inches(1.3)
     card(s, rx, y, rw, Inches(1.1), fill=WHITE, line=LINE, shadow=True)
-    text(s, rx+Inches(0.2), y+Inches(0.12), rw-Inches(0.4), Inches(0.34),
-         [{'text':t_,'size':14,'color':TEAL,'bold':True,'font':FONT_M},
-          {'text':'   '+cnt,'size':13,'color':GOLD,'bold':True}])
-    text(s, rx+Inches(0.2), y+Inches(0.55), rw-Inches(0.4), Inches(0.45),
+    text(s, rx+Inches(0.2), y+Inches(0.16), rw-Inches(0.4), Inches(0.34),
+         [{'runs':[{'text':t_,'size':14,'color':TEAL,'bold':True,'font':FONT_M},
+                   {'text':'    '+cnt,'size':13,'color':GOLD,'bold':True}]}])
+    text(s, rx+Inches(0.2), y+Inches(0.62), rw-Inches(0.4), Inches(0.4),
          [{'text':d,'size':11.5,'color':BODY}])
 
 # 5-2 時序模擬設計
@@ -761,7 +772,7 @@ hline(s, ML+Inches(0.3), Inches(2.65), lw2-Inches(0.6), color=LINE2)
 pts=[("天氣系統持續 3–7 天","今日大浪，明日通常也是大浪，不會突然平靜"),
      ("獨立隨機抽樣不夠","若每筆各自抽，海況沒有日際關聯，排班預測失去意義"),
      ("時序自相關模型","用前一日的海況嚴重度加上隨機擾動，生成下一日海況"),
-     ("效果驗證","RandomForest 海況預測 AUC = 0.811（有時序訊號可學習）")]
+     ("效果驗證","RandomForest 海況預測 AUC = 0.703（有時序訊號可學習）")]
 yy=Inches(2.82)
 for t_,d in pts:
     text(s, ML+Inches(0.3), yy, lw2-Inches(0.6), Inches(0.3),
@@ -829,10 +840,10 @@ divider("06","統計分析","Statistical Analysis",
 
 # 6-1 檢定總覽
 s = content_slide("統計分析 · 總覽", "四項檢定，全部顯著（數值為實機輸出）")
-kdata=[("F = 181.4","單因子 ANOVA","p < 0.0001 · 海況顯著影響工時",GOLD),
-       ("χ² = 349.6","卡方獨立性","df=6 · 海域與海況顯著關聯",INK),
-       ("R² = 0.784","OLS 多元迴歸","4 特徵解釋 78.4% 工時變異",TEAL),
-       ("Gini = 0.042","工時公平性","近乎完全均等分配",TERRA)]
+kdata=[("F = 249.1","單因子 ANOVA","p < 0.0001 · 海況顯著影響工時",GOLD),
+       ("χ² = 232.8","卡方獨立性","df=6 · 海域與海況顯著關聯",INK),
+       ("R² = 0.801","OLS 多元迴歸","4 特徵解釋 80.1% 工時變異",TEAL),
+       ("Gini = 0.031","工時公平性","近乎完全均等分配",TERRA)]
 gw=(CW-Inches(0.9))/4
 for i,(v,l,d,acc) in enumerate(kdata):
     x=ML+i*(gw+Inches(0.3))
@@ -851,15 +862,15 @@ text(s, ML+Inches(0.25), Inches(5.08), CW-Inches(0.5), Inches(0.34),
 text(s, ML+Inches(0.25), Inches(5.45), CW-Inches(0.5), Inches(1.0),
      [{'text':'大浪天工時較平靜天短約 1.5 小時（ANOVA）；外海大浪比例 20% vs 港口 1%（卡方）→ 排班引擎據此縮減外海員額；',
        'size':12.5,'color':BODY,'space_after':4},
-      {'text':'工時受海況 / 海域 / 星期 / 打卡時刻共同決定，解釋力 78.4%，遠高於任何單維度模型。',
+      {'text':'工時受海況 / 海域 / 星期 / 打卡時刻共同決定，解釋力 80.1%，遠高於任何單維度模型。',
        'size':12.5,'color':BODY}], leading=1.2)
 
 # 6-2 ANOVA + boxplot
-s = content_slide("統計分析 · ANOVA", "海況等級越高，值勤工時越短（F = 181.4, p < 0.0001）")
+s = content_slide("統計分析 · ANOVA", "海況等級越高，值勤工時越短（F = 249.1, p < 0.0001）")
 fit_image(s, f"{IMG}/hours_boxplot.png", ML, Inches(2.05), Inches(7.6), Inches(4.4))
 rx=ML+Inches(7.9); rw=CW-Inches(7.9)
 annotate(s, rx, Inches(2.05), rw,
-         ["H0：各海況平均工時相同","檢定量 F = 181.433","p 值 < 0.0001 → 拒絕 H0",
+         ["H0：各海況平均工時相同","檢定量 F = 249.104","p 值 < 0.0001 → 拒絕 H0",
           "· 四組間至少一對顯著差異","大浪中位數較平靜低約 1.5h",
           "對應機制：大浪提前下勤 100 分","→ 數據驗證了模擬設計的因果"],
          header_txt="檢定說明", size=12.5)
@@ -869,7 +880,7 @@ s = content_slide("統計分析 · 卡方檢定", "海域與海況並非獨立�
 fit_image(s, f"{IMG}/zone_sea_stacked.png", ML, Inches(2.05), Inches(7.2), Inches(4.4))
 rx=ML+Inches(7.5); rw=CW-Inches(7.5)
 annotate(s, rx, Inches(2.05), rw,
-         ["H0：海域與海況彼此獨立","檢定量 χ² = 349.634，df = 6","p 值 < 0.0001 → 拒絕 H0",
+         ["H0：海域與海況彼此獨立","檢定量 χ² = 232.811，df = 6","p 值 < 0.0001 → 拒絕 H0",
           "外海大浪佔比 ≈ 20%","港口大浪佔比 ≈ 1%","· 海域分配直接決定風險暴露",
           "→ 排班引擎縮減外海員額的依據"],
          header_txt="檢定說明", size=12.5)
@@ -879,9 +890,9 @@ s = content_slide("統計分析 · OLS 迴歸", "上工時刻與海況是工時�
 fit_image(s, f"{IMG}/regression_coef.png", ML, Inches(2.05), Inches(7.4), Inches(4.4))
 rx=ML+Inches(7.7); rw=CW-Inches(7.7)
 annotate(s, rx, Inches(2.05), rw,
-         ["標準化 OLS（numpy.linalg.lstsq）","R² = 0.784（解釋 78.4% 變異）",
-          "上工時刻 β = −0.569（最強）","海況等級 β = −0.435（次強）",
-          "海域距岸 β ≈ 0","星期 β = +0.014（可忽略）",
+         ["標準化 OLS（numpy.linalg.lstsq）","R² = 0.801（解釋 80.1% 變異）",
+          "上工時刻 β = −0.554（最強）","海況等級 β = −0.530（次強）",
+          "海域距岸 β ≈ 0","星期 β = −0.018（可忽略）",
           "· β 已標準化，可直接比較重要性"],
          header_txt="模型結果", size=12.5)
 
@@ -892,8 +903,8 @@ rx=ML+Inches(5.95); rw=CW-Inches(5.95)
 annotate(s, rx, Inches(2.05), rw,
          ["海況為有序離散變數，Pearson 不適用","改用 Spearman 等級相關",
           {'text':'主要發現','size':13,'color':INK,'bold':True,'bullet':'▪','bullet_color':GOLD},
-          "工時 ↔ 上工時刻：r ≈ −0.52","工時 ↔ 海況等級：r ≈ −0.44",
-          "海況 ↔ 海域：r ≈ +0.35","· 外海海況較惡劣的數值確認",
+          "工時 ↔ 上工時刻：r ≈ −0.65","工時 ↔ 海況等級：r ≈ −0.56",
+          "海況 ↔ 海域：r ≈ +0.43","· 外海海況較惡劣的數值確認",
           "亦作為 OLS 特徵共線性診斷"],
          header_txt="方法與發現", size=12.5)
 
@@ -918,7 +929,7 @@ annotate(s, rx, Inches(2.05), rw,
          header_txt="兩種方法", size=12.5)
 
 # 7-2 RandomForest
-s = content_slide("機器學習 · RandomForest", "AUC = 0.811：用 TimeSeriesSplit 避免未來洩漏")
+s = content_slide("機器學習 · RandomForest", "AUC = 0.703：用 TimeSeriesSplit 避免未來洩漏")
 fit_image(s, f"{IMG}/feature_importance.png", ML, Inches(2.05), Inches(7.4), Inches(4.4))
 rx=ML+Inches(7.7); rw=CW-Inches(7.7)
 annotate(s, rx, Inches(2.05), rw,
@@ -927,7 +938,7 @@ annotate(s, rx, Inches(2.05), rw,
           {'text':'訓練配置','size':13,'color':INK,'bold':True,'bullet':'▪','bullet_color':GOLD},
           "· GridSearchCV 超參數搜尋","· class_weight = balanced","· TimeSeriesSplit(5) 防未來洩漏",
           {'text':'結果','size':13,'color':TEAL,'bold':True,'bullet':'▪','bullet_color':TEAL},
-          "· 測試集 acc 0.949 / AUC 0.811"],
+          "· 測試集 acc 0.692 / AUC 0.703"],
          header_txt="ML 設計", size=12.5)
 
 # 7-3 Markov
@@ -967,11 +978,11 @@ annotate(s, rx, Inches(2.05), rw,
          header_txt="計算方式", size=12.5)
 
 # 8-2 Lorenz
-s = content_slide("人資決策 · 工時公平", "Gini = 0.042：工時分配近乎完全均等")
+s = content_slide("人資決策 · 工時公平", "Gini = 0.031：工時分配近乎完全均等")
 fit_image(s, f"{IMG}/fairness_lorenz.png", ML, Inches(2.05), Inches(6.0), Inches(4.4))
 rx=ML+Inches(6.35); rw=CW-Inches(6.35)
 annotate(s, rx, Inches(2.05), rw,
-         ["Gini 係數移植自經濟學分配理論","0 = 完全平均，1 = 極度集中","本系統 Gini = 0.042 → 高度均等",
+         ["Gini 係數移植自經濟學分配理論","0 = 完全平均，1 = 極度集中","本系統 Gini = 0.031 → 高度均等",
           "Lorenz 曲線緊貼對角線",
           {'text':'自動標記','size':13,'color':INK,'bold':True,'bullet':'▪','bullet_color':GOLD},
           "· 過勞：工時 ≥ 中位數 ×1.3","· 閒置：工時 ≤ 中位數 ×0.7",
@@ -984,7 +995,7 @@ s = content_slide("人資決策 · 船艦可用性", "維護里程推估，需�
 fit_image(s, f"{IMG}/vessel_availability.png", ML, Inches(2.05), Inches(7.6), Inches(4.4))
 rx=ML+Inches(7.9); rw=CW-Inches(7.9)
 annotate(s, rx, Inches(2.05), rw,
-         ["可用度 = f(累計趟次 mod 45)","MAINT_INTERVAL = 45 趟","可用度 < 30% → 標記「需維護」",
+         ["可用度 = f(累計趟次 mod 45)","MAINT_INTERVAL = 45 趟","可用度 ≤ 15% → 標記「需維護」",
           "需維護船艦不進入排班候選池","與疲勞 / 暴露聯動，避免高風險組合",
           "本次：所有船艦可用、無需維護"],
          header_txt="可用度模型", size=12.5)
@@ -1017,8 +1028,8 @@ tabs=[("勤務決策建議","海況警示 · 海域風險 · 外海暴露 Top 8"
       ("異常診斷","Z-score + Isolation Forest（2）",TERRA)]
 for i,(t_,d,acc) in enumerate(tabs):
     col=i%2; row=i//2
-    x=ML+col*(Inches(6.2)+Inches(0.3)); y=Inches(2.05)+row*Inches(0.98)
-    w=Inches(6.2) if not(i==6) else CW
+    x=ML+col*(HW+Inches(0.3)); y=Inches(2.05)+row*Inches(0.98)
+    w=HW if not(i==6) else CW
     card(s, x, y, w, Inches(0.82), fill=WHITE, line=LINE, shadow=True)
     rect(s, x, y, Inches(0.09), Inches(0.82), fill=acc)
     text(s, x+Inches(0.3), y+Inches(0.1), w-Inches(0.5), Inches(0.34),
@@ -1089,8 +1100,39 @@ for gi,(htxt,acc,items) in enumerate(groups):
         text(s, x+Inches(0.15), y, gw-Inches(0.3), ROW_H,
              [{'text': t_, 'size': 12.5, 'color': INK, 'bold': True,
                'bullet': '✓', 'bullet_color': acc},
-              {'text': d, 'size': 10.5, 'color': MUTED}],
+              {'text': d, 'size': 11, 'color': MUTED}],
              leading=1.05, space_after=1)
+
+# 9-5 團隊分工
+s = content_slide("專題管理 · 團隊分工", "技術實作集中於組長，組員各司支援角色")
+lead_h = Inches(2.15)
+card(s, ML, Inches(2.05), CW, lead_h, fill=PANEL3, line=GOLD, shadow=True)
+rect(s, ML, Inches(2.05), Inches(0.1), lead_h, fill=GOLD)
+text(s, ML+Inches(0.32), Inches(2.2), CW-Inches(0.6), Inches(0.4),
+     [{'runs':[{'text':'黃宇平（組長）','size':16,'color':INK,'bold':True},
+               {'text':'　·　系統全棧技術實作','size':13,'color':GOLD,'bold':True}]}])
+hline(s, ML+Inches(0.32), Inches(2.66), CW-Inches(0.64), color=GOLD_L)
+_lead_cols=[
+    ["Docker 三容器建置與一鍵部署","PHP 22 檔 Linux 化 + 排班決策頁",
+     "MySQL Schema 擴充 + 1,200 筆模擬資料","CWA 浮標海象資料管線整合"],
+    ["Pandas 清洗 + 統計檢定 + 25 張圖表","RandomForest 預測 + MILP 排班引擎",
+     "Gradio 儀表板 + Folium 互動地圖","GitHub Actions CI + 期末報告與簡報製作"],
+]
+_cw = (CW - Inches(0.7)) / 2
+for ci, items in enumerate(_lead_cols):
+    x = ML + Inches(0.38) + ci * _cw
+    text(s, x, Inches(2.82), _cw - Inches(0.2), Inches(1.5),
+         [{'text':it,'size':12,'color':BODY,'bullet':'▪','bullet_color':GOLD} for it in items],
+         leading=1.12, space_after=8)
+_members=[["傅瀚鋌","作業工具支援"],
+          ["曾紹喆","題目設定討論"],
+          ["劉家样","輔助驗收功能"],
+          ["李翊丞","題目程式碼解決輔助"],
+          ["林秉賢","專題虛擬環境程式碼解決輔助"]]
+table(s, ML, Inches(4.5), [Inches(2.2), CW-Inches(2.2)],
+      [("組員",L),("負責項目",L)],
+      [[(m[0],INK,L,True), m[1]] for m in _members],
+      row_h=Inches(0.4), header_h=Inches(0.42), fsize=12.5, hsize=12.5)
 
 # 結語
 s = slide()
@@ -1103,11 +1145,11 @@ text(s, ML, Inches(0.9), CW, Inches(0.6),
      [{'text':'本學期達成','size':28,'color':INK,'bold':True}])
 ach=["Docker 三容器一鍵部署，修正跨平台轉移問題（start_demo.sh 自動建 .env）",
      "MILP 整數規劃排班引擎 — 全域最優性差距 0%，全班唯一具名班表輸出",
-     "RandomForest（acc 0.949 / AUC 0.811）+ Markov 雙模型海況預測",
+     "RandomForest（acc 0.692 / AUC 0.703）+ Markov 雙模型海況預測",
      "Isolation Forest 5 維異常偵測，補強 Z-score 盲區",
      "Holt 雙指數平滑 + 線性外推雙趨勢預測（純 NumPy）",
-     "人員雷達圖 · 疲勞指數 · Gini 0.042 · 船艦可用性四項人力決策",
-     "25 張圖表 · 45 項 CI 全綠 · F=181.4 · χ²=349.6 · R²=0.784"]
+     "人員雷達圖 · 疲勞指數 · Gini 0.031 · 船艦可用性四項人力決策",
+     "25 張圖表 · 45 項 CI 全綠 · F=249.1 · χ²=232.8 · R²=0.801"]
 for i,a in enumerate(ach):
     y=Inches(1.65)+i*Inches(0.6)
     rect(s, ML, y, CW, Inches(0.52), fill=PANEL if i%2==0 else WHITE, line=LINE, rounded=True, radius=0.08)

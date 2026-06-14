@@ -49,7 +49,7 @@
 > **核心差異化模組（純海象資料做不出來）**：自動排班引擎 `build_schedule()`、人員疲勞
 > `compute_fatigue()`、工時公平性 `compute_fairness()`（Gini + Lorenz）、船艦可用性
 > `compute_vessel_status()`，統一輸出至 `recommendations.json`，由 `scheduler.php`（明日排班決策頁）
-> 與 Gradio「人力資源決策」tab 呈現。目前圖表 21 張、測試 33 個、CI 全綠。
+> 與 Gradio「人力資源決策」tab 呈現。目前圖表 25 張、測試 45 項、CI 全綠。
 
 ## Schema 擴充計畫
 

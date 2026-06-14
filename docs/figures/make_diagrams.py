@@ -42,7 +42,7 @@ ax.add_patch(Rectangle((3, 3), 94, 39.5, fill=False, ec="#8a97a5", lw=1.4, ls=(0
 ax.text(5, 40.2, "Docker 內部網路（單一指令 docker compose up 啟動）", fontsize=9.5, color="#5b6770")
 box(ax, 8, 27, 26, 10.5, "web 容器\nphp:8.2-apache\n打卡·請假·排班決策頁\nscheduler.php / 儀表板", C_BG_B, C_BLUE, 10)
 box(ax, 66, 27, 26, 10.5, "analysis 容器\npython:3.11\nPandas·scikit-learn\nGradio·排班引擎", C_BG_T, C_TEAL, 10)
-box(ax, 37.5, 27, 25, 10.5, "analysis_output\n（named volume）\n21 張 PNG·duty_map.html\nrecommendations.json", C_BG_G, C_GRAY, 9.2, bold=False)
+box(ax, 37.5, 27, 25, 10.5, "analysis_output\n（named volume）\n25 張 PNG·duty_map.html\nrecommendations.json", C_BG_G, C_GRAY, 9.2, bold=False)
 box(ax, 37.5, 6.5, 25, 10.5, "db 容器\nmysql:8.0\nusers · attendance · leaves\nsea_observations", "#fdf6e9", "#9a7b2d", 10)
 arrow(ax, 21, 47, 21, 38.3); arrow(ax, 79, 47, 79, 38.3)
 arrow(ax, 23, 27, 40, 15.5); arrow(ax, 77, 27, 60, 15.5)
@@ -55,13 +55,13 @@ fig.savefig(f"{OUT}/fig1_architecture.png", bbox_inches="tight", facecolor="whit
 fig, ax = canvas(12.5, 4.6)
 ax.text(50, 58, "資料流程：從資料生成到決策呈現", ha="center", fontsize=15, fontweight="bold", color="#152333")
 stages = [
-    ("① 資料生成", "generate_mock_data.py\n約 1,200 筆值勤紀錄\nfetch_sea_data.py\nCWA 浮標 ≈720 筆海象", C_BG_B, C_BLUE),
+    ("① 資料生成", "generate_mock_data.py\n約 1,200 筆值勤紀錄\nfetch_sea_data.py\nCWA 浮標 736 筆海象", C_BG_B, C_BLUE),
     ("② 儲存", "MySQL 8.0\nusers / attendance\nleaves\nsea_observations", "#fdf6e9", "#9a7b2d"),
     ("③ 分析", "Pandas 清洗·統計檢定\nRandomForest·Markov\n排班引擎\nbuild_schedule()", C_BG_T, C_TEAL),
-    ("④ 產出", "21 張 PNG 圖表\nduty_map.html（Folium）\nrecommendations.json\nsea_predictor.joblib", C_BG_G, C_GRAY),
+    ("④ 產出", "25 張 PNG 圖表\nduty_map.html（Folium）\nrecommendations.json\nsea_predictor.joblib", C_BG_G, C_GRAY),
     ("⑤ 呈現", "PHP 儀表板\nscheduler.php 明日排班\nGradio 互動介面\n（每 60 秒自動刷新）", C_BG_GR, C_GREEN),
 ]
-w, gap, x = 17.6, 2.9, 2.0
+w, gap, x = 17.2, 2.5, 1.8
 for i, (t, sub, fc, ec) in enumerate(stages):
     xi = x + i * (w + gap)
     box(ax, xi, 14, w, 30, "", fc, ec)
