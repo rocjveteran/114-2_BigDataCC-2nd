@@ -1075,6 +1075,8 @@ groups=[("必要技術 (4)",INK,[("Python + Pandas","清洗 / 統計 / 排班"),
         ("差異化創新 (4)",GOLD,[("MILP (HiGHS)","排班全域最佳化"),("Isolation Forest","5 維異常偵測"),
                           ("Holt 平滑","純 NumPy 趨勢預測"),("人員雷達圖","五維調度輪廓")])]
 gw=(CW-Inches(0.7))/3
+# 每列高度：2 行（技術名 + 描述），依最多 7 項設計
+ROW_H = Inches(0.52)
 for gi,(htxt,acc,items) in enumerate(groups):
     x=ML+gi*(gw+Inches(0.35))
     card(s, x, Inches(2.05), gw, Inches(4.5), fill=WHITE, line=LINE, shadow=True)
@@ -1082,12 +1084,13 @@ for gi,(htxt,acc,items) in enumerate(groups):
     text(s, x, Inches(2.05), gw, Inches(0.5),
          [{'text':htxt,'size':14,'color':WHITE,'bold':True,'align':C}], anchor='m')
     for i,(t_,d) in enumerate(items):
-        y=Inches(2.72)+i*Inches(0.5)
-        text(s, x+Inches(0.22), y, gw-Inches(0.4), Inches(0.3),
-             [{'text':'✓ ','size':12,'color':acc,'bold':True},
-              {'text':t_,'size':12.5,'color':INK,'bold':True}])
-        text(s, x+Inches(0.55), y+Inches(0.26), gw-Inches(0.7), Inches(0.24),
-             [{'text':d,'size':11,'color':MUTED}])
+        y=Inches(2.68)+i*ROW_H
+        # 「✓ 技術名稱」在同一段落（bullet 系統），描述在第二段落：兩行合為一個文字框
+        text(s, x+Inches(0.15), y, gw-Inches(0.3), ROW_H,
+             [{'text': t_, 'size': 12.5, 'color': INK, 'bold': True,
+               'bullet': '✓', 'bullet_color': acc},
+              {'text': d, 'size': 10.5, 'color': MUTED}],
+             leading=1.05, space_after=1)
 
 # 結語
 s = slide()
