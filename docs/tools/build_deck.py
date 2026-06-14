@@ -166,11 +166,11 @@ def footer(s, page=True):
     hline(s, ML, Inches(7.06), CW, color=LINE, weight=0.75)
     text(s, ML, Inches(7.12), Inches(9), Inches(0.3),
          [{'text':'海勤人力資源與作業安全決策系統  ·  114-2 巨量資料與雲端運算  第 2 組',
-           'size':9.5,'color':MUTED}])
+           'size':10,'color':MUTED}])
     if page:
         _pageno[0]+=1
         text(s, SW-MR-Inches(1.2), Inches(7.12), Inches(1.2), Inches(0.3),
-             [{'text':f'{_pageno[0]:02d}','size':9.5,'color':MUTED,'align':R}], font=FONT_M)
+             [{'text':f'{_pageno[0]:02d}','size':10,'color':MUTED,'align':R}], font=FONT_M)
 
 def content_slide(kicker, title, sub=None):
     s = slide(); header(s, kicker, title, sub); footer(s); return s
@@ -191,13 +191,19 @@ def card(s, l, t, w, h, fill=PANEL, line=LINE, shadow=False, radius=0.05):
 def kpi(s, l, t, w, h, value, label, sub=None, accent=GOLD, value_size=30):
     card(s, l, t, w, h, fill=WHITE, line=LINE, shadow=True)
     rect(s, l, t, w, Inches(0.06), fill=accent)
-    text(s, l+Inches(0.18), t+Inches(0.24), w-Inches(0.36), Inches(0.66),
+    # 依卡片高度自適應配置：大數字置於上方剩餘空間（垂直置中），
+    # 標籤／附註鎖定卡片底部，矮卡片亦不會與數字相疊。
+    lab_h = Inches(0.28)
+    sub_h = Inches(0.26) if sub else Inches(0.0)
+    val_top = t + Inches(0.12)
+    val_h   = h - Inches(0.12) - lab_h - sub_h - Inches(0.06)
+    text(s, l+Inches(0.18), val_top, w-Inches(0.36), val_h,
          [{'text':value,'size':value_size,'color':INK,'bold':True}], font=FONT_M, anchor='m')
-    text(s, l+Inches(0.18), t+h-Inches(0.62), w-Inches(0.36), Inches(0.3),
+    text(s, l+Inches(0.18), t+h-lab_h-sub_h-Inches(0.04), w-Inches(0.36), lab_h,
          [{'text':label,'size':12.5,'color':BODY,'bold':True}])
     if sub:
-        text(s, l+Inches(0.18), t+h-Inches(0.34), w-Inches(0.36), Inches(0.28),
-             [{'text':sub,'size':10.5,'color':MUTED}])
+        text(s, l+Inches(0.18), t+h-sub_h-Inches(0.02), w-Inches(0.36), sub_h,
+             [{'text':sub,'size':11,'color':MUTED}])
 
 def annotate(s, l, t, w, items, header_txt=None, size=12.5, gap=None):
     """右側註解清單。items: list[str|dict]"""
@@ -211,7 +217,7 @@ def annotate(s, l, t, w, items, header_txt=None, size=12.5, gap=None):
         if isinstance(it, dict): paras.append(it)
         elif it=='': paras.append({'text':'','size':6,'space_after':2})
         elif it.startswith('· '):
-            paras.append({'text':it[2:],'size':size-1.5,'color':MUTED,'bullet':'–','bullet_color':LINE2})
+            paras.append({'text':it[2:],'size':size-1,'color':MUTED,'bullet':'–','bullet_color':LINE2})
         else:
             paras.append({'text':it,'size':size,'color':BODY,'bullet':'▪','bullet_color':GOLD})
     text(s, l, y, w, Inches(5), paras, leading=1.12, space_after=6)
@@ -305,7 +311,7 @@ for i,(v,l) in enumerate(kdata):
 hline(s, ML, Inches(6.95), CW, color=LINE)
 text(s, ML, Inches(7.05), CW, Inches(0.3),
      [{'text':'MILP 整數規劃排班 · RandomForest 海況預測 · Isolation Forest 異常偵測 · Gradio 互動分析',
-       'size':10.5,'color':MUTED}])
+       'size':11.5,'color':MUTED}])
 
 # ════════════════════════════════════════════════════════════════════════════
 # 2. 一句話定位（大圖式）
@@ -359,7 +365,7 @@ for i,(n,t_,d) in enumerate(agenda):
     text(s, x+Inches(1.15), y+Inches(0.2), cw2-Inches(1.3), Inches(0.4),
          [{'text':t_,'size':14.5,'color':INK,'bold':True}])
     text(s, x+Inches(1.15), y+Inches(0.66), cw2-Inches(1.3), Inches(0.6),
-         [{'text':d,'size':10.5,'color':MUTED}], leading=1.1)
+         [{'text':d,'size':11.5,'color':MUTED}], leading=1.1)
 
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION 01
@@ -552,15 +558,15 @@ for i,(fn,d,role,acc) in enumerate(pages):
     text(s, x+Inches(0.22), y+Inches(0.48), cw3-Inches(0.4), Inches(0.3),
          [{'text':d,'size':11.5,'color':BODY}])
     text(s, x+Inches(0.22), y+Inches(0.75), cw3-Inches(0.4), Inches(0.26),
-         [{'text':role,'size':10,'color':MUTED}])
+         [{'text':role,'size':11,'color':MUTED}])
 
 # 3-2 Demo 登入/打卡
 s = content_slide("PHP 系統 · Demo（一）", "員工端：登入動畫與即時海象打卡頁")
-fit_image(s, f"{SCR}/01_login.png", ML, Inches(2.1), Inches(6.0), Inches(3.9), valign='t')
-fit_image(s, f"{SCR}/02_dashboard.png", ML+Inches(6.3), Inches(2.1), Inches(6.0), Inches(3.9), valign='t')
-text(s, ML, Inches(6.05), Inches(6.0), Inches(0.3),
+fit_image(s, f"{SCR}/01_login.png", ML, Inches(2.1), Inches(6.0), Inches(3.3), valign='t')
+fit_image(s, f"{SCR}/02_dashboard.png", ML+Inches(6.3), Inches(2.1), Inches(6.0), Inches(3.3), valign='t')
+text(s, ML, Inches(5.5), Inches(6.0), Inches(0.3),
      [{'text':'登入頁 · 粒子波動動畫背景','size':11.5,'color':MUTED,'align':C}])
-text(s, ML+Inches(6.3), Inches(6.05), Inches(6.0), Inches(0.3),
+text(s, ML+Inches(6.3), Inches(5.5), Inches(6.0), Inches(0.3),
      [{'text':'打卡頁 · 即時海象橫幅 + 個人疲勞卡','size':11.5,'color':MUTED,'align':C}])
 takeaway(s, "測試帳號", "boss1 / admin1 / em1　·　Demo 密碼 demo1234（種子密碼於首次啟動以 bcrypt 重設）")
 
@@ -909,7 +915,7 @@ annotate(s, rx, Inches(2.05), rw,
           "· 同時追蹤水準 + 趨勢分量","· 以純 NumPy 自行實作","· 對近期資料給予更高權重",
           {'text':'兩模型並排','size':13,'color':TEAL,'bold':True,'bullet':'▪','bullet_color':TEAL},
           "· 比較預測差異，增加可信度","· 趨勢方向一致即為穩健預測"],
-         header_txt="兩種方法", size=12)
+         header_txt="兩種方法", size=12.5)
 
 # 7-2 RandomForest
 s = content_slide("機器學習 · RandomForest", "AUC = 0.811：用 TimeSeriesSplit 避免未來洩漏")
@@ -922,7 +928,7 @@ annotate(s, rx, Inches(2.05), rw,
           "· GridSearchCV 超參數搜尋","· class_weight = balanced","· TimeSeriesSplit(5) 防未來洩漏",
           {'text':'結果','size':13,'color':TEAL,'bold':True,'bullet':'▪','bullet_color':TEAL},
           "· 測試集 acc 0.949 / AUC 0.811"],
-         header_txt="ML 設計", size=12)
+         header_txt="ML 設計", size=12.5)
 
 # 7-3 Markov
 s = content_slide("預測 · Markov 轉移", "海況具狀態惰性，可外推未來 7 天惡劣機率")
@@ -940,7 +946,7 @@ annotate(s, rx, Inches(2.05), rw,
           "· 同時考慮工時、海況、海域、","  打卡時刻、星期五個維度","· 偵測「情境型異常」",
           {'text':'互補效果','size':13,'color':TEAL,'bold':True,'bullet':'▪','bullet_color':TEAL},
           "· 兩法聯用：工時正常但情境異常","· 的紀錄，Z-score 看不到"],
-         header_txt="兩法比較", size=12)
+         header_txt="兩法比較", size=12.5)
 
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION 08  人力資源決策
@@ -971,7 +977,7 @@ annotate(s, rx, Inches(2.05), rw,
           "· 過勞：工時 ≥ 中位數 ×1.3","· 閒置：工時 ≤ 中位數 ×0.7",
           "本次無人員達門檻 → 輪班執行均勻",
           "此維度純海象系統無法產出"],
-         header_txt="Lorenz / Gini", size=12)
+         header_txt="Lorenz / Gini", size=12.5)
 
 # 8-3 船艦
 s = content_slide("人資決策 · 船艦可用性", "維護里程推估，需維護船艦自動排除於排班")
@@ -992,7 +998,7 @@ annotate(s, rx, Inches(2.05), rw,
           {'text':'如何輔助排班','size':13,'color':INK,'bold':True,'bullet':'▪','bullet_color':GOLD},
           "· 外海+大浪暴露高 → 換至近海/港口","· 暴露低+疲勞低 → 外海最佳候選","· 總工時偏高 → 潛在過勞、建議輪休",
           "補足 Lorenz 只看整體分配的不足"],
-         header_txt="維度與應用", size=12)
+         header_txt="維度與應用", size=12.5)
 
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION 09  互動與工程品質
@@ -1080,8 +1086,8 @@ for gi,(htxt,acc,items) in enumerate(groups):
         text(s, x+Inches(0.22), y, gw-Inches(0.4), Inches(0.3),
              [{'text':'✓ ','size':12,'color':acc,'bold':True},
               {'text':t_,'size':12.5,'color':INK,'bold':True}])
-        text(s, x+Inches(0.55), y+Inches(0.24), gw-Inches(0.7), Inches(0.24),
-             [{'text':d,'size':10,'color':MUTED}])
+        text(s, x+Inches(0.55), y+Inches(0.26), gw-Inches(0.7), Inches(0.24),
+             [{'text':d,'size':11,'color':MUTED}])
 
 # 結語
 s = slide()
