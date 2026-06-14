@@ -77,6 +77,7 @@ def add_shadow(shape, blur=7, dist=3.5, dir_deg=90, color="1C3D5A", alpha=20):
     pass  # disabled — custom XML injection breaks PowerPoint file validation
 
 def rect(s, l, t, w, h, fill=None, line=None, lw=0.75, rounded=False, radius=0.045, shadow=False):
+    l,t,w,h = int(l),int(t),int(w),int(h)
     shp = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE if rounded else MSO_SHAPE.RECTANGLE,
                              l, t, w, h)
     if fill is None:
@@ -93,11 +94,13 @@ def rect(s, l, t, w, h, fill=None, line=None, lw=0.75, rounded=False, radius=0.0
     return shp
 
 def hline(s, l, t, w, color=LINE, weight=1.0):
+    l,t,w = int(l),int(t),int(w)
     ln = s.shapes.add_connector(2, l, t, l+w, t)
     ln.line.color.rgb = color; ln.line.width = Pt(weight)
     return ln
 
 def vline(s, l, t, h, color=LINE, weight=1.0):
+    l,t,h = int(l),int(t),int(h)
     ln = s.shapes.add_connector(2, l, t, l, t+h)
     ln.line.color.rgb = color; ln.line.width = Pt(weight)
     return ln
@@ -107,6 +110,7 @@ L, C, R = PP_ALIGN.LEFT, PP_ALIGN.CENTER, PP_ALIGN.RIGHT
 def text(s, l, t, w, h, lines, size=14, color=BODY, bold=False, italic=False,
          font=FONT, align=L, anchor='t', leading=1.12, space_after=5, wrap=True):
     """lines: str 或 list[str|dict]。dict 可含 text,size,color,bold,italic,font,align,bullet,space_before"""
+    l,t,w,h = int(l),int(t),int(w),int(h)
     tb = s.shapes.add_textbox(l, t, w, h)
     tf = tb.text_frame; tf.word_wrap = wrap
     tf.vertical_anchor = {'t':MSO_ANCHOR.TOP,'m':MSO_ANCHOR.MIDDLE,'b':MSO_ANCHOR.BOTTOM}[anchor]
